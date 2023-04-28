@@ -12,20 +12,6 @@ use actix_session::SessionMiddleware;
 use actix_identity::IdentityMiddleware;
 use actix_cors::Cors;
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
-}
-
 async fn user_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
     #[derive(Deserialize, Debug, Serialize, Clone)]
     struct TmpUser {
@@ -56,6 +42,35 @@ async fn user_list(_user: Option<Identity>, data: web::Data<State>) -> impl Resp
     web::Json(lst)
 }
 
+async fn mentee_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
+    #[derive(Deserialize, Debug, Serialize, Clone)]
+    struct TmpMentee {
+        pub id: u64,
+        pub name: String,
+    }
+
+    #[derive(Deserialize, Debug, Serialize, Clone)]
+    struct TmpMenteeList {
+        pub mentees: Vec<TmpMentee>
+    }
+
+    let _srv = data.server.lock().unwrap();
+
+    let mut lst = TmpMenteeList {
+         mentees: Vec::new(),
+    };
+
+    for el in &_srv.mentees {
+        lst.mentees.push(TmpMentee {
+            id: *el.0 as u64,
+            name: el.1.name.clone(),
+        });
+    }
+
+    web::Json(lst)
+}
+
+
 // The secret key would usually be read from a configuration file/environment variables.
 fn get_secret_key() -> Key {
     return Key::generate();
@@ -81,8 +96,8 @@ async fn main() -> std::io::Result<()> {
                 .cookie_http_only(false)
                 .build(),
             )
-            .route("/list", web::get().to(user_list))
-            .route("/hello", web::get().to(manual_hello))
+            .route("/user/list", web::get().to(user_list))
+            .route("/mentee/list", web::get().to(mentee_list))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
