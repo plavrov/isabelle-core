@@ -1,7 +1,9 @@
+use serde::{Deserialize, Serialize};
+
 use crate::data_model::mentee::*;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScheduleEntry {
     pub is_group: bool,
     pub mentees: Vec<u64>,
