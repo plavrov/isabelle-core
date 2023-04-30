@@ -1,10 +1,12 @@
 use crate::data_model::mentee::*;
-use crate::data_model::user::*;
 
+
+#[derive(Debug, Clone)]
 pub struct ScheduleEntry {
     pub is_group: bool,
-    pub mentees: Vec<Mentee>,
-    pub users: Vec<User>,
+    pub mentees: Vec<u64>,
+    pub users: Vec<u64>,
+    pub times: Vec<u64>,
 }
 
 unsafe impl Send for ScheduleEntry {}
@@ -15,6 +17,7 @@ impl ScheduleEntry {
             is_group: false,
             mentees: Vec::new(),
             users: Vec::new(),
+            times: Vec::new(),
         }
     }
 }
