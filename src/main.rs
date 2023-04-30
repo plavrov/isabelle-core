@@ -15,7 +15,7 @@ use log::{info, error};
 use crate::data_model::user::*;
 use crate::data_model::mentee::*;
 use crate::data_model::schedule_entry::*;
-use crate::server::data_reader::*;
+use crate::server::data_rw::*;
 use std::ops::DerefMut;
 use std::ops::Deref;
 
@@ -53,6 +53,7 @@ async fn user_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpReq
     }
     srv.users.insert(idx, c);
 
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -72,6 +73,7 @@ async fn user_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequ
         error!("Failed to remove user {}", params.id);
     }
 
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -138,6 +140,7 @@ async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpR
     }
     srv.mentees.insert(idx, c);
 
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -157,6 +160,7 @@ async fn mentee_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRe
         error!("Failed to remove mentee {}", params.id);
     }
 
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -248,7 +252,7 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
     let mut obj = srv.schedule_entry_times[&params.time].clone();
     obj.push(idx);
     *srv.schedule_entry_times.get_mut(&params.time).unwrap() = obj;
-
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -276,6 +280,7 @@ async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req
         error!("Failed to remove schedule entry {}", params.id);
     }
 
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
