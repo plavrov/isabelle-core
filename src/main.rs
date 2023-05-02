@@ -1,6 +1,7 @@
 
 mod data_model;
 mod server;
+use serde_qs;
 use actix_identity::Identity;
 use actix_web::{get, post, web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
 use actix_web::web::Data;
@@ -117,7 +118,8 @@ async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpR
     }
 
     let mut c = Mentee::new();
-    let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
+    //let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
+    let params = serde_qs::from_str::<TmpParams>(&req.query_string()).unwrap();
 
     let mut srv = data.server.lock().unwrap();
 
@@ -208,7 +210,8 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
     }
 
     let mut c = ScheduleEntry::new();
-    let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
+    info!("Query: {}", req.query_string());
+    let params = serde_qs::from_str::<TmpParams>(&req.query_string()).unwrap();
 
     let mut srv = data.server.lock().unwrap();
 
@@ -223,6 +226,9 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
     c.is_group = params.is_group;
     c.mentees = params.mentees.clone();
     c.users = params.users.clone();
+    for user in &c.users {
+        info!("User: {}", user);
+    }
     c.times.push(params.time);
 
     if params.id != unset_id() {
@@ -248,7 +254,9 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
         info!("Edited schedule entry with ID {}", idx);
     }
 
-
+    if !srv.schedule_entry_times.contains_key(&params.time) {
+        srv.schedule_entry_times.insert(params.time, Vec::new());
+    }
     let mut obj = srv.schedule_entry_times[&params.time].clone();
     obj.push(idx);
     *srv.schedule_entry_times.get_mut(&params.time).unwrap() = obj;
@@ -358,7 +366,6 @@ async fn main() -> std::io::Result<()> {
     let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
-        srv.users_cnt = 5;
         {
             *srv.deref_mut() = read_data("sample-data")
         }
