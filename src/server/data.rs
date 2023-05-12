@@ -1,6 +1,7 @@
-use crate::data_model::schedule_entry::ScheduleEntry;
-use crate::data_model::mentee::*;
-use crate::data_model::user::*;
+use isabelle_dm::data_model::mentee::Mentee;
+use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
+use isabelle_dm::data_model::mentee::*;
+use isabelle_dm::data_model::user::*;
 
 use std::collections::HashMap;
 

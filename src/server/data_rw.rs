@@ -4,9 +4,9 @@ use std::fs;
 use std::path::Path;
 
 use crate::server::data::*;
-use crate::data_model::user::*;
-use crate::data_model::mentee::*;
-use crate::data_model::schedule_entry::*;
+use isabelle_dm::data_model::user::*;
+use isabelle_dm::data_model::mentee::*;
+use isabelle_dm::data_model::schedule_entry::*;
 use log::{info};
 
 use serde::Deserialize;
