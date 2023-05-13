@@ -9,9 +9,6 @@ use isabelle_dm::data_model::mentee::*;
 use isabelle_dm::data_model::schedule_entry::*;
 use log::{info};
 
-use serde::Deserialize;
-
-
 pub fn read_user(mut data: &mut Data, path: &str) {
     let paths = fs::read_dir(path).unwrap();
 
@@ -132,78 +129,78 @@ pub fn read_data(path: &str) -> Data {
 pub fn write_user_data(data: &mut Data, path: &str) {
     let existing_paths = fs::read_dir(path.to_string() + "/user").unwrap();
     for ep in existing_paths {
-        let epPath = ep.unwrap().path().display().to_string();
-        if Path::new(&epPath).is_file() {
-            std::fs::remove_file(&epPath);
+        let ep_path = ep.unwrap().path().display().to_string();
+        if Path::new(&ep_path).is_file() {
+            std::fs::remove_file(&ep_path).expect("Couldn't remove file");
         }
         else {
-            std::fs::remove_dir_all(&epPath);
+            std::fs::remove_dir_all(&ep_path).expect("Couldn't remove directory");
         }
     }
 
     for user in &data.users {
         let tmp_path = path.to_string() + "/user/" + &user.0.to_string();
 
-        std::fs::create_dir(&tmp_path);
+        std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
 
         let tmp_data_path = tmp_path.clone() + "/data.js";
         info!("User path: {}", tmp_data_path);
         let s = serde_json::to_string(&user.1);
-        std::fs::write(tmp_data_path, s.unwrap());
+        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write user");
     }
     std::fs::write(path.to_string() + "/user/cnt",
-                   data.users_cnt.to_string());
+                   data.users_cnt.to_string()).expect("Couldn't write user counter");
 }
 
 pub fn write_mentee_data(data: &mut Data, path: &str) {
     let existing_paths = fs::read_dir(path.to_string() + "/mentee").unwrap();
     for ep in existing_paths {
-        let epPath = ep.unwrap().path().display().to_string();
-        if Path::new(&epPath).is_file() {
-            std::fs::remove_file(&epPath);
+        let ep_path = ep.unwrap().path().display().to_string();
+        if Path::new(&ep_path).is_file() {
+            std::fs::remove_file(&ep_path).expect("Couldn't remove file");
         }
         else {
-            std::fs::remove_dir_all(&epPath);
+            std::fs::remove_dir_all(&ep_path).expect("Couldn't remove directory");
         }
     }
 
     for mentee in &data.mentees {
         let tmp_path = path.to_string() + "/mentee/" + &mentee.0.to_string();
 
-        std::fs::create_dir(&tmp_path);
+        std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
 
         let tmp_data_path = tmp_path.clone() + "/data.js";
         info!("Mentee path: {}", tmp_data_path);
         let s = serde_json::to_string(&mentee.1);
-        std::fs::write(tmp_data_path, s.unwrap());
+        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
     }
     std::fs::write(path.to_string() + "/mentee/cnt",
-                   data.mentee_cnt.to_string());
+                   data.mentee_cnt.to_string()).expect("Couldn't write mentee counter");
 }
 
 pub fn write_schedule_data(data: &mut Data, path: &str) {
     let existing_paths = fs::read_dir(path.to_string() + "/schedule").unwrap();
     for ep in existing_paths {
-        let epPath = ep.unwrap().path().display().to_string();
-        if Path::new(&epPath).is_file() {
-            std::fs::remove_file(&epPath);
+        let ep_path = ep.unwrap().path().display().to_string();
+        if Path::new(&ep_path).is_file() {
+            std::fs::remove_file(&ep_path).expect("Couldn't remove file");
         }
         else {
-            std::fs::remove_dir_all(&epPath);
+            std::fs::remove_dir_all(&ep_path).expect("Couldn't remove directory");
         }
     }
     for sch in &data.schedule_entries {
         let tmp_path = path.to_string() + "/schedule/" + &sch.0.to_string();
 
-        std::fs::create_dir(&tmp_path);
+        std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
 
         let tmp_data_path = tmp_path.clone() + "/data.js";
         info!("schedule path: {}", tmp_data_path);
         let s = serde_json::to_string(&sch.1);
-        std::fs::write(tmp_data_path, s.unwrap());
+        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
     }
     std::fs::write(path.to_string() + "/schedule/cnt",
-                   data.schedule_entry_cnt.to_string());
+                   data.schedule_entry_cnt.to_string()).expect("Couldn't write schedule counter");
 }
 
 pub fn write_data(data: &mut Data, path: &str) {

@@ -2,7 +2,7 @@ mod server;
 use isabelle_dm::data_model::user::User;
 use serde_qs;
 use actix_identity::Identity;
-use actix_web::{get, post, web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
+use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
 use actix_web::web::Data;
 use crate::server::state::*;
 use serde::{Deserialize, Serialize};
@@ -12,12 +12,11 @@ use actix_session::SessionMiddleware;
 use actix_identity::IdentityMiddleware;
 use actix_cors::Cors;
 use log::{info, error};
-use isabelle_dm::data_model::user::*;
+
 use isabelle_dm::data_model::mentee::*;
 use isabelle_dm::data_model::schedule_entry::*;
 use crate::server::data_rw::*;
 use std::ops::DerefMut;
-use std::ops::Deref;
 
 async fn user_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     #[derive(Deserialize, Debug, Serialize, Clone)]

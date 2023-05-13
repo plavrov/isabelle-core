@@ -1,5 +1,4 @@
-use isabelle_dm::data_model::mentee::Mentee;
-use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
+use isabelle_dm::data_model::schedule_entry::*;
 use isabelle_dm::data_model::mentee::*;
 use isabelle_dm::data_model::user::*;
 
