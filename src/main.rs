@@ -1,5 +1,8 @@
 mod server;
 use isabelle_dm::data_model::user::User;
+use isabelle_dm::data_model::mentee::Mentee;
+use isabelle_dm::data_model::del_param::DelParam;
+use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
 use serde_qs;
 use actix_identity::Identity;
 use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
@@ -13,42 +16,30 @@ use actix_identity::IdentityMiddleware;
 use actix_cors::Cors;
 use log::{info, error};
 
-use isabelle_dm::data_model::mentee::*;
-use isabelle_dm::data_model::schedule_entry::*;
 use crate::server::data_rw::*;
 use std::ops::DerefMut;
 
 async fn user_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpUser {
-        #[serde(default = "unset_id")]
-        pub id: u64,
-        pub firstname: String,
-        pub surname: String,
-    }
-
-    let mut c = User::new();
-    let params = web::Query::<TmpUser>::from_query(req.query_string()).unwrap();
+    let mut c = serde_qs::from_str::<User>(&req.query_string()).unwrap();
 
     let mut srv = data.server.lock().unwrap();
 
     let mut idx = srv.users_cnt + 1;
-    if params.id == unset_id() {
+    if c.id == unset_id() {
         srv.users_cnt += 1;
     }
     else {
-        idx = params.id;
+        idx = c.id;
         srv.users.remove(&idx);
     }
 
-    c.firstname = params.firstname.clone();
-    c.surname = params.surname.clone();
+    c.id = idx;
 
-    if params.id == unset_id() {
-        info!("Added user {} {} with ID {}", &params.firstname.to_string(), &params.surname.to_string(), idx);
+    if c.id == unset_id() {
+        info!("Added user {} {} with ID {}", &c.firstname.to_string(), &c.surname.to_string(), idx);
     }
     else {
-        info!("Edited user {} {} with ID {}", &params.firstname.to_string(), &params.surname.to_string(), idx);
+        info!("Edited user {} {} with ID {}", &c.firstname.to_string(), &c.surname.to_string(), idx);
     }
     srv.users.insert(idx, c);
 
@@ -57,14 +48,8 @@ async fn user_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpReq
 }
 
 async fn user_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-
-    #[derive(Deserialize, Debug)]
-    pub struct UserDelParams {
-        id: u64,
-    }
-
     let mut srv = data.server.lock().unwrap();
-    let params = web::Query::<UserDelParams>::from_query(req.query_string()).unwrap();
+    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
     if srv.users.contains_key(&params.id) {
         srv.users.remove(&params.id);
         info!("Removed user with ID {}", &params.id);
@@ -108,36 +93,27 @@ async fn user_list(_user: Option<Identity>, data: web::Data<State>) -> impl Resp
 
 
 async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpParams {
-        #[serde(default = "unset_id")]
-        pub id: u64,
-        pub name: String,
-    }
-
-    let mut c = Mentee::new();
     //let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
-    let params = serde_qs::from_str::<TmpParams>(&req.query_string()).unwrap();
+    let mut c = serde_qs::from_str::<Mentee>(&req.query_string()).unwrap();
 
     let mut srv = data.server.lock().unwrap();
 
     let mut idx = srv.mentee_cnt + 1;
-    if params.id == unset_id() {
+    if c.id == unset_id() {
         srv.mentee_cnt += 1;
     }
     else {
-        idx = params.id;
+        idx = c.id;
         srv.mentees.remove(&idx);
     }
 
-    c.name = params.name.clone();
-
-    if params.id == unset_id() {
-        info!("Added mentee {} with ID {}", &params.name.to_string(), srv.users_cnt);
+    if c.id == unset_id() {
+        info!("Added mentee {} with ID {}", &c.name.to_string(), srv.users_cnt);
     }
     else {
-        info!("Edited mentee {} with ID {}", &params.name.to_string(), srv.users_cnt);
+        info!("Edited mentee {} with ID {}", &c.name.to_string(), srv.users_cnt);
     }
+    c.id = idx;
     srv.mentees.insert(idx, c);
 
     write_data(srv.deref_mut(), "sample-data");
@@ -145,14 +121,8 @@ async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpR
 }
 
 async fn mentee_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-
-    #[derive(Deserialize, Debug)]
-    pub struct TmpParams {
-        id: u64,
-    }
-
     let mut srv = data.server.lock().unwrap();
-    let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
+    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
     if srv.mentees.contains_key(&params.id) {
         srv.mentees.remove(&params.id);
         info!("Removed mentees with ID {}", &params.id);
@@ -197,6 +167,7 @@ fn unset_id() -> u64 {
 }
 
 async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+    /*
     #[derive(Deserialize, Debug, Serialize, Clone)]
     struct TmpParams {
         #[serde(default = "unset_id")]
@@ -206,44 +177,37 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
         pub users: Vec<u64>,
         pub time: u64,
     }
+    */
 
-    let mut c = ScheduleEntry::new();
+    //let mut c = ScheduleEntry::new();
     info!("Query: {}", req.query_string());
-    let params = serde_qs::from_str::<TmpParams>(&req.query_string()).unwrap();
+    let mut c = serde_qs::from_str::<ScheduleEntry>(&req.query_string()).unwrap();
 
     let mut srv = data.server.lock().unwrap();
 
     let mut idx = srv.schedule_entry_cnt + 1;
-    if params.id != unset_id() {
+    if c.id == unset_id() {
         srv.schedule_entry_cnt += 1;
     }
     else {
-        idx = params.id;
+        idx = c.id;
     }
 
-    c.is_group = params.is_group;
-    c.mentees = params.mentees.clone();
-    c.users = params.users.clone();
-    for user in &c.users {
-        info!("User: {}", user);
-    }
-    c.times.push(params.time);
-
-    if params.id != unset_id() {
-        if srv.schedule_entries.contains_key(&params.id) {
-            for time in srv.schedule_entries[&params.id].times.clone()
+    if c.id != unset_id() {
+        if srv.schedule_entries.contains_key(&c.id) {
+            for time in srv.schedule_entries[&c.id].times.clone()
             {
                 if srv.schedule_entry_times.contains_key(&time)
                 {
-                    srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != params.id);
+                    srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != c.id);
                 }
             }
-            srv.schedule_entries.remove(&params.id);
+            srv.schedule_entries.remove(&c.id);
         }
     }
 
-    srv.schedule_entries.insert(idx, c);
-    if params.id == unset_id()
+    c.id = idx;
+    if c.id == unset_id()
     {
         info!("Added new schedule entry with ID {}", idx);
     }
@@ -252,25 +216,24 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
         info!("Edited schedule entry with ID {}", idx);
     }
 
-    if !srv.schedule_entry_times.contains_key(&params.time) {
-        srv.schedule_entry_times.insert(params.time, Vec::new());
+    for time in &c.times {
+        if !srv.schedule_entry_times.contains_key(&time) {
+            srv.schedule_entry_times.insert(*time, Vec::new());
+        }
+
+
+        let mut obj = srv.schedule_entry_times[&time].clone();
+        obj.push(idx);
+        *srv.schedule_entry_times.get_mut(&time).unwrap() = obj;
     }
-    let mut obj = srv.schedule_entry_times[&params.time].clone();
-    obj.push(idx);
-    *srv.schedule_entry_times.get_mut(&params.time).unwrap() = obj;
+    srv.schedule_entries.insert(idx, c);
     write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
 async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-
-    #[derive(Deserialize, Debug)]
-    pub struct TmpParams {
-        id: u64,
-    }
-
     let mut srv = data.server.lock().unwrap();
-    let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
+    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
     if srv.schedule_entries.contains_key(&params.id) {
 
         for time in srv.schedule_entries[&params.id].times.clone()
