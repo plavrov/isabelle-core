@@ -8,7 +8,6 @@ use actix_identity::Identity;
 use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
 use actix_web::web::Data;
 use crate::server::state::*;
-use serde::{Deserialize, Serialize};
 
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
@@ -21,10 +20,9 @@ use std::ops::DerefMut;
 
 async fn user_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut c = serde_qs::from_str::<User>(&req.query_string()).unwrap();
-
     let mut srv = data.server.lock().unwrap();
-
     let mut idx = srv.users_cnt + 1;
+
     if c.id == unset_id() {
         srv.users_cnt += 1;
     }
@@ -62,43 +60,17 @@ async fn user_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequ
 }
 
 async fn user_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpUser {
-        pub id: u64,
-        pub firstname: String,
-        pub surname: String,
-    }
-
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpUserList {
-        pub users: Vec<TmpUser>
-    }
-
     let _srv = data.server.lock().unwrap();
 
-    let mut lst = TmpUserList {
-        users: Vec::new(),
-    };
-
-    for el in &_srv.users {
-        lst.users.push(TmpUser {
-            id: *el.0 as u64,
-            firstname: el.1.firstname.clone(),
-            surname: el.1.surname.clone(),
-        });
-    }
-
-    web::Json(lst)
+    web::Json(_srv.users.clone())
 }
 
 
 async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    //let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
     let mut c = serde_qs::from_str::<Mentee>(&req.query_string()).unwrap();
-
     let mut srv = data.server.lock().unwrap();
-
     let mut idx = srv.mentee_cnt + 1;
+
     if c.id == unset_id() {
         srv.mentee_cnt += 1;
     }
@@ -123,6 +95,7 @@ async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpR
 async fn mentee_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+
     if srv.mentees.contains_key(&params.id) {
         srv.mentees.remove(&params.id);
         info!("Removed mentees with ID {}", &params.id);
@@ -135,31 +108,9 @@ async fn mentee_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRe
 }
 
 async fn mentee_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpMentee {
-        pub id: u64,
-        pub name: String,
-    }
-
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpMenteeList {
-        pub mentees: Vec<TmpMentee>
-    }
-
     let _srv = data.server.lock().unwrap();
 
-    let mut lst = TmpMenteeList {
-         mentees: Vec::new(),
-    };
-
-    for el in &_srv.mentees {
-        lst.mentees.push(TmpMentee {
-            id: *el.0 as u64,
-            name: el.1.name.clone(),
-        });
-    }
-
-    web::Json(lst)
+    web::Json(_srv.mentees.clone())
 }
 
 fn unset_id() -> u64 {
@@ -167,25 +118,10 @@ fn unset_id() -> u64 {
 }
 
 async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    /*
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpParams {
-        #[serde(default = "unset_id")]
-        pub id: u64,
-        pub is_group: bool,
-        pub mentees: Vec<u64>,
-        pub users: Vec<u64>,
-        pub time: u64,
-    }
-    */
-
-    //let mut c = ScheduleEntry::new();
-    info!("Query: {}", req.query_string());
     let mut c = serde_qs::from_str::<ScheduleEntry>(&req.query_string()).unwrap();
-
     let mut srv = data.server.lock().unwrap();
-
     let mut idx = srv.schedule_entry_cnt + 1;
+
     if c.id == unset_id() {
         srv.schedule_entry_cnt += 1;
     }
@@ -234,6 +170,7 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
 async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+
     if srv.schedule_entries.contains_key(&params.id) {
 
         for time in srv.schedule_entries[&params.id].times.clone()
@@ -254,65 +191,9 @@ async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req
 }
 
 
-async fn schedule_entry_list(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpParams {
-        #[serde(default = "unset_id")]
-        pub after: u64,
-        #[serde(default = "unset_id")]
-        pub before: u64,
-    }
-
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpScheduleEntry {
-        pub timestamp: u64,
-        pub is_group: bool,
-        pub mentees: Vec<u64>,
-        pub users: Vec<u64>,
-        pub times: Vec<u64>,
-    }
-
-    #[derive(Deserialize, Debug, Serialize, Clone)]
-    struct TmpScheduleEntryList {
-        pub schedule_entries: Vec<TmpScheduleEntry>
-    }
-
-    let params = web::Query::<TmpParams>::from_query(req.query_string()).unwrap();
+async fn schedule_entry_list(_user: Option<Identity>, data: web::Data<State>, _req: HttpRequest) -> impl Responder {
     let _srv = data.server.lock().unwrap();
-
-    let mut lst = TmpScheduleEntryList {
-         schedule_entries: Vec::new(),
-    };
-
-    for el in &_srv.schedule_entries {
-        for time in &el.1.times {
-            if params.after != unset_id() && params.after > *time {
-                continue;
-            }
-            if params.before != unset_id() && params.before < *time {
-                continue;
-            }
-        }
-        let mut entry = TmpScheduleEntry {
-            timestamp: *el.0 as u64,
-            is_group: el.1.is_group,
-            mentees: Vec::new(),
-            users: Vec::new(),
-            times: Vec::new()
-        };
-        for mentee in &el.1.mentees {
-            entry.mentees.push(*mentee);
-        }
-        for user in &el.1.users {
-            entry.users.push(*user);
-        }
-        for time in &el.1.times {
-            entry.times.push(*time);
-        }
-        lst.schedule_entries.push(entry);
-    }
-
-    web::Json(lst)
+    web::Json(_srv.schedule_entries.clone())
 }
 
 // The secret key would usually be read from a configuration file/environment variables.
@@ -323,7 +204,7 @@ fn get_secret_key() -> Key {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    //std::env::set_var("RUST_LOG", "debug");
+
     let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
