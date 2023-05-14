@@ -4,6 +4,7 @@ use isabelle_dm::data_model::mentee::Mentee;
 use isabelle_dm::data_model::del_param::DelParam;
 use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
 use serde_qs;
+use serde_qs::Config;
 use actix_identity::Identity;
 use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
 use actix_web::web::Data;
@@ -118,9 +119,13 @@ fn unset_id() -> u64 {
 }
 
 async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    let mut c = serde_qs::from_str::<ScheduleEntry>(&req.query_string()).unwrap();
+    info!("Query: {}", &req.query_string());
+    let config = Config::new(10, false);
+    let mut c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
     let mut idx = srv.schedule_entry_cnt + 1;
+
+    info!("Entry: {}", serde_json::to_string(&c.clone()).unwrap());
 
     if c.id == unset_id() {
         srv.schedule_entry_cnt += 1;
