@@ -150,6 +150,35 @@ async fn schedule_entry_done(_user: Option<Identity>, data: web::Data<State>, re
     HttpResponse::Ok()
 }
 
+async fn schedule_entry_paid(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+    info!("Query: {}", &req.query_string());
+    let config = Config::new(10, false);
+    let mut c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let mut srv = data.server.lock().unwrap();
+
+    let mut nc = srv.schedule_entries[&c.id].clone();
+
+    if nc.bool_params.contains_key("paid") {
+        let obj = nc.bool_params.get_mut("paid").unwrap();
+        *obj = true;
+    }
+    else {
+        nc.bool_params.insert("paid".to_string(), true);
+    }
+
+    srv.schedule_entries.remove(&c.id);
+    srv.schedule_entries.insert(c.id, nc);
+
+    if c.id != unset_id()
+    {
+        info!("Marked schedule entry with ID {} as paid", c.id);
+    }
+
+    //write_data(srv.deref_mut(), "sample-data");
+    HttpResponse::Ok()
+}
+
+
 async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
@@ -220,6 +249,7 @@ async fn main() -> std::io::Result<()> {
             .route("/schedule/del", web::get().to(schedule_entry_del))
             .route("/schedule/list", web::get().to(schedule_entry_list))
             .route("/schedule/done", web::get().to(schedule_entry_done))
+            .route("/schedule/paid", web::get().to(schedule_entry_paid))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
