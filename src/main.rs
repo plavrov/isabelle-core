@@ -92,6 +92,7 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
             {
                 srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != c.id);
             }
+            info!("Removed old schedule entry with ID {}", idx);
             srv.schedule_entries.remove(&c.id);
         }
     }
