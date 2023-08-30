@@ -4,12 +4,11 @@ use std::fs;
 use std::path::Path;
 
 use crate::server::data::*;
-use isabelle_dm::data_model::user::*;
-use isabelle_dm::data_model::mentee::*;
+use isabelle_dm::data_model::item::*;
 use isabelle_dm::data_model::schedule_entry::*;
 use log::{info};
 
-pub fn read_user(mut data: &mut Data, path: &str) {
+pub fn read_item(mut data: &mut Data, path: &str) {
     let paths = fs::read_dir(path).unwrap();
 
     for path in paths {
@@ -24,9 +23,9 @@ pub fn read_user(mut data: &mut Data, path: &str) {
 
         if Path::new(&data_path).is_file() {
             let text = std::fs::read_to_string(data_path).unwrap();
-            let user: User =
+            let itm: Item =
                 serde_json::from_str(&text).unwrap();
-            data.users.insert(idx.unwrap(), user);
+            data.items.insert(idx.unwrap(), itm);
         }
     }
 
@@ -40,9 +39,10 @@ pub fn read_user(mut data: &mut Data, path: &str) {
         return;
     }
 
-    data.users_cnt = parsed.unwrap();
+    data.items_cnt = parsed.unwrap();
 }
 
+/*
 pub fn read_mentee(mut data: &mut Data, path: &str) {
     let paths = fs::read_dir(path).unwrap();
 
@@ -76,6 +76,7 @@ pub fn read_mentee(mut data: &mut Data, path: &str) {
 
     data.mentee_cnt = parsed.unwrap();
 }
+*/
 
 pub fn read_schedule_entries(mut data: &mut Data, path: &str) {
     let paths = fs::read_dir(path).unwrap();
@@ -120,14 +121,13 @@ pub fn read_data(path: &str) -> Data {
     }
     data.schedule_entry_cnt = 5;
 
-    read_user(&mut data, (path.to_string() + "/user").as_str());
-    read_mentee(&mut data, (path.to_string() + "/mentee").as_str());
+    read_item(&mut data, (path.to_string() + "/item").as_str());
     read_schedule_entries(&mut data, (path.to_string() + "/schedule").as_str());
     return data;
 }
 
-pub fn write_user_data(data: &mut Data, path: &str) {
-    let existing_paths = fs::read_dir(path.to_string() + "/user").unwrap();
+pub fn write_item_data(data: &mut Data, path: &str) {
+    let existing_paths = fs::read_dir(path.to_string() + "/item").unwrap();
     for ep in existing_paths {
         let ep_path = ep.unwrap().path().display().to_string();
         if Path::new(&ep_path).is_file() {
@@ -138,44 +138,18 @@ pub fn write_user_data(data: &mut Data, path: &str) {
         }
     }
 
-    for user in &data.users {
-        let tmp_path = path.to_string() + "/user/" + &user.0.to_string();
+    for item in &data.items {
+        let tmp_path = path.to_string() + "/item/" + &item.0.to_string();
 
         std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
 
         let tmp_data_path = tmp_path.clone() + "/data.js";
-        info!("User path: {}", tmp_data_path);
-        let s = serde_json::to_string(&user.1);
-        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write user");
+        info!("Item path: {}", tmp_data_path);
+        let s = serde_json::to_string(&item.1);
+        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write item");
     }
-    std::fs::write(path.to_string() + "/user/cnt",
-                   data.users_cnt.to_string()).expect("Couldn't write user counter");
-}
-
-pub fn write_mentee_data(data: &mut Data, path: &str) {
-    let existing_paths = fs::read_dir(path.to_string() + "/mentee").unwrap();
-    for ep in existing_paths {
-        let ep_path = ep.unwrap().path().display().to_string();
-        if Path::new(&ep_path).is_file() {
-            std::fs::remove_file(&ep_path).expect("Couldn't remove file");
-        }
-        else {
-            std::fs::remove_dir_all(&ep_path).expect("Couldn't remove directory");
-        }
-    }
-
-    for mentee in &data.mentees {
-        let tmp_path = path.to_string() + "/mentee/" + &mentee.0.to_string();
-
-        std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
-
-        let tmp_data_path = tmp_path.clone() + "/data.js";
-        info!("Mentee path: {}", tmp_data_path);
-        let s = serde_json::to_string(&mentee.1);
-        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
-    }
-    std::fs::write(path.to_string() + "/mentee/cnt",
-                   data.mentee_cnt.to_string()).expect("Couldn't write mentee counter");
+    std::fs::write(path.to_string() + "/item/cnt",
+                   data.items_cnt.to_string()).expect("Couldn't write item counter");
 }
 
 pub fn write_schedule_data(data: &mut Data, path: &str) {
@@ -204,7 +178,6 @@ pub fn write_schedule_data(data: &mut Data, path: &str) {
 }
 
 pub fn write_data(data: &mut Data, path: &str) {
-    write_user_data(data, path);
-    write_mentee_data(data, path);
+    write_item_data(data, path);
     write_schedule_data(data, path);
 }

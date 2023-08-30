@@ -1,6 +1,5 @@
 mod server;
-use isabelle_dm::data_model::user::User;
-use isabelle_dm::data_model::mentee::Mentee;
+use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::del_param::DelParam;
 use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
 use serde_qs;
@@ -19,99 +18,51 @@ use log::{info, error};
 use crate::server::data_rw::*;
 use std::ops::DerefMut;
 
-async fn user_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    let mut c = serde_qs::from_str::<User>(&req.query_string()).unwrap();
+async fn item_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+    let mut c = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
-    let mut idx = srv.users_cnt + 1;
+    let mut idx = srv.items_cnt + 1;
 
     if c.id == unset_id() {
-        srv.users_cnt += 1;
+        srv.items_cnt += 1;
     }
     else {
         idx = c.id;
-        srv.users.remove(&idx);
+        srv.items.remove(&idx);
     }
 
     c.id = idx;
 
     if c.id == unset_id() {
-        info!("Added user {} {} with ID {}", &c.firstname.to_string(), &c.surname.to_string(), idx);
+        info!("Added item {} {} with ID {}", &c.safe_str("firstname", "".to_string()).to_string(), &c.safe_str("surname", "".to_string()).to_string(), idx);
     }
     else {
-        info!("Edited user {} {} with ID {}", &c.firstname.to_string(), &c.surname.to_string(), idx);
+        info!("Edited item {} {} with ID {}", &c.safe_str("firstname", "".to_string()).to_string(), &c.safe_str("surname", "".to_string()).to_string(), idx);
     }
-    srv.users.insert(idx, c);
+    srv.items.insert(idx, c);
 
     write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
-async fn user_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+async fn item_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
-    if srv.users.contains_key(&params.id) {
-        srv.users.remove(&params.id);
-        info!("Removed user with ID {}", &params.id);
+    if srv.items.contains_key(&params.id) {
+        srv.items.remove(&params.id);
+        info!("Removed item with ID {}", &params.id);
     } else {
-        error!("Failed to remove user {}", params.id);
+        error!("Failed to remove item {}", params.id);
     }
 
     write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
-async fn user_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
+async fn item_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
     let _srv = data.server.lock().unwrap();
 
-    web::Json(_srv.users.clone())
-}
-
-
-async fn mentee_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    let mut c = serde_qs::from_str::<Mentee>(&req.query_string()).unwrap();
-    let mut srv = data.server.lock().unwrap();
-    let mut idx = srv.mentee_cnt + 1;
-
-    if c.id == unset_id() {
-        srv.mentee_cnt += 1;
-    }
-    else {
-        idx = c.id;
-        srv.mentees.remove(&idx);
-    }
-
-    if c.id == unset_id() {
-        info!("Added mentee {} with ID {}", &c.name.to_string(), srv.users_cnt);
-    }
-    else {
-        info!("Edited mentee {} with ID {}", &c.name.to_string(), srv.users_cnt);
-    }
-    c.id = idx;
-    srv.mentees.insert(idx, c);
-
-    write_data(srv.deref_mut(), "sample-data");
-    HttpResponse::Ok()
-}
-
-async fn mentee_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    let mut srv = data.server.lock().unwrap();
-    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
-
-    if srv.mentees.contains_key(&params.id) {
-        srv.mentees.remove(&params.id);
-        info!("Removed mentees with ID {}", &params.id);
-    } else {
-        error!("Failed to remove mentee {}", params.id);
-    }
-
-    write_data(srv.deref_mut(), "sample-data");
-    HttpResponse::Ok()
-}
-
-async fn mentee_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    let _srv = data.server.lock().unwrap();
-
-    web::Json(_srv.mentees.clone())
+    web::Json(_srv.items.clone())
 }
 
 fn unset_id() -> u64 {
@@ -136,12 +87,10 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
 
     if c.id != unset_id() {
         if srv.schedule_entries.contains_key(&c.id) {
-            for time in srv.schedule_entries[&c.id].times.clone()
+            let time = c.time;
+            if srv.schedule_entry_times.contains_key(&time)
             {
-                if srv.schedule_entry_times.contains_key(&time)
-                {
-                    srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != c.id);
-                }
+                srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != c.id);
             }
             srv.schedule_entries.remove(&c.id);
         }
@@ -157,18 +106,46 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
         info!("Edited schedule entry with ID {}", idx);
     }
 
-    for time in &c.times {
-        if !srv.schedule_entry_times.contains_key(&time) {
-            srv.schedule_entry_times.insert(*time, Vec::new());
-        }
-
-
-        let mut obj = srv.schedule_entry_times[&time].clone();
-        obj.push(idx);
-        *srv.schedule_entry_times.get_mut(&time).unwrap() = obj;
+    let time = c.time;
+    if !srv.schedule_entry_times.contains_key(&time) {
+        srv.schedule_entry_times.insert(time, Vec::new());
     }
+
+
+    let mut obj = srv.schedule_entry_times[&time].clone();
+    obj.push(idx);
+    *srv.schedule_entry_times.get_mut(&time).unwrap() = obj;
+
     srv.schedule_entries.insert(idx, c);
     write_data(srv.deref_mut(), "sample-data");
+    HttpResponse::Ok()
+}
+
+async fn schedule_entry_done(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+    info!("Query: {}", &req.query_string());
+    let config = Config::new(10, false);
+    let mut c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let mut srv = data.server.lock().unwrap();
+
+    let mut nc = srv.schedule_entries[&c.id].clone();
+
+    if nc.bool_params.contains_key("done") {
+        let obj = nc.bool_params.get_mut("done").unwrap();
+        *obj = true;
+    }
+    else {
+        nc.bool_params.insert("done".to_string(), true);
+    }
+
+    srv.schedule_entries.remove(&c.id);
+    srv.schedule_entries.insert(c.id, nc);
+
+    if c.id != unset_id()
+    {
+        info!("Marked schedule entry with ID {} as done", c.id);
+    }
+
+    //write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -178,7 +155,7 @@ async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req
 
     if srv.schedule_entries.contains_key(&params.id) {
 
-        for time in srv.schedule_entries[&params.id].times.clone()
+        let time = srv.schedule_entries[&params.id].time;
         {
             if srv.schedule_entry_times.contains_key(&time)
             {
@@ -235,15 +212,13 @@ async fn main() -> std::io::Result<()> {
                 .cookie_http_only(false)
                 .build(),
             )
-            .route("/user/edit", web::get().to(user_edit))
-            .route("/user/del", web::get().to(user_del))
-            .route("/user/list", web::get().to(user_list))
-            .route("/mentee/edit", web::get().to(mentee_edit))
-            .route("/mentee/del", web::get().to(mentee_del))
-            .route("/mentee/list", web::get().to(mentee_list))
+            .route("/item/edit", web::get().to(item_edit))
+            .route("/item/del", web::get().to(item_del))
+            .route("/item/list", web::get().to(item_list))
             .route("/schedule/edit", web::get().to(schedule_entry_edit))
             .route("/schedule/del", web::get().to(schedule_entry_del))
             .route("/schedule/list", web::get().to(schedule_entry_list))
+            .route("/schedule/done", web::get().to(schedule_entry_done))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
