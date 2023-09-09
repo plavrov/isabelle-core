@@ -125,7 +125,7 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
 async fn schedule_entry_done(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
-    let mut c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
 
     let mut nc = srv.schedule_entries[&c.id].clone();
@@ -153,7 +153,7 @@ async fn schedule_entry_done(_user: Option<Identity>, data: web::Data<State>, re
 async fn schedule_entry_paid(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
-    let mut c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
 
     let mut nc = srv.schedule_entries[&c.id].clone();
