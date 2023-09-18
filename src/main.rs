@@ -1,11 +1,12 @@
 mod server;
+use actix_session::config::{BrowserSession, CookieContentSecurity};
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::del_param::DelParam;
 use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
 use serde_qs;
 use serde_qs::Config;
 use actix_identity::Identity;
-use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
+use actix_web::{web, App, HttpMessage, HttpResponse, HttpRequest, HttpServer, Responder, cookie::Key, cookie::SameSite};
 use actix_web::web::Data;
 use crate::server::state::*;
 
@@ -13,10 +14,12 @@ use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_identity::IdentityMiddleware;
 use actix_cors::Cors;
+
 use log::{info, error};
 
 use crate::server::data_rw::*;
 use std::ops::DerefMut;
+use serde::{Deserialize, Serialize};
 
 async fn item_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut c = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
@@ -208,9 +211,55 @@ async fn schedule_entry_list(_user: Option<Identity>, data: web::Data<State>, _r
     web::Json(_srv.schedule_entries.clone())
 }
 
+async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRequest) -> impl Responder {
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    pub struct LoginUser {
+        pub username: String,
+        pub password: String,
+    }
+
+    let config = Config::new(10, false);
+    let c : LoginUser = config.deserialize_str(&request.query_string()).unwrap();
+
+    // Some kind of authentication should happen here
+    // e.g. password-based, biometric, etc.
+    // [...]
+
+    // attach a verified user identity to the active session
+    Identity::login(&request.extensions(), c.username.clone()).unwrap();
+    info!("Logged in! {}", c.username);
+
+    HttpResponse::Ok()
+}
+
+async fn logout(_user: Option<Identity>, _data: web::Data<State>, _request: HttpRequest) -> impl Responder {
+    if !_user.is_none() {
+        _user.unwrap().logout();
+        info!("Logged out!");
+    }
+    else {
+        info!("No user");
+    }
+
+    HttpResponse::Ok()
+}
+
 // The secret key would usually be read from a configuration file/environment variables.
 fn get_secret_key() -> Key {
     return Key::generate();
+}
+
+fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
+    SessionMiddleware::builder(
+        CookieSessionStore::default(), Key::from(&[0; 64])
+    )
+    .cookie_name(String::from("isabelle-cookie"))
+    .cookie_secure(true)
+    .session_lifecycle(BrowserSession::default())
+    .cookie_same_site(SameSite::None)
+    .cookie_content_security(CookieContentSecurity::Private)
+    .cookie_http_only(true)
+    .build()
 }
 
 #[actix_web::main]
@@ -227,21 +276,12 @@ async fn main() -> std::io::Result<()> {
     let data = Data::new(state);
     let secret_key = get_secret_key();
     info!("Starting server");
-    HttpServer::new(move || {
+    HttpServer::new(move ||
         App::new()
             .app_data(data.clone())
             .wrap(Cors::permissive())
             .wrap(IdentityMiddleware::default())
-            .wrap(
-                SessionMiddleware::builder(
-                    CookieSessionStore::default(),
-                    secret_key.clone()
-                )
-                .cookie_same_site(SameSite::None)
-                .cookie_secure(false)
-                .cookie_http_only(false)
-                .build(),
-            )
+            .wrap(session_middleware())
             .route("/item/edit", web::get().to(item_edit))
             .route("/item/del", web::get().to(item_del))
             .route("/item/list", web::get().to(item_list))
@@ -250,7 +290,9 @@ async fn main() -> std::io::Result<()> {
             .route("/schedule/list", web::get().to(schedule_entry_list))
             .route("/schedule/done", web::get().to(schedule_entry_done))
             .route("/schedule/paid", web::get().to(schedule_entry_paid))
-    })
+            .route("/login", web::post().to(login))
+            .route("/logout", web::post().to(logout))
+    )
     .bind(("127.0.0.1", 8080))?
     .run()
     .await
