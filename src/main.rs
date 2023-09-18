@@ -244,6 +244,39 @@ async fn logout(_user: Option<Identity>, _data: web::Data<State>, _request: Http
     HttpResponse::Ok()
 }
 
+async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
+    let mut srv = data.server.lock().unwrap();
+
+    //let _srv = data.server.lock().unwrap();
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    pub struct LoginUser {
+        pub username: String,
+        pub role: Vec<String>,
+    }
+
+    let mut user : LoginUser = LoginUser { username: "".to_string(), role: Vec::new() };
+
+    if _user.is_none() {
+        info!("No user");
+        return web::Json(user)
+    }
+
+    for item in &srv.items {
+        if item.1.fields.contains_key("login") &&
+           item.1.fields["login"] == _user.as_ref().unwrap().id().unwrap() {
+            user.username = _user.as_ref().unwrap().id().unwrap();
+            if item.1.bool_params.contains_key("is_human") {
+                for bp in &item.1.bool_params {
+                    if bp.0.starts_with("role_is_") {
+                        user.role.push(bp.0[8..].to_string());
+                    }
+                }
+            }
+        }
+    }
+    web::Json(user)
+}
+
 // The secret key would usually be read from a configuration file/environment variables.
 fn get_secret_key() -> Key {
     return Key::generate();
@@ -292,6 +325,7 @@ async fn main() -> std::io::Result<()> {
             .route("/schedule/paid", web::get().to(schedule_entry_paid))
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
+            .route("/is_logged_in", web::get().to(is_logged_in))
     )
     .bind(("127.0.0.1", 8080))?
     .run()
