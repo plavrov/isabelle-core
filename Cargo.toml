@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 actix-web = { version = "4", features = ["cookies"]}
-actix-session = { version = "0.7.1", features = ["cookie-session"] }
-actix-identity = "0.5.2"
-actix-cors = "0.6.2"
+actix-session = { version = "0.8", features = ["cookie-session"] }
+actix-identity = "0.6.0"
+actix-cors = "0.6.4"
 serde = { version = "1.0", features = ["derive"] }
 env_logger = "0.8.4"
 log = "0.4.0"
