@@ -1,3 +1,4 @@
+use std::ops::Deref;
 mod server;
 use actix_session::config::{BrowserSession, CookieContentSecurity};
 use isabelle_dm::data_model::item::Item;
@@ -21,10 +22,29 @@ use crate::server::data_rw::*;
 use std::ops::DerefMut;
 use serde::{Deserialize, Serialize};
 
-async fn item_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+fn get_user(srv: &crate::server::data::Data, login: String) -> Option<Item> {
+    for item in &srv.items {
+        if item.1.fields.contains_key("login") &&
+           item.1.fields["login"] == login &&
+           item.1.bool_params.contains_key("is_human") {
+            return Some(item.1.clone());
+        }
+    }
+    return None;
+}
+
+async fn item_edit(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut c = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
     let mut idx = srv.items_cnt + 1;
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Item edit: no user");
+        return HttpResponse::Unauthorized();
+    }
 
     if c.id == unset_id() {
         srv.items_cnt += 1;
@@ -48,8 +68,17 @@ async fn item_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpReq
     HttpResponse::Ok()
 }
 
-async fn item_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+async fn item_del(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Item del: no user");
+        return HttpResponse::Unauthorized();
+    }
+
     let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
     if srv.items.contains_key(&params.id) {
         srv.items.remove(&params.id);
@@ -72,12 +101,20 @@ fn unset_id() -> u64 {
     return u64::MAX;
 }
 
-async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
     let mut c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
     let mut idx = srv.schedule_entry_cnt + 1;
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Schedule entry edit: no user");
+        return HttpResponse::Unauthorized();
+    }
 
     info!("Entry: {}", serde_json::to_string(&c.clone()).unwrap());
 
@@ -125,11 +162,19 @@ async fn schedule_entry_edit(_user: Option<Identity>, data: web::Data<State>, re
     HttpResponse::Ok()
 }
 
-async fn schedule_entry_done(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+async fn schedule_entry_done(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
     let c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Schedule entry done: no user");
+        return HttpResponse::Unauthorized();
+    }
 
     let mut nc = srv.schedule_entries[&c.id].clone();
 
@@ -153,11 +198,19 @@ async fn schedule_entry_done(_user: Option<Identity>, data: web::Data<State>, re
     HttpResponse::Ok()
 }
 
-async fn schedule_entry_paid(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+async fn schedule_entry_paid(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
     let c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Schedule entry paid: no user");
+        return HttpResponse::Unauthorized();
+    }
 
     let mut nc = srv.schedule_entries[&c.id].clone();
 
@@ -182,9 +235,17 @@ async fn schedule_entry_paid(_user: Option<Identity>, data: web::Data<State>, re
 }
 
 
-async fn schedule_entry_del(_user: Option<Identity>, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+async fn schedule_entry_del(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Schedule entry del: no user");
+        return HttpResponse::Unauthorized();
+    }
 
     if srv.schedule_entries.contains_key(&params.id) {
 
@@ -322,14 +383,14 @@ async fn main() -> std::io::Result<()> {
             .wrap(Cors::permissive())
             .wrap(IdentityMiddleware::default())
             .wrap(session_middleware())
-            .route("/item/edit", web::get().to(item_edit))
+            .route("/item/edit", web::post().to(item_edit))
             .route("/item/del", web::get().to(item_del))
             .route("/item/list", web::get().to(item_list))
-            .route("/schedule/edit", web::get().to(schedule_entry_edit))
+            .route("/schedule/edit", web::post().to(schedule_entry_edit))
             .route("/schedule/del", web::get().to(schedule_entry_del))
             .route("/schedule/list", web::get().to(schedule_entry_list))
-            .route("/schedule/done", web::get().to(schedule_entry_done))
-            .route("/schedule/paid", web::get().to(schedule_entry_paid))
+            .route("/schedule/done", web::post().to(schedule_entry_done))
+            .route("/schedule/paid", web::post().to(schedule_entry_paid))
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
             .route("/is_logged_in", web::get().to(is_logged_in))
