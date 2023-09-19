@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::Deref;
 mod server;
 use actix_session::config::{BrowserSession, CookieContentSecurity};
@@ -351,6 +352,47 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
     web::Json(user)
 }
 
+async fn setting_edit(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> impl Responder {
+    let mut _srv = data.server.lock().unwrap();
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    pub struct AllSettings {
+        pub str_params: HashMap<String, String>,
+    }
+
+    let current_user = get_user(_srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Setting edit: no user");
+        return HttpResponse::Unauthorized();
+    }
+
+    let config = Config::new(10, false);
+    let c : AllSettings = config.deserialize_str(&_req.query_string()).unwrap();
+    _srv.str_settings = c.str_params.clone();
+    info!("Setting edit: {}", serde_json::to_string(&c.str_params).unwrap());
+    HttpResponse::Ok()
+}
+
+async fn setting_list(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> HttpResponse {
+    let _srv = data.server.lock().unwrap();
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    pub struct AllSettings {
+        pub str_params: HashMap<String, String>,
+    }
+
+    let current_user = get_user(_srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Setting list: no user");
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    let st = AllSettings { str_params: _srv.str_settings.clone() };
+    HttpResponse::Ok().body(serde_json::to_string(&st).unwrap())
+}
+
 // The secret key would usually be read from a configuration file/environment variables.
 fn get_secret_key() -> Key {
     return Key::generate();
@@ -374,33 +416,6 @@ fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-
-
-    /*
-    let email = Message::builder()
-        .from("Maxim Menshikov <MaximMenshchikov@gmail.com>".parse().unwrap())
-        .to("UltraShot <ultrashotru@gmail.com>".parse().unwrap())
-        .subject("Happy new year")
-        .header(ContentType::TEXT_PLAIN)
-        .body(String::from("Be happy!"))
-        .unwrap();
-
-    let creds = Credentials::new("maximmenshchikov".to_owned(), "ugio fehy ftzb tjau".to_owned());
-
-    // Open a remote connection to gmail
-    let mailer = SmtpTransport::relay("smtp.gmail.com")
-        .unwrap()
-        .credentials(creds)
-        .build();
-
-    // Send the email
-    match mailer.send(&email) {
-        Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {:?}", e),
-    }
-
-    */
-
 
     let state = State::new();
     {
@@ -429,6 +444,8 @@ async fn main() -> std::io::Result<()> {
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
             .route("/is_logged_in", web::get().to(is_logged_in))
+            .route("/setting/edit", web::post().to(setting_edit))
+            .route("/setting/list", web::get().to(setting_list))
     )
     .bind(("127.0.0.1", 8080))?
     .run()
