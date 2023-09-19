@@ -1,5 +1,6 @@
 extern crate serde_json;
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -111,6 +112,19 @@ pub fn read_schedule_entries(mut data: &mut Data, path: &str) {
 
     data.schedule_entry_cnt = parsed.unwrap();
 }
+
+pub fn read_settings_entries(mut data: &mut Data, path: &str) {
+    let tmp_data_path = path.to_string() + "/settings.js";
+
+    let read_data = std::fs::read_to_string(tmp_data_path);
+    if let Err(_e) = read_data {
+        return;
+    }
+    let text = read_data.unwrap();
+    let settings: HashMap<String, String> = serde_json::from_str(&text).unwrap();
+    data.str_settings = settings;
+}
+
 pub fn read_data(path: &str) -> Data {
     let mut data = Data::new();
 
@@ -123,6 +137,7 @@ pub fn read_data(path: &str) -> Data {
 
     read_item(&mut data, (path.to_string() + "/item").as_str());
     read_schedule_entries(&mut data, (path.to_string() + "/schedule").as_str());
+    read_settings_entries(&mut data, (path.to_string() + "/").as_str());
     return data;
 }
 
@@ -177,7 +192,16 @@ pub fn write_schedule_data(data: &mut Data, path: &str) {
                    data.schedule_entry_cnt.to_string()).expect("Couldn't write schedule counter");
 }
 
+pub fn write_settings_data(data: &mut Data, path: &str) {
+    let tmp_data_path = path.to_string() + "/settings.js";
+    info!("settings path: {}", tmp_data_path);
+
+    let s = serde_json::to_string(&data.str_settings);
+    std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
+}
+
 pub fn write_data(data: &mut Data, path: &str) {
     write_item_data(data, path);
     write_schedule_data(data, path);
+    write_settings_data(data, path);
 }

@@ -21,6 +21,9 @@ use log::{info, error};
 use crate::server::data_rw::*;
 use std::ops::DerefMut;
 use serde::{Deserialize, Serialize};
+use lettre::message::header::ContentType;
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 
 fn get_user(srv: &crate::server::data::Data, login: String) -> Option<Item> {
     for item in &srv.items {
@@ -371,6 +374,33 @@ fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
+
+
+    /*
+    let email = Message::builder()
+        .from("Maxim Menshikov <MaximMenshchikov@gmail.com>".parse().unwrap())
+        .to("UltraShot <ultrashotru@gmail.com>".parse().unwrap())
+        .subject("Happy new year")
+        .header(ContentType::TEXT_PLAIN)
+        .body(String::from("Be happy!"))
+        .unwrap();
+
+    let creds = Credentials::new("maximmenshchikov".to_owned(), "ugio fehy ftzb tjau".to_owned());
+
+    // Open a remote connection to gmail
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    // Send the email
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {:?}", e),
+    }
+
+    */
+
 
     let state = State::new();
     {

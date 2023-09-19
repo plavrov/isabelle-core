@@ -10,7 +10,9 @@ pub struct Data {
 
     pub schedule_entry_cnt: u64,
     pub schedule_entries: HashMap<u64, ScheduleEntry>,
-    pub schedule_entry_times: HashMap<u64, Vec<u64>>
+    pub schedule_entry_times: HashMap<u64, Vec<u64>>,
+
+    pub str_settings: HashMap<String, String>
 }
 
 impl Data {
@@ -23,6 +25,8 @@ impl Data {
             schedule_entries: HashMap::new(),
 
             schedule_entry_times: HashMap::new(),
+
+            str_settings: HashMap::new(),
         }
     }
 }
