@@ -286,6 +286,11 @@ async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRe
     let mut found : bool = false;
 
     for item in &srv.items {
+        if item.1.bool_params.contains_key("is_human") {
+            info!("{} / {} against {} / {}",
+                  item.1.fields["login"], item.1.fields["password"],
+                  c.username, c.password);
+        }
         if item.1.bool_params.contains_key("is_human") &&
            item.1.fields.contains_key("login") &&
            item.1.fields["login"] == c.username &&
@@ -359,7 +364,7 @@ fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
     .cookie_domain(Some("localhost".into()))
     .cookie_content_security(CookieContentSecurity::Private)
     .cookie_http_only(true)
-    .cookie_secure(false)
+    .cookie_secure(true)
     .build()
 }
 
