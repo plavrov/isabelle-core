@@ -212,6 +212,8 @@ async fn schedule_entry_list(_user: Option<Identity>, data: web::Data<State>, _r
 }
 
 async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRequest) -> impl Responder {
+    let srv = _data.server.lock().unwrap();
+
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
     pub struct LoginUser {
         pub username: String,
@@ -220,34 +222,37 @@ async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRe
 
     let config = Config::new(10, false);
     let c : LoginUser = config.deserialize_str(&request.query_string()).unwrap();
+    let mut found : bool = false;
 
-    // Some kind of authentication should happen here
-    // e.g. password-based, biometric, etc.
-    // [...]
+    for item in &srv.items {
+        if item.1.bool_params.contains_key("is_human") &&
+           item.1.fields.contains_key("login") &&
+           item.1.fields["login"] == c.username &&
+           item.1.fields["password"] == c.password {
+            Identity::login(&request.extensions(), c.username.clone()).unwrap();
+            info!("Logged in! {}", c.username);
+            found = true;
+            break;
+        }
+    }
 
-    // attach a verified user identity to the active session
-    Identity::login(&request.extensions(), c.username.clone()).unwrap();
-    info!("Logged in! {}", c.username);
+    if !found {
+        info!("No user found, couldn't log in");
+    }
 
     HttpResponse::Ok()
 }
 
-async fn logout(_user: Option<Identity>, _data: web::Data<State>, _request: HttpRequest) -> impl Responder {
-    if !_user.is_none() {
-        _user.unwrap().logout();
-        info!("Logged out!");
-    }
-    else {
-        info!("No user");
-    }
+async fn logout(_user: Identity, _data: web::Data<State>, _request: HttpRequest) -> impl Responder {
+    _user.logout();
+    info!("Logged out");
 
     HttpResponse::Ok()
 }
 
 async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    let mut srv = data.server.lock().unwrap();
+    let srv = data.server.lock().unwrap();
 
-    //let _srv = data.server.lock().unwrap();
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
     pub struct LoginUser {
         pub username: String,
@@ -286,12 +291,14 @@ fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(
         CookieSessionStore::default(), Key::from(&[0; 64])
     )
-    .cookie_name(String::from("isabelle-cookie"))
-    .cookie_secure(true)
     .session_lifecycle(BrowserSession::default())
     .cookie_same_site(SameSite::None)
+    .cookie_path("/".into())
+    .cookie_name(String::from("isabelle-cookie"))
+    .cookie_domain(Some("localhost".into()))
     .cookie_content_security(CookieContentSecurity::Private)
     .cookie_http_only(true)
+    .cookie_secure(false)
     .build()
 }
 
