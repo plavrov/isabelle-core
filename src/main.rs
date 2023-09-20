@@ -420,9 +420,12 @@ pub fn send_email(srv: &crate::server::data::Data, to: &str, subject: &str, body
 
     info!("Building email...");
 
-    if smtp_server == "" || smtp_login == "" || smtp_password == "" ||
+    if to == "" ||
+       smtp_server == "" ||
+       smtp_login == "" ||
+       smtp_password == "" ||
        smtp_from == "" {
-        info!("Not present");
+        info!("Input options not present");
         return;
     }
 
