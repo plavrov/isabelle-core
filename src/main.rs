@@ -1,4 +1,3 @@
-use std::sync::MutexGuard;
 use std::collections::HashMap;
 use std::ops::Deref;
 mod server;
@@ -396,11 +395,6 @@ async fn setting_list(_user: Identity, data: web::Data<State>, _req: HttpRequest
     HttpResponse::Ok().body(serde_json::to_string(&st).unwrap())
 }
 
-// The secret key would usually be read from a configuration file/environment variables.
-fn get_secret_key() -> Key {
-    return Key::generate();
-}
-
 pub fn safe_option_str(st: &HashMap<String, String>, key: &str, def: &str) -> String {
     if st.contains_key(key) {
         return st[key].clone();
@@ -481,7 +475,6 @@ async fn main() -> std::io::Result<()> {
         }
     }
     let data = Data::new(state);
-    let secret_key = get_secret_key();
     info!("Starting server");
     HttpServer::new(move ||
         App::new()
