@@ -1,3 +1,4 @@
+use std::sync::MutexGuard;
 use std::collections::HashMap;
 use std::ops::Deref;
 mod server;
@@ -198,7 +199,7 @@ async fn schedule_entry_done(_user: Identity, data: web::Data<State>, req: HttpR
         info!("Marked schedule entry with ID {} as done", c.id);
     }
 
-    //write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -234,7 +235,8 @@ async fn schedule_entry_paid(_user: Identity, data: web::Data<State>, req: HttpR
         info!("Marked schedule entry with ID {} as paid", c.id);
     }
 
-    //write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut(), "sample-data");
+
     HttpResponse::Ok()
 }
 
@@ -371,6 +373,7 @@ async fn setting_edit(_user: Identity, data: web::Data<State>, _req: HttpRequest
     let c : AllSettings = config.deserialize_str(&_req.query_string()).unwrap();
     _srv.str_settings = c.str_params.clone();
     info!("Setting edit: {}", serde_json::to_string(&c.str_params).unwrap());
+    write_data(_srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
 }
 
@@ -405,17 +408,21 @@ pub fn safe_option_str(st: &HashMap<String, String>, key: &str, def: &str) -> St
     return def.to_string();
 }
 
-pub async fn send_email(data: web::Data<State>, to: &str, subject: &str, body: &str) {
-    let _srv = data.server.lock().unwrap();
-    let st = &_srv.str_settings;
+pub fn send_email(srv: &crate::server::data::Data, to: &str, subject: &str, body: &str) {
+    let st = &srv.str_settings;
+
+    info!("Checking options...");
 
     let smtp_server = safe_option_str(&st, "smtp_server", "");
     let smtp_login = safe_option_str(&st, "smtp_login", "");
     let smtp_password = safe_option_str(&st, "smtp_password", "");
     let smtp_from = safe_option_str(&st, "smtp_from", "");
 
+    info!("Building email...");
+
     if smtp_server == "" || smtp_login == "" || smtp_password == "" ||
        smtp_from == "" {
+        info!("Not present");
         return;
     }
 
@@ -429,6 +436,7 @@ pub async fn send_email(data: web::Data<State>, to: &str, subject: &str, body: &
 
     let creds = Credentials::new(smtp_login.to_owned(), smtp_password.to_owned());
 
+    info!("Sending email...");
     // Open a remote connection to gmail
     let mailer = SmtpTransport::relay(&smtp_server)
         .unwrap()
