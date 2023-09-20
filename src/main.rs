@@ -398,6 +398,51 @@ fn get_secret_key() -> Key {
     return Key::generate();
 }
 
+pub fn safe_option_str(st: &HashMap<String, String>, key: &str, def: &str) -> String {
+    if st.contains_key(key) {
+        return st[key].clone();
+    }
+    return def.to_string();
+}
+
+pub async fn send_email(data: web::Data<State>, to: &str, subject: &str, body: &str) {
+    let _srv = data.server.lock().unwrap();
+    let st = &_srv.str_settings;
+
+    let smtp_server = safe_option_str(&st, "smtp_server", "");
+    let smtp_login = safe_option_str(&st, "smtp_login", "");
+    let smtp_password = safe_option_str(&st, "smtp_password", "");
+    let smtp_from = safe_option_str(&st, "smtp_from", "");
+
+    if smtp_server == "" || smtp_login == "" || smtp_password == "" ||
+       smtp_from == "" {
+        return;
+    }
+
+    let email = Message::builder()
+        .from(smtp_from.parse().unwrap())
+        .to(to.parse().unwrap())
+        .subject(subject)
+        .header(ContentType::TEXT_PLAIN)
+        .body(String::from(body))
+        .unwrap();
+
+    let creds = Credentials::new(smtp_login.to_owned(), smtp_password.to_owned());
+
+    // Open a remote connection to gmail
+    let mailer = SmtpTransport::relay(&smtp_server)
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    // Send the email
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {:?}", e),
+    }
+}
+
+
 fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(
         CookieSessionStore::default(), Key::from(&[0; 64])
