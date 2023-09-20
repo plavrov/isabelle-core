@@ -5,6 +5,7 @@ use actix_session::config::{BrowserSession, CookieContentSecurity};
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::del_param::DelParam;
 use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
+use isabelle_dm::data_model::all_settings::AllSettings;
 use serde_qs;
 use serde_qs::Config;
 use actix_identity::Identity;
@@ -355,10 +356,6 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
 
 async fn setting_edit(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> impl Responder {
     let mut _srv = data.server.lock().unwrap();
-    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
-    pub struct AllSettings {
-        pub str_params: HashMap<String, String>,
-    }
 
     let current_user = get_user(_srv.deref(), _user.id().unwrap());
     if current_user == None ||
@@ -370,7 +367,7 @@ async fn setting_edit(_user: Identity, data: web::Data<State>, _req: HttpRequest
 
     let config = Config::new(10, false);
     let c : AllSettings = config.deserialize_str(&_req.query_string()).unwrap();
-    _srv.str_settings = c.str_params.clone();
+    _srv.settings = c.clone();
     info!("Setting edit: {}", serde_json::to_string(&c.str_params).unwrap());
     write_data(_srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
@@ -391,26 +388,17 @@ async fn setting_list(_user: Identity, data: web::Data<State>, _req: HttpRequest
         return HttpResponse::Unauthorized().finish();
     }
 
-    let st = AllSettings { str_params: _srv.str_settings.clone() };
+    let st = _srv.settings.clone();
     HttpResponse::Ok().body(serde_json::to_string(&st).unwrap())
 }
 
-pub fn safe_option_str(st: &HashMap<String, String>, key: &str, def: &str) -> String {
-    if st.contains_key(key) {
-        return st[key].clone();
-    }
-    return def.to_string();
-}
-
 pub fn send_email(srv: &crate::server::data::Data, to: &str, subject: &str, body: &str) {
-    let st = &srv.str_settings;
-
     info!("Checking options...");
 
-    let smtp_server = safe_option_str(&st, "smtp_server", "");
-    let smtp_login = safe_option_str(&st, "smtp_login", "");
-    let smtp_password = safe_option_str(&st, "smtp_password", "");
-    let smtp_from = safe_option_str(&st, "smtp_from", "");
+    let smtp_server = srv.settings.clone().safe_str("smtp_server", "");
+    let smtp_login = srv.settings.clone().safe_str("smtp_login", "");
+    let smtp_password = srv.settings.clone().safe_str("smtp_password", "");
+    let smtp_from = srv.settings.clone().safe_str("smtp_from", "");
 
     info!("Building email...");
 

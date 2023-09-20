@@ -1,6 +1,6 @@
 use isabelle_dm::data_model::schedule_entry::*;
 use isabelle_dm::data_model::item::*;
-
+use isabelle_dm::data_model::all_settings::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct Data {
     pub schedule_entries: HashMap<u64, ScheduleEntry>,
     pub schedule_entry_times: HashMap<u64, Vec<u64>>,
 
-    pub str_settings: HashMap<String, String>
+    pub settings: AllSettings,
 }
 
 impl Data {
@@ -26,7 +26,7 @@ impl Data {
 
             schedule_entry_times: HashMap::new(),
 
-            str_settings: HashMap::new(),
+            settings: AllSettings::new(),
         }
     }
 }

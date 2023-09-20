@@ -1,6 +1,6 @@
 extern crate serde_json;
 
-use std::collections::HashMap;
+use isabelle_dm::data_model::all_settings::AllSettings;
 use std::fs;
 use std::path::Path;
 
@@ -121,8 +121,8 @@ pub fn read_settings_entries(mut data: &mut Data, path: &str) {
         return;
     }
     let text = read_data.unwrap();
-    let settings: HashMap<String, String> = serde_json::from_str(&text).unwrap();
-    data.str_settings = settings;
+    let settings: AllSettings = serde_json::from_str(&text).unwrap();
+    data.settings = settings;
 }
 
 pub fn read_data(path: &str) -> Data {
@@ -196,7 +196,7 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
     let tmp_data_path = path.to_string() + "/settings.js";
     info!("settings path: {}", tmp_data_path);
 
-    let s = serde_json::to_string(&data.str_settings);
+    let s = serde_json::to_string(&data.settings);
     std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
 }
 
