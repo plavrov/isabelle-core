@@ -92,13 +92,6 @@ pub fn read_settings_entries(mut data: &mut Data, path: &str) {
 pub fn read_data(path: &str) -> Data {
     let mut data = Data::new();
 
-    let paths = fs::read_dir(path).unwrap();
-
-    for path in paths {
-        println!("Name: {}", path.unwrap().path().display())
-    }
-    data.schedule_entry_cnt = 5;
-
     read_item(&mut data, (path.to_string() + "/item").as_str());
     read_schedule_entries(&mut data, (path.to_string() + "/schedule").as_str());
     read_settings_entries(&mut data, (path.to_string() + "/").as_str());
