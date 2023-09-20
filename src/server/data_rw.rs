@@ -43,42 +43,6 @@ pub fn read_item(mut data: &mut Data, path: &str) {
     data.items_cnt = parsed.unwrap();
 }
 
-/*
-pub fn read_mentee(mut data: &mut Data, path: &str) {
-    let paths = fs::read_dir(path).unwrap();
-
-    for path in paths {
-        let data_path = path.as_ref().unwrap().path().display().to_string() + "/data.js";
-        let idx = path.as_ref().unwrap().file_name().into_string().unwrap().parse::<u64>();
-
-        if let Err(_e) = idx {
-            continue;
-        }
-
-        info!("Reading from {}", idx.clone().unwrap());
-
-        if Path::new(&data_path).is_file() {
-            let text = std::fs::read_to_string(data_path).unwrap();
-            let mentee: Mentee =
-                serde_json::from_str(&text).unwrap();
-            data.mentees.insert(idx.unwrap(), mentee);
-        }
-    }
-
-    let cnt_str = std::fs::read_to_string(path.to_string() + "/cnt");
-    if let Err(_e) = cnt_str {
-        return;
-    }
-
-    let parsed = cnt_str.unwrap().parse::<u64>();
-    if let Err(_e) = parsed {
-        return;
-    }
-
-    data.mentee_cnt = parsed.unwrap();
-}
-*/
-
 pub fn read_schedule_entries(mut data: &mut Data, path: &str) {
     let paths = fs::read_dir(path).unwrap();
 
