@@ -328,10 +328,11 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
     pub struct LoginUser {
         pub username: String,
+        pub id: u64,
         pub role: Vec<String>,
     }
 
-    let mut user : LoginUser = LoginUser { username: "".to_string(), role: Vec::new() };
+    let mut user : LoginUser = LoginUser { username: "".to_string(), id: 0, role: Vec::new() };
 
     if _user.is_none() {
         info!("No user");
@@ -341,13 +342,15 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
     for item in &srv.items {
         if item.1.fields.contains_key("login") &&
            item.1.fields["login"] == _user.as_ref().unwrap().id().unwrap() {
-            user.username = _user.as_ref().unwrap().id().unwrap();
             if item.1.bool_params.contains_key("is_human") {
+                user.username = _user.as_ref().unwrap().id().unwrap();
+                user.id = *item.0;
                 for bp in &item.1.bool_params {
                     if bp.0.starts_with("role_is_") {
                         user.role.push(bp.0[8..].to_string());
                     }
                 }
+                break;
             }
         }
     }
