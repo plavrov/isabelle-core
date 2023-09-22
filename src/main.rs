@@ -477,7 +477,7 @@ async fn main() -> std::io::Result<()> {
             .route("/item/del", web::get().to(item_del))
             .route("/item/list", web::get().to(item_list))
             .route("/schedule/edit", web::post().to(schedule_entry_edit))
-            .route("/schedule/del", web::get().to(schedule_entry_del))
+            .route("/schedule/del", web::post().to(schedule_entry_del))
             .route("/schedule/list", web::get().to(schedule_entry_list))
             .route("/schedule/done", web::post().to(schedule_entry_done))
             .route("/schedule/paid", web::post().to(schedule_entry_paid))
