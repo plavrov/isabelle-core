@@ -158,6 +158,43 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
     }
 
 
+    /* emails */
+    let entities: [&str; 2] = ["teacher", "student"];
+    let email_entities: [&str; 2] = ["email", "parent_email"];
+
+    // Part 2: loop over elements in string array.
+    for ent in &entities {
+        for em in &email_entities {
+            let target_id = c.safe_id(ent, 0);
+            let target = &srv.items[&target_id];
+            let target_email = target.safe_str(em, "".to_string());
+            if target.safe_bool("notify_training_email", false) &&
+               target_email != "" {
+                send_email(&srv,
+                    &target_email,
+                    "Schedule changed",
+                    &format!("Please review changes for the following entry:\n{}{}",
+                    "http://localhost:8081/job/edit?id=".to_owned(),
+                    &idx.to_string()));
+            }
+        }
+    }
+
+    {
+        let target_id = c.safe_id("student", 0);
+        let target = &srv.items[&target_id];
+        let target_email = target.safe_str("email", "".to_string());
+        if target.safe_bool("notify_training_email", false) &&
+           target_email != "" {
+            send_email(&srv,
+                &target_email,
+                "Schedule changed",
+                &format!("Please review changes for the following entry:\n{}{}",
+                "http://localhost:8081/job/edit?id=".to_owned(),
+                &idx.to_string()));
+        }
+    }
+
     let mut obj = srv.schedule_entry_times[&time].clone();
     obj.push(idx);
     *srv.schedule_entry_times.get_mut(&time).unwrap() = obj;
