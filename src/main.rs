@@ -96,10 +96,19 @@ async fn item_del(_user: Identity, data: web::Data<State>, req: HttpRequest) -> 
     HttpResponse::Ok()
 }
 
-async fn item_list(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    let _srv = data.server.lock().unwrap();
+async fn item_list(_user: Identity, data: web::Data<State>) -> HttpResponse {
+    let srv = data.server.lock().unwrap();
 
-    web::Json(_srv.items.clone())
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Item list: no user");
+        return HttpResponse::Unauthorized().into();
+    }
+
+
+    HttpResponse::Ok().body(serde_json::to_string(&srv.items).unwrap())
 }
 
 fn unset_id() -> u64 {
@@ -310,9 +319,18 @@ async fn schedule_entry_del(_user: Identity, data: web::Data<State>, req: HttpRe
 }
 
 
-async fn schedule_entry_list(_user: Option<Identity>, data: web::Data<State>, _req: HttpRequest) -> impl Responder {
-    let _srv = data.server.lock().unwrap();
-    web::Json(_srv.schedule_entries.clone())
+async fn schedule_entry_list(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> HttpResponse {
+    let srv = data.server.lock().unwrap();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Item list: no user");
+        return HttpResponse::Unauthorized().into();
+    }
+
+    HttpResponse::Ok().body(serde_json::to_string(&srv.schedule_entries).unwrap())
 }
 
 async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRequest) -> impl Responder {
