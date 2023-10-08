@@ -10,6 +10,7 @@ actix-web = { version = "4", features = ["cookies"]}
 actix-session = { version = "0.8", features = ["cookie-session"] }
 actix-identity = "0.6.0"
 actix-cors = "0.6.4"
+chrono = "0.4.26"
 serde = { version = "1.0", features = ["derive"] }
 env_logger = "0.8.4"
 log = "0.4.0"
@@ -17,3 +18,4 @@ serde_json = "1.0.96"
 serde_qs = "0.12.0"
 isabelle-dm = { "git" = "ssh://git@github.com/isabelle-platform/isabelle-dm.git" }
 lettre = "0.10.4"
+now = "0.1.3"
