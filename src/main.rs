@@ -26,6 +26,10 @@ use serde::{Deserialize, Serialize};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
+use chrono::{DateTime, NaiveDateTime, NaiveDate, Utc, Weekday, Datelike};
+use now::DateTimeNow;
+
+
 
 fn get_user(srv: &crate::server::data::Data, login: String) -> Option<Item> {
     for item in &srv.items {
@@ -333,6 +337,53 @@ async fn schedule_entry_list(_user: Identity, data: web::Data<State>, _req: Http
     HttpResponse::Ok().body(serde_json::to_string(&srv.schedule_entries).unwrap())
 }
 
+async fn schedule_materialize(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+    info!("Query: {}", &req.query_string());
+    let config = Config::new(10, false);
+    let _c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let mut srv = data.server.lock().unwrap();
+    let mut vec : Vec<ScheduleEntry> = Vec::new();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       !current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") {
+        info!("Schedule entry paid: no user");
+        return HttpResponse::Unauthorized();
+    }
+
+    let now = Utc::now();
+    let week_start = now.beginning_of_week().timestamp() as u64;
+    let mut final_cnt = srv.schedule_entry_cnt;
+    for entry in &srv.schedule_entries {
+        let mut cp_entry = entry.1.clone();
+        let day = entry.1.safe_str("day_of_the_week", "".to_string());
+        if day != "" {
+            info!("Found entry that we want to materialize: {}", entry.0);
+            let all_days = [ "mon", "tue", "wed", "thu", "fri", "sat", "sun" ];
+            let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
+            let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.time % (60 * 60 * 24);
+            cp_entry.time = ts;
+            //cp_entry.str_params["day_of_the_week"]
+            cp_entry.str_params.remove("day_of_the_week");
+            cp_entry.str_params.insert("day_of_the_week".to_string(), "".to_string());
+        }
+        cp_entry.id = final_cnt;
+        vec.push(cp_entry);
+        final_cnt += 1;
+    }
+
+    for ent in vec {
+        info!("Materialized entry with ID {}", ent.id);
+        srv.schedule_entries.insert(ent.id, ent);
+    }
+
+    srv.schedule_entry_cnt = final_cnt;
+
+    write_data(srv.deref_mut(), "sample-data");
+
+    HttpResponse::Ok()
+}
+
 async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRequest) -> impl Responder {
     let srv = _data.server.lock().unwrap();
 
@@ -536,6 +587,7 @@ async fn main() -> std::io::Result<()> {
             .route("/schedule/list", web::get().to(schedule_entry_list))
             .route("/schedule/done", web::post().to(schedule_entry_done))
             .route("/schedule/paid", web::post().to(schedule_entry_paid))
+            .route("/schedule/materialize", web::post().to(schedule_materialize))
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
             .route("/is_logged_in", web::get().to(is_logged_in))
