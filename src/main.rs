@@ -580,7 +580,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(IdentityMiddleware::default())
             .wrap(session_middleware())
             .route("/item/edit", web::post().to(item_edit))
-            .route("/item/del", web::get().to(item_del))
+            .route("/item/del", web::post().to(item_del))
             .route("/item/list", web::get().to(item_list))
             .route("/schedule/edit", web::post().to(schedule_entry_edit))
             .route("/schedule/del", web::post().to(schedule_entry_del))
