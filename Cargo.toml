@@ -19,3 +19,4 @@ serde_qs = "0.12.0"
 isabelle-dm = { "git" = "ssh://git@github.com/isabelle-platform/isabelle-dm.git" }
 lettre = "0.10.4"
 now = "0.1.3"
+google-calendar = "0.7.0"
