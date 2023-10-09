@@ -119,6 +119,10 @@ fn unset_id() -> u64 {
     return u64::MAX;
 }
 
+fn unset_week() -> u64 {
+    return 0;
+}
+
 async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
@@ -179,8 +183,27 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
     for ent in &entities {
         for em in &email_entities {
             let target_id = c.safe_id(ent, 0);
+            if srv.items.contains_key(&target_id) {
+                let target = &srv.items[&target_id];
+                let target_email = target.safe_str(em, "".to_string());
+                if target.safe_bool("notify_training_email", false) &&
+                   target_email != "" {
+                    send_email(&srv,
+                        &target_email,
+                        "Schedule changed",
+                        &format!("Please review changes for the following entry:\n{}{}",
+                        "http://localhost:8081/job/edit?id=".to_owned(),
+                        &idx.to_string()));
+                }
+            }
+        }
+    }
+
+    {
+        let target_id = c.safe_id("student", 0);
+        if srv.items.contains_key(&target_id) {
             let target = &srv.items[&target_id];
-            let target_email = target.safe_str(em, "".to_string());
+            let target_email = target.safe_str("email", "".to_string());
             if target.safe_bool("notify_training_email", false) &&
                target_email != "" {
                 send_email(&srv,
@@ -190,21 +213,6 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
                     "http://localhost:8081/job/edit?id=".to_owned(),
                     &idx.to_string()));
             }
-        }
-    }
-
-    {
-        let target_id = c.safe_id("student", 0);
-        let target = &srv.items[&target_id];
-        let target_email = target.safe_str("email", "".to_string());
-        if target.safe_bool("notify_training_email", false) &&
-           target_email != "" {
-            send_email(&srv,
-                &target_email,
-                "Schedule changed",
-                &format!("Please review changes for the following entry:\n{}{}",
-                "http://localhost:8081/job/edit?id=".to_owned(),
-                &idx.to_string()));
         }
     }
 
@@ -339,8 +347,14 @@ async fn schedule_entry_list(_user: Identity, data: web::Data<State>, _req: Http
 
 async fn schedule_materialize(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     info!("Query: {}", &req.query_string());
-    let config = Config::new(10, false);
-    let _c : ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    struct WeekSchedule {
+        #[serde(default = "unset_week")]
+        pub week : u64,
+    }
+
+    let params = web::Query::<WeekSchedule>::from_query(req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
     let mut vec : Vec<ScheduleEntry> = Vec::new();
 
@@ -351,8 +365,10 @@ async fn schedule_materialize(_user: Identity, data: web::Data<State>, req: Http
         return HttpResponse::Unauthorized();
     }
 
+    info!("WEEK: {}", params.week);
+
     let now = Utc::now();
-    let week_start = now.beginning_of_week().timestamp() as u64;
+    let week_start = (now.beginning_of_week().timestamp() as u64) + (60 * 60 * 24 * 7) * params.week;
     let mut final_cnt = srv.schedule_entry_cnt;
     for entry in &srv.schedule_entries {
         let day = entry.1.safe_str("day_of_the_week", "".to_string());
@@ -366,9 +382,21 @@ async fn schedule_materialize(_user: Identity, data: web::Data<State>, req: Http
             cp_entry.time = ts;
             cp_entry.id_params.insert("parent_id".to_string(), *entry.0);
             cp_entry.str_params.insert("day_of_the_week".to_string(), "unset".to_string());
-            final_cnt += 1;
-            cp_entry.id = final_cnt;
-            vec.push(cp_entry);
+
+            let mut skip = false;
+            for tmp__ in &srv.schedule_entries {
+                if tmp__.1.time == cp_entry.time &&
+                   tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0 {
+                    skip = true;
+                    break;
+                }
+            }
+
+            if !skip {
+                final_cnt += 1;
+                cp_entry.id = final_cnt;
+                vec.push(cp_entry);
+            }
         }
     }
 
