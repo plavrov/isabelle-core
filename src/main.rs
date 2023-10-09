@@ -355,21 +355,21 @@ async fn schedule_materialize(_user: Identity, data: web::Data<State>, req: Http
     let week_start = now.beginning_of_week().timestamp() as u64;
     let mut final_cnt = srv.schedule_entry_cnt;
     for entry in &srv.schedule_entries {
-        let mut cp_entry = entry.1.clone();
         let day = entry.1.safe_str("day_of_the_week", "".to_string());
-        if day != "" {
+        let pid = entry.1.safe_id("parent_id", u64::MAX);
+        if day != "" && day != "unset" && pid == u64::MAX {
+            let mut cp_entry = ScheduleEntry::new();
             info!("Found entry that we want to materialize: {}", entry.0);
             let all_days = [ "mon", "tue", "wed", "thu", "fri", "sat", "sun" ];
             let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
             let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.time % (60 * 60 * 24);
             cp_entry.time = ts;
-            //cp_entry.str_params["day_of_the_week"]
-            cp_entry.str_params.remove("day_of_the_week");
-            cp_entry.str_params.insert("day_of_the_week".to_string(), "".to_string());
+            cp_entry.id_params.insert("parent_id".to_string(), *entry.0);
+            cp_entry.str_params.insert("day_of_the_week".to_string(), "unset".to_string());
+            final_cnt += 1;
+            cp_entry.id = final_cnt;
+            vec.push(cp_entry);
         }
-        cp_entry.id = final_cnt;
-        vec.push(cp_entry);
-        final_cnt += 1;
     }
 
     for ent in vec {
