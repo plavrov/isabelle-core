@@ -26,9 +26,8 @@ use serde::{Deserialize, Serialize};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
-use chrono::{DateTime, NaiveDateTime, NaiveDate, Utc, Weekday, Datelike};
+use chrono::{Utc};
 use now::DateTimeNow;
-
 
 
 fn get_user(srv: &crate::server::data::Data, login: String) -> Option<Item> {
