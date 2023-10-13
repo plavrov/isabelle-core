@@ -13,6 +13,8 @@ pub struct Data {
     pub schedule_entry_times: HashMap<u64, Vec<u64>>,
 
     pub settings: AllSettings,
+
+    pub gc_path: String,
 }
 
 impl Data {
@@ -27,6 +29,8 @@ impl Data {
             schedule_entry_times: HashMap::new(),
 
             settings: AllSettings::new(),
+
+            gc_path: "".to_string(),
         }
     }
 }

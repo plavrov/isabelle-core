@@ -1,3 +1,8 @@
+use chrono::NaiveDateTime;
+use chrono::DateTime;
+use std::io::Write;
+use std::fs::File;
+use std::env;
 use std::collections::HashMap;
 use std::ops::Deref;
 mod server;
@@ -28,7 +33,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use chrono::{Utc};
 use now::DateTimeNow;
-
+use std::process::Command;
 
 fn get_user(srv: &crate::server::data::Data, login: String) -> Option<Item> {
     for item in &srv.items {
@@ -120,6 +125,21 @@ fn unset_id() -> u64 {
 
 fn unset_week() -> u64 {
     return 0;
+}
+
+pub fn ts2datetimestr(ts: u64) -> String {
+    #![allow(warnings)]
+    let mut datetime = ts;
+
+    if datetime == 0 {
+        datetime = chrono::Local::now().timestamp() as u64;
+    }
+
+    let naive = NaiveDateTime::from_timestamp(datetime as i64, 0);
+    let utc_date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+
+    let newdate = utc_date_time.format("%Y-%m-%d %H:%M");
+    newdate.to_string()
 }
 
 async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
@@ -219,6 +239,10 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
     obj.push(idx);
     *srv.schedule_entry_times.get_mut(&time).unwrap() = obj;
 
+    sync_with_google(&srv,
+                    true,
+                    "Test entry".to_string(),
+                    ts2datetimestr(time));
     srv.schedule_entries.insert(idx, c);
     write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
@@ -571,6 +595,58 @@ pub fn send_email(srv: &crate::server::data::Data, to: &str, subject: &str, body
     }
 }
 
+pub fn sync_with_google(srv: &crate::server::data::Data,
+                        add: bool,
+                        name: String,
+                        date_time: String) {
+
+    /* Put credentials to json file */
+    let mut dir = env::current_exe().unwrap();
+    dir.pop();
+    let creds = dir.display().to_string() + "/credentials.json";
+    let mut file = File::create(creds.clone()).unwrap();
+    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone());
+
+    info!("Syncing entry with Google...");
+    /* Run google calendar sync */
+    Command::new("python3")
+        .current_dir(srv.gc_path.clone())
+        .env("PATH", "/opt/homebrew/opt/binutils/bin".to_owned() +
+                     ":/Users/mmenshikov/.cargo/bin" +
+                     ":/opt/homebrew/opt/llvm/bin" +
+                     ":/Users/mmenshikov/.local/share/gem/ruby/3.1.0/bin" +
+                     ":/opt/homebrew/opt/openjdk/bin" +
+                     ":/opt/homebrew/bin" +
+                     ":/usr/local/bin" +
+                     ":/System/Cryptexes/App/usr/bin" +
+                     ":/usr/bin" +
+                     ":/bin" +
+                     ":/usr/sbin" +
+                     ":/sbin" +
+                     ":/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin" +
+                     ":/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin" +
+                     ":/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin" +
+                     ":/opt/X11/bin" +
+                     ":/Library/Apple/usr/bin" +
+                     ":/Library/TeX/texbin" +
+                     ":/Applications/Wireshark.app/Contents/MacOS")
+        .arg("-m")
+        .arg("igc")
+        .arg("-e")
+        .arg(srv.settings.str_params["sync_google_email"].clone())
+        .arg("-c")
+        .arg(srv.settings.str_params["sync_google_cal_name"].clone())
+        .arg("-creds")
+        .arg(creds)
+        .arg(if add { "-add" } else { "-delete" })
+        .arg("-add-name")
+        .arg(name)
+        .arg("-add-date-time")
+        .arg(date_time)
+        .spawn()
+        .expect("Failed to sync with Google");
+    info!("Synchronization is done");
+}
 
 fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(
@@ -589,15 +665,30 @@ fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+    let mut gc_path : String = "".to_string();
+    let mut gc_next = false;
+    for arg in args {
+        if gc_next {
+            gc_path = arg.clone();
+            gc_next = false;
+        }
+        if arg == "--gc-path" {
+            gc_next = true;
+        }
+    }
+
     env_logger::init();
 
     let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
         {
-            *srv.deref_mut() = read_data("sample-data")
+            *srv.deref_mut() = read_data("sample-data");
+            (*srv.deref_mut()).gc_path = gc_path.to_string();
         }
     }
+
     let data = Data::new(state);
     info!("Starting server");
     HttpServer::new(move ||
