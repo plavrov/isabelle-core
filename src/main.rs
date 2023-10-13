@@ -625,6 +625,8 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
+
+            init_google(srv.deref_mut());
         }
     }
 
