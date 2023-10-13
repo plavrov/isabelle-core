@@ -1,10 +1,8 @@
 use chrono::NaiveDateTime;
 use chrono::DateTime;
-use std::io::Write;
-use std::fs::File;
-use std::env;
 use std::collections::HashMap;
 use std::ops::Deref;
+mod notif;
 mod server;
 use actix_session::config::{BrowserSession, CookieContentSecurity};
 use isabelle_dm::data_model::item::Item;
@@ -24,16 +22,14 @@ use actix_identity::IdentityMiddleware;
 use actix_cors::Cors;
 
 use log::{info, error};
-
+use std::env;
 use crate::server::data_rw::*;
 use std::ops::DerefMut;
 use serde::{Deserialize, Serialize};
-use lettre::message::header::ContentType;
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpTransport, Transport};
 use chrono::{Utc};
 use now::DateTimeNow;
-use std::process::Command;
+use crate::notif::gcal::*;
+use crate::notif::email::*;
 
 fn get_user(srv: &crate::server::data::Data, login: String) -> Option<Item> {
     for item in &srv.items {
@@ -563,102 +559,6 @@ async fn setting_list(_user: Identity, data: web::Data<State>, _req: HttpRequest
 
     let st = _srv.settings.clone();
     HttpResponse::Ok().body(serde_json::to_string(&st).unwrap())
-}
-
-pub fn send_email(srv: &crate::server::data::Data, to: &str, subject: &str, body: &str) {
-    info!("Checking options...");
-
-    let smtp_server = srv.settings.clone().safe_str("smtp_server", "");
-    let smtp_login = srv.settings.clone().safe_str("smtp_login", "");
-    let smtp_password = srv.settings.clone().safe_str("smtp_password", "");
-    let smtp_from = srv.settings.clone().safe_str("smtp_from", "");
-
-    info!("Building email...");
-
-    if to == "" ||
-       smtp_server == "" ||
-       smtp_login == "" ||
-       smtp_password == "" ||
-       smtp_from == "" {
-        info!("Input options not present");
-        return;
-    }
-
-    let email = Message::builder()
-        .from(smtp_from.parse().unwrap())
-        .to(to.parse().unwrap())
-        .subject(subject)
-        .header(ContentType::TEXT_PLAIN)
-        .body(String::from(body))
-        .unwrap();
-
-    let creds = Credentials::new(smtp_login.to_owned(), smtp_password.to_owned());
-
-    info!("Sending email...");
-    // Open a remote connection to gmail
-    let mailer = SmtpTransport::relay(&smtp_server)
-        .unwrap()
-        .credentials(creds)
-        .build();
-
-    // Send the email
-    match mailer.send(&email) {
-        Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {:?}", e),
-    }
-}
-
-pub fn sync_with_google(srv: &crate::server::data::Data,
-                        add: bool,
-                        name: String,
-                        date_time: String) {
-
-    /* Put credentials to json file */
-    let mut dir = env::current_exe().unwrap();
-    dir.pop();
-    let creds = dir.display().to_string() + "/credentials.json";
-    let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone());
-
-    info!("Syncing entry with Google...");
-    /* Run google calendar sync */
-    Command::new("python3")
-        .current_dir(srv.gc_path.clone())
-        .env("PATH", "/opt/homebrew/opt/binutils/bin".to_owned() +
-                     ":/Users/mmenshikov/.cargo/bin" +
-                     ":/opt/homebrew/opt/llvm/bin" +
-                     ":/Users/mmenshikov/.local/share/gem/ruby/3.1.0/bin" +
-                     ":/opt/homebrew/opt/openjdk/bin" +
-                     ":/opt/homebrew/bin" +
-                     ":/usr/local/bin" +
-                     ":/System/Cryptexes/App/usr/bin" +
-                     ":/usr/bin" +
-                     ":/bin" +
-                     ":/usr/sbin" +
-                     ":/sbin" +
-                     ":/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin" +
-                     ":/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin" +
-                     ":/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin" +
-                     ":/opt/X11/bin" +
-                     ":/Library/Apple/usr/bin" +
-                     ":/Library/TeX/texbin" +
-                     ":/Applications/Wireshark.app/Contents/MacOS")
-        .arg("-m")
-        .arg("igc")
-        .arg("-e")
-        .arg(srv.settings.str_params["sync_google_email"].clone())
-        .arg("-c")
-        .arg(srv.settings.str_params["sync_google_cal_name"].clone())
-        .arg("-creds")
-        .arg(creds)
-        .arg(if add { "-add" } else { "-delete" })
-        .arg("-add-name")
-        .arg(name)
-        .arg("-add-date-time")
-        .arg(date_time)
-        .spawn()
-        .expect("Failed to sync with Google");
-    info!("Synchronization is done");
 }
 
 fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
