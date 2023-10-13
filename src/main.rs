@@ -127,6 +127,15 @@ fn unset_week() -> u64 {
     return 0;
 }
 
+pub fn eventname(srv: &crate::server::data::Data, sch: &ScheduleEntry) -> String {
+    let teacher_id = sch.safe_id("teacher", 0);
+    if teacher_id == 0 {
+        "Training".to_string()
+    } else {
+        "Training with ".to_owned() + &srv.items[&teacher_id].safe_str("firstname", "<unknown>".to_string())
+    }
+}
+
 pub fn ts2datetimestr(ts: u64) -> String {
     #![allow(warnings)]
     let mut datetime = ts;
@@ -174,6 +183,10 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
                 srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != c.id);
             }
             info!("Removed old schedule entry with ID {}", idx);
+            sync_with_google(&srv,
+                    false,
+                    eventname(&srv, &srv.schedule_entries[&c.id]),
+                    ts2datetimestr(srv.schedule_entries[&c.id].time));
             srv.schedule_entries.remove(&c.id);
         }
     }
@@ -241,7 +254,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
 
     sync_with_google(&srv,
                     true,
-                    "Test entry".to_string(),
+                    eventname(&srv, &c),
                     ts2datetimestr(time));
     srv.schedule_entries.insert(idx, c);
     write_data(srv.deref_mut(), "sample-data");
