@@ -6,4 +6,4 @@ if [ ! -d isabelle-gc ] ; then
 	./install.sh
 	popd
 fi
-RUST_LOG=info ./target/debug/isabelle-core --gc-path $(pwd)/isabelle-gc --python-path $(which python3)
+RUST_LOG=info ./target/debug/isabelle-core --data-path $(pwd)/sample-data --gc-path $(pwd)/isabelle-gc --python-path $(which python3)
