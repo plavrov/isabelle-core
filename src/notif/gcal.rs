@@ -9,6 +9,13 @@ pub fn sync_with_google(srv: &crate::server::data::Data,
                         name: String,
                         date_time: String) {
 
+    if srv.settings.clone().safe_bool("sync_google_cal", false) ||
+       srv.settings.clone().safe_str("sync_google_creds", "") == "" ||
+       srv.settings.clone().safe_str("sync_google_email", "") == "" ||
+       srv.settings.clone().safe_str("sync_google_cal_name", "") == "" {
+        return;
+    }
+
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();

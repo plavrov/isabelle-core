@@ -132,9 +132,17 @@ pub fn eventname(srv: &crate::server::data::Data, sch: &ScheduleEntry) -> String
     }
 }
 
-pub fn ts2datetimestr(ts: u64) -> String {
+pub fn entry2datetimestr(entry: &ScheduleEntry) -> String {
     #![allow(warnings)]
-    let mut datetime = ts;
+    let mut datetime = entry.time;
+
+    let all_days = [ "mon", "tue", "wed", "thu", "fri", "sat", "sun" ];
+    let day = entry.safe_str("day_of_the_week", "".to_string());
+    if day != "" && day != "unset" {
+        let now = Utc::now();
+        let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
+        datetime = (now.beginning_of_week().timestamp() as u64) + 24 * 60 * 60 * tmp_day + (entry.time % (24 * 60 * 60));
+    }
 
     if datetime == 0 {
         datetime = chrono::Local::now().timestamp() as u64;
@@ -182,7 +190,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
             sync_with_google(&srv,
                     false,
                     eventname(&srv, &srv.schedule_entries[&c.id]),
-                    ts2datetimestr(srv.schedule_entries[&c.id].time));
+                    entry2datetimestr(&srv.schedule_entries[&c.id]));
             srv.schedule_entries.remove(&c.id);
         }
     }
@@ -251,7 +259,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
     sync_with_google(&srv,
                     true,
                     eventname(&srv, &c),
-                    ts2datetimestr(time));
+                    entry2datetimestr(&c));
     srv.schedule_entries.insert(idx, c);
     write_data(srv.deref_mut(), "sample-data");
     HttpResponse::Ok()
@@ -352,6 +360,8 @@ async fn schedule_entry_del(_user: Identity, data: web::Data<State>, req: HttpRe
                 srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != params.id);
             }
         }
+        let ent = &srv.schedule_entries[&params.id];
+        sync_with_google(&srv, false, eventname(&srv, &ent), entry2datetimestr(ent));
         srv.schedule_entries.remove(&params.id);
         info!("Removed schedule entry with ID {}", &params.id);
     } else {
