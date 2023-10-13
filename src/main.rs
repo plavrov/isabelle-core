@@ -229,7 +229,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
                         &target_email,
                         "Schedule changed",
                         &format!("Please review changes for the following entry:\n{}{}",
-                        "http://localhost:8081/job/edit?id=".to_owned(),
+                        srv.public_url.clone() + "/job/edit?id=",
                         &idx.to_string()));
                 }
             }
@@ -247,7 +247,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
                     &target_email,
                     "Schedule changed",
                     &format!("Please review changes for the following entry:\n{}{}",
-                    "http://localhost:8081/job/edit?id=".to_owned(),
+                    srv.public_url.clone() + "/job/edit?id=",
                     &idx.to_string()));
             }
         }
@@ -596,9 +596,11 @@ async fn main() -> std::io::Result<()> {
     let mut gc_path : String = "".to_string();
     let mut py_path : String = "".to_string();
     let mut data_path : String = "sample-data".to_string();
+    let mut pub_path : String = "http://localhost:8081".to_string();
     let mut gc_next = false;
     let mut py_next = false;
     let mut data_next = false;
+    let mut pub_next = false;
     for arg in args {
         if gc_next {
             gc_path = arg.clone();
@@ -609,13 +611,19 @@ async fn main() -> std::io::Result<()> {
         } else if data_next {
             data_path = arg.clone();
             data_next = false;
+        } else if pub_next {
+            pub_path = arg.clone();
+            pub_next = false;
         }
+
         if arg == "--gc-path" {
             gc_next = true;
         } else if arg == "--py-path" {
             py_next = true;
         } else if arg == "--data-path" {
             data_next = true;
+        } else if arg == "--pub-url" {
+            pub_next = true;
         }
     }
 
@@ -629,6 +637,7 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
+            (*srv.deref_mut()).public_url = pub_path.to_string();
 
             init_google(srv.deref_mut());
         }

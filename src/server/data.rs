@@ -17,6 +17,7 @@ pub struct Data {
     pub gc_path: String,
     pub py_path: String,
     pub data_path: String,
+    pub public_url: String,
 }
 
 impl Data {
@@ -35,6 +36,7 @@ impl Data {
             gc_path: "".to_string(),
             py_path: "".to_string(),
             data_path: "".to_string(),
+            public_url: "".to_string(),
         }
     }
 }

@@ -6,4 +6,4 @@ if [ ! -d isabelle-gc ] ; then
 	./install.sh
 	popd
 fi
-RUST_LOG=info ./target/debug/isabelle-core --data-path $(pwd)/sample-data --gc-path $(pwd)/isabelle-gc --py-path /opt/homebrew/bin/python3
+RUST_LOG=info ./target/debug/isabelle-core --pub-url http://localhost:8081 --data-path $(pwd)/sample-data --gc-path $(pwd)/isabelle-gc --py-path /opt/homebrew/bin/python3
