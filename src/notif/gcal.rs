@@ -9,10 +9,11 @@ pub fn sync_with_google(srv: &crate::server::data::Data,
                         name: String,
                         date_time: String) {
 
-    if srv.settings.clone().safe_bool("sync_google_cal", false) ||
+    if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
        srv.settings.clone().safe_str("sync_google_creds", "") == "" ||
        srv.settings.clone().safe_str("sync_google_email", "") == "" ||
        srv.settings.clone().safe_str("sync_google_cal_name", "") == "" {
+        info!("Don't sync with google");
         return;
     }
 
@@ -25,8 +26,9 @@ pub fn sync_with_google(srv: &crate::server::data::Data,
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
-    Command::new("python3")
+    Command::new("/opt/homebrew/bin/python3")
         .current_dir(srv.gc_path.clone())
+        /*
         .env("PATH", "/opt/homebrew/opt/binutils/bin".to_owned() +
                      ":/Users/mmenshikov/.cargo/bin" +
                      ":/opt/homebrew/opt/llvm/bin" +
@@ -46,6 +48,7 @@ pub fn sync_with_google(srv: &crate::server::data::Data,
                      ":/Library/Apple/usr/bin" +
                      ":/Library/TeX/texbin" +
                      ":/Applications/Wireshark.app/Contents/MacOS")
+        */
         .arg("-m")
         .arg("igc")
         .arg("-e")

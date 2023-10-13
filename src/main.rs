@@ -590,14 +590,22 @@ fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
 async fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let mut gc_path : String = "".to_string();
+    let mut py_path : String = "".to_string();
     let mut gc_next = false;
+    let mut py_next = false;
     for arg in args {
         if gc_next {
             gc_path = arg.clone();
             gc_next = false;
         }
+        if py_next {
+            py_path = arg.clone();
+            py_next = false;
+        }
         if arg == "--gc-path" {
             gc_next = true;
+        } else if arg == "--py-path" {
+            py_next = true;
         }
     }
 
@@ -609,6 +617,7 @@ async fn main() -> std::io::Result<()> {
         {
             *srv.deref_mut() = read_data("sample-data");
             (*srv.deref_mut()).gc_path = gc_path.to_string();
+            (*srv.deref_mut()).py_path = py_path.to_string();
         }
     }
 
@@ -635,7 +644,7 @@ async fn main() -> std::io::Result<()> {
             .route("/setting/edit", web::post().to(setting_edit))
             .route("/setting/list", web::get().to(setting_list))
     )
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", 8090))?
     .run()
     .await
 }

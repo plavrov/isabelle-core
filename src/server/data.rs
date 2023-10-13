@@ -15,6 +15,7 @@ pub struct Data {
     pub settings: AllSettings,
 
     pub gc_path: String,
+    pub py_path: String,
 }
 
 impl Data {
@@ -31,6 +32,7 @@ impl Data {
             settings: AllSettings::new(),
 
             gc_path: "".to_string(),
+            py_path: "".to_string(),
         }
     }
 }
