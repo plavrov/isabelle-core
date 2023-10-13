@@ -187,6 +187,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
                 srv.schedule_entry_times.get_mut(&time).unwrap().retain(|&val| val != c.id);
             }
             info!("Removed old schedule entry with ID {}", idx);
+            init_google(&srv);
             sync_with_google(&srv,
                     false,
                     eventname(&srv, &srv.schedule_entries[&c.id]),
@@ -256,6 +257,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
     obj.push(idx);
     *srv.schedule_entry_times.get_mut(&time).unwrap() = obj;
 
+    init_google(&srv);
     sync_with_google(&srv,
                     true,
                     eventname(&srv, &c),
@@ -350,6 +352,8 @@ async fn schedule_entry_del(_user: Identity, data: web::Data<State>, req: HttpRe
         info!("Schedule entry del: no user");
         return HttpResponse::Unauthorized();
     }
+
+    init_google(&srv);
 
     if srv.schedule_entries.contains_key(&params.id) {
 
