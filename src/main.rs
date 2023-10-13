@@ -73,7 +73,7 @@ async fn item_edit(_user: Identity, data: web::Data<State>, req: HttpRequest) ->
     }
     srv.items.insert(idx, c);
 
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
     HttpResponse::Ok()
 }
 
@@ -96,7 +96,7 @@ async fn item_del(_user: Identity, data: web::Data<State>, req: HttpRequest) -> 
         error!("Failed to remove item {}", params.id);
     }
 
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
     HttpResponse::Ok()
 }
 
@@ -261,7 +261,7 @@ async fn schedule_entry_edit(_user: Identity, data: web::Data<State>, req: HttpR
                     eventname(&srv, &c),
                     entry2datetimestr(&c));
     srv.schedule_entries.insert(idx, c);
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
     HttpResponse::Ok()
 }
 
@@ -297,7 +297,7 @@ async fn schedule_entry_done(_user: Identity, data: web::Data<State>, req: HttpR
         info!("Marked schedule entry with ID {} as done", c.id);
     }
 
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
     HttpResponse::Ok()
 }
 
@@ -333,7 +333,7 @@ async fn schedule_entry_paid(_user: Identity, data: web::Data<State>, req: HttpR
         info!("Marked schedule entry with ID {} as paid", c.id);
     }
 
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
 
     HttpResponse::Ok()
 }
@@ -368,7 +368,7 @@ async fn schedule_entry_del(_user: Identity, data: web::Data<State>, req: HttpRe
         error!("Failed to remove schedule entry {}", params.id);
     }
 
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
     HttpResponse::Ok()
 }
 
@@ -449,7 +449,7 @@ async fn schedule_materialize(_user: Identity, data: web::Data<State>, req: Http
 
     srv.schedule_entry_cnt = final_cnt;
 
-    write_data(srv.deref_mut(), "sample-data");
+    write_data(srv.deref_mut());
 
     HttpResponse::Ok()
 }
@@ -548,7 +548,7 @@ async fn setting_edit(_user: Identity, data: web::Data<State>, _req: HttpRequest
     let c : AllSettings = config.deserialize_str(&_req.query_string()).unwrap();
     _srv.settings = c.clone();
     info!("Setting edit: {}", serde_json::to_string(&c.str_params).unwrap());
-    write_data(_srv.deref_mut(), "sample-data");
+    write_data(_srv.deref_mut());
     HttpResponse::Ok()
 }
 
@@ -591,21 +591,27 @@ async fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let mut gc_path : String = "".to_string();
     let mut py_path : String = "".to_string();
+    let mut data_path : String = "sample-data".to_string();
     let mut gc_next = false;
     let mut py_next = false;
+    let mut data_next = false;
     for arg in args {
         if gc_next {
             gc_path = arg.clone();
             gc_next = false;
-        }
-        if py_next {
+        } else if py_next {
             py_path = arg.clone();
             py_next = false;
+        } else if data_next {
+            data_path = arg.clone();
+            data_next = false;
         }
         if arg == "--gc-path" {
             gc_next = true;
         } else if arg == "--py-path" {
             py_next = true;
+        } else if arg == "--data-path" {
+            data_next = true;
         }
     }
 
@@ -615,9 +621,10 @@ async fn main() -> std::io::Result<()> {
     {
         let mut srv = state.server.lock().unwrap();
         {
-            *srv.deref_mut() = read_data("sample-data");
+            *srv.deref_mut() = read_data(&data_path);
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
+            (*srv.deref_mut()).data_path = data_path.to_string();
         }
     }
 

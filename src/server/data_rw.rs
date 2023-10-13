@@ -157,8 +157,8 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
     std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
 }
 
-pub fn write_data(data: &mut Data, path: &str) {
-    write_item_data(data, path);
-    write_schedule_data(data, path);
-    write_settings_data(data, path);
+pub fn write_data(data: &mut Data) {
+    write_item_data(data, &data.data_path.clone());
+    write_schedule_data(data, &data.data_path.clone());
+    write_settings_data(data, &data.data_path.clone());
 }
