@@ -597,10 +597,13 @@ async fn main() -> std::io::Result<()> {
     let mut py_path : String = "".to_string();
     let mut data_path : String = "sample-data".to_string();
     let mut pub_path : String = "http://localhost:8081".to_string();
+    let mut port : u16 = 8090;
     let mut gc_next = false;
     let mut py_next = false;
     let mut data_next = false;
     let mut pub_next = false;
+    let mut port_next = false;
+
     for arg in args {
         if gc_next {
             gc_path = arg.clone();
@@ -614,6 +617,9 @@ async fn main() -> std::io::Result<()> {
         } else if pub_next {
             pub_path = arg.clone();
             pub_next = false;
+        } else if port_next {
+            port = arg.parse().unwrap();
+            port_next = false;
         }
 
         if arg == "--gc-path" {
@@ -638,6 +644,7 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
             (*srv.deref_mut()).public_url = pub_path.to_string();
+            (*srv.deref_mut()).port = port;
 
             init_google(srv.deref_mut());
         }
@@ -666,7 +673,7 @@ async fn main() -> std::io::Result<()> {
             .route("/setting/edit", web::post().to(setting_edit))
             .route("/setting/list", web::get().to(setting_list))
     )
-    .bind(("127.0.0.1", 8090))?
+    .bind(("127.0.0.1", port))?
     .run()
     .await
 }

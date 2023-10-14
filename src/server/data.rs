@@ -18,6 +18,7 @@ pub struct Data {
     pub py_path: String,
     pub data_path: String,
     pub public_url: String,
+    pub port: u16,
 }
 
 impl Data {
@@ -37,6 +38,7 @@ impl Data {
             py_path: "".to_string(),
             data_path: "".to_string(),
             public_url: "".to_string(),
+            port: 8090,
         }
     }
 }
