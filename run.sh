@@ -32,10 +32,10 @@ if [ "$gc_path" == "" ] ; then
 	if [ ! -d isabelle-gc ] ; then
 		git clone https://github.com/isabelle-platform/isabelle-gc.git
 		pushd isabelle-gc
-		gc_path="$(pwd)"
 		./install.sh
 		popd
 	fi
+	gc_path="$(pwd)/isabelle-gc"
 fi
 
 RUST_LOG=info ./target/debug/isabelle-core --port "${port}" --pub-url "${pub_url}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}"
