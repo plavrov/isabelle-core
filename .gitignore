@@ -17,3 +17,5 @@ Cargo.lock
 isabelle-gc/
 sample-data/
 sample-data
+*.sublime-workspace
+

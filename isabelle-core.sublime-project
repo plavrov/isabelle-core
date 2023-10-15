@@ -1,0 +1,31 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"make"
+			],
+			"name": "Isabelle Core - build",
+			"shell": true,
+			"working_dir": "${project_path:${folder}}",
+			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
+		},
+		{
+			"cmd":
+			[
+				"make && ./run.sh"
+			],
+			"name": "Isabelle Core - build & run",
+			"shell": true,
+			"working_dir": "${project_path:${folder}}",
+			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
+		}
+	]
+}

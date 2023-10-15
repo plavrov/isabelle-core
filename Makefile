@@ -3,4 +3,4 @@
 all: build
 
 build:
-	cargo build && ./run.sh
+	cargo build
