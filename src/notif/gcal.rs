@@ -152,6 +152,8 @@ pub fn auth_google(srv: &crate::server::data::Data) -> String {
 }
 
 pub fn auth_google_end(srv: &crate::server::data::Data,
+                       full_query: String,
+                       state: String,
                        code: String) -> String {
 
     info!("Ending Google authentication...");
@@ -183,8 +185,14 @@ pub fn auth_google_end(srv: &crate::server::data::Data,
         .arg("-m")
         .arg("igc")
         .arg("-flow-end")
-        .arg("-flow-token")
+        .arg("-flow-code")
         .arg(code)
+        .arg("-flow-state")
+        .arg(state)
+        .arg("-flow-complete-url")
+        .arg(full_query)
+        .arg("-flow-backlink")
+        .arg(srv.public_url.clone() + "/setting/gcal_auth")
         .arg("-creds")
         .arg(creds)
         .arg("-pickle")

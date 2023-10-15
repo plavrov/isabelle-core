@@ -609,7 +609,7 @@ async fn setting_gcal_auth_end(_user: Identity, data: web::Data<State>, _req: Ht
         return HttpResponse::Unauthorized().finish();
     }
 
-    HttpResponse::Ok().body(auth_google_end(&_srv, data.code))
+    HttpResponse::Ok().body(auth_google_end(&_srv, _srv.public_url.clone() + "/?" + _req.query_string(), data.state, data.code))
 }
 
 fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
