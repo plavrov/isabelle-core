@@ -575,6 +575,42 @@ async fn setting_list(_user: Identity, data: web::Data<State>, _req: HttpRequest
     HttpResponse::Ok().body(serde_json::to_string(&st).unwrap())
 }
 
+async fn setting_gcal_auth(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> HttpResponse {
+    let _srv = data.server.lock().unwrap();
+
+    let current_user = get_user(_srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       !current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") {
+        info!("Setting list: no user");
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    HttpResponse::Ok().body(auth_google(&_srv))
+}
+
+async fn setting_gcal_auth_end(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> HttpResponse {
+    let _srv = data.server.lock().unwrap();
+
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    pub struct AuthEndData {
+        pub token: String,
+        pub code: String,
+        pub scope: String,
+    }
+
+    let config = Config::new(10, false);
+    let data : AuthEndData = config.deserialize_str(&_req.query_string()).unwrap();
+
+    let current_user = get_user(_srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       !current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") {
+        info!("Setting list: no user");
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    HttpResponse::Ok().body(auth_google_end(&_srv, data.code))
+}
+
 fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(
         CookieSessionStore::default(), Key::from(&[0; 64])
@@ -646,7 +682,9 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
 
-            init_google(srv.deref_mut());
+            info!("Initializing google!");
+            let res = init_google(srv.deref_mut());
+            info!("Result: {}", res);
         }
     }
 
@@ -672,6 +710,8 @@ async fn main() -> std::io::Result<()> {
             .route("/is_logged_in", web::get().to(is_logged_in))
             .route("/setting/edit", web::post().to(setting_edit))
             .route("/setting/list", web::get().to(setting_list))
+            .route("/setting/gcal_auth", web::post().to(setting_gcal_auth))
+            .route("/setting/gcal_auth_end", web::post().to(setting_gcal_auth_end))
     )
     .bind(("127.0.0.1", port))?
     .run()
