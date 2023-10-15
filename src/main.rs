@@ -591,9 +591,10 @@ async fn setting_gcal_auth(_user: Identity, data: web::Data<State>, _req: HttpRe
 async fn setting_gcal_auth_end(_user: Identity, data: web::Data<State>, _req: HttpRequest) -> HttpResponse {
     let _srv = data.server.lock().unwrap();
 
+    info!("Auth end");
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
     pub struct AuthEndData {
-        pub token: String,
+        pub state: String,
         pub code: String,
         pub scope: String,
     }
