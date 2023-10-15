@@ -163,6 +163,11 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
 
     let s = serde_json::to_string(&data.settings);
     std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
+
+    if data.settings.str_params.contains_key("site_name") {
+        let tmp_name_path = path.to_string() + "/site_name.txt";
+        std::fs::write(tmp_name_path, &data.settings.str_params["site_name"]).expect("Couldn't write to file");
+    }
 }
 
 pub fn write_data(data: &mut Data) {
