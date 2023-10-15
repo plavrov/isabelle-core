@@ -9,6 +9,14 @@ use isabelle_dm::data_model::item::*;
 use isabelle_dm::data_model::schedule_entry::*;
 use log::{info};
 
+pub fn get_credentials_json(srv: &crate::server::data::Data) -> String {
+    return srv.data_path.clone() + "/credentials.json";
+}
+
+pub fn get_pickle(srv: &crate::server::data::Data) -> String {
+    return srv.data_path.clone() + "/token.pickle";
+}
+
 pub fn read_item(mut data: &mut Data, path: &str) {
     let paths = fs::read_dir(path).unwrap();
 
