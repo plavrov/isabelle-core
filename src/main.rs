@@ -511,13 +511,19 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
         pub id: u64,
         pub role: Vec<String>,
         pub site_name: String,
+        pub site_logo: String,
     }
 
-    let mut user : LoginUser = LoginUser { username: "".to_string(), id: 0, role: Vec::new(), site_name: "".to_string()};
+    let mut user : LoginUser = LoginUser { username: "".to_string(), id: 0, role: Vec::new(), site_name: "".to_string(), site_logo: "".to_string()};
 
     user.site_name = srv.settings.clone().safe_str("site_name", "Isabelle");
     if user.site_name == "" {
         user.site_name = "Isabelle".to_string();
+    }
+
+    user.site_logo = srv.settings.clone().safe_str("site_logo", "");
+    if user.site_logo == "" {
+        user.site_logo = "logo.png".to_string();
     }
 
     if _user.is_none() {
