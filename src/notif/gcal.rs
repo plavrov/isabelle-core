@@ -1,3 +1,4 @@
+use std::time::Duration;
 use std::path::Path;
 use crate::server::data_rw::*;
 use std::process::Command;
@@ -27,7 +28,8 @@ pub fn sync_with_google(srv: &crate::server::data::Data,
     let creds = get_credentials_json(srv);
     let pickle = get_pickle(srv);
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone());
+
+    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -74,7 +76,7 @@ pub fn init_google(srv: &crate::server::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone());
+    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -116,7 +118,7 @@ pub fn auth_google(srv: &crate::server::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone());
+    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
 
     info!("Authentication with Google...");
     /* Run google calendar sync */
@@ -142,7 +144,7 @@ pub fn auth_google(srv: &crate::server::data::Data) -> String {
          info!("URL provided");
          return s;
       }
-      thread::sleep_ms(5000);
+      thread::sleep(Duration::from_millis(5000));
     }
 
     info!("Flow timed out");
@@ -176,7 +178,7 @@ pub fn auth_google_end(srv: &crate::server::data::Data,
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone());
+    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
 
     info!("Finish Authentication with Google...");
     /* Run google calendar sync */
@@ -200,7 +202,7 @@ pub fn auth_google_end(srv: &crate::server::data::Data,
         .spawn();
     info!("Started OAuth saver");
 
-    thread::sleep_ms(5000);
+    thread::sleep(Duration::from_millis(5000));
 
     return "running".to_string();
 }
