@@ -512,9 +512,10 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
         pub role: Vec<String>,
         pub site_name: String,
         pub site_logo: String,
+        pub licensed_to: String,
     }
 
-    let mut user : LoginUser = LoginUser { username: "".to_string(), id: 0, role: Vec::new(), site_name: "".to_string(), site_logo: "".to_string()};
+    let mut user : LoginUser = LoginUser { username: "".to_string(), id: 0, role: Vec::new(), site_name: "".to_string(), site_logo: "".to_string(), licensed_to: "".to_string()};
 
     user.site_name = srv.settings.clone().safe_str("site_name", "Isabelle");
     if user.site_name == "" {
@@ -524,6 +525,11 @@ async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl R
     user.site_logo = srv.settings.clone().safe_str("site_logo", "");
     if user.site_logo == "" {
         user.site_logo = "logo.png".to_string();
+    }
+
+    user.licensed_to = srv.settings.clone().safe_str("licensed_to", "");
+    if user.licensed_to == "" {
+        user.licensed_to = "end user".to_string();
     }
 
     if _user.is_none() {
