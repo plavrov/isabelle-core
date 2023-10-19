@@ -100,6 +100,38 @@ async fn item_del(_user: Identity, data: web::Data<State>, req: HttpRequest) -> 
     HttpResponse::Ok()
 }
 
+async fn item_done(_user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+    let mut srv = data.server.lock().unwrap();
+
+    let current_user = get_user(srv.deref(), _user.id().unwrap());
+    if current_user == None ||
+       (!current_user.as_ref().unwrap().bool_params.contains_key("role_is_admin") &&
+        !current_user.as_ref().unwrap().bool_params.contains_key("role_is_teacher")) {
+        info!("Item done: no user");
+        return HttpResponse::Unauthorized();
+    }
+
+    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+    if srv.items.contains_key(&params.id) {
+        let mut itm = srv.items[&params.id].clone();
+
+        srv.items.remove(&params.id);
+        if itm.bool_params.contains_key("done") {
+            let obj = itm.bool_params.get_mut("done").unwrap();
+            *obj = true;
+        } else {
+            itm.bool_params.insert("done".to_string(), true);
+        }
+        srv.items.insert(params.id, itm);
+        info!("Marked item with ID {} as done", &params.id);
+    } else {
+        error!("Failed to mark item {} as done", params.id);
+    }
+
+    write_data(srv.deref_mut());
+    HttpResponse::Ok()
+}
+
 async fn item_list(_user: Identity, data: web::Data<State>) -> HttpResponse {
     let srv = data.server.lock().unwrap();
 
@@ -718,6 +750,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(session_middleware())
             .route("/item/edit", web::post().to(item_edit))
             .route("/item/del", web::post().to(item_del))
+            .route("/item/done", web::post().to(item_done))
             .route("/item/list", web::get().to(item_list))
             .route("/schedule/edit", web::post().to(schedule_entry_edit))
             .route("/schedule/del", web::post().to(schedule_entry_del))
