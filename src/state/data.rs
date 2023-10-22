@@ -1,10 +1,14 @@
 use isabelle_dm::data_model::item::*;
 use std::collections::HashMap;
+use crate::state::collection::*;
 
 #[derive(Debug, Clone)]
 pub struct Data {
     pub items_cnt: u64,
     pub items: HashMap<u64, Item>,
+
+    pub itm_cnt: HashMap<String, u64>,
+    pub itm: HashMap<String, Collection>,
 
     pub schedule_entry_cnt: u64,
     pub schedule_entries: HashMap<u64, Item>,
@@ -24,6 +28,9 @@ impl Data {
         Self {
             items_cnt: 0,
             items: HashMap::new(),
+
+            itm_cnt: HashMap::new(),
+            itm: HashMap::new(),
 
             schedule_entry_cnt: 0,
             schedule_entries: HashMap::new(),

@@ -1,5 +1,5 @@
 extern crate serde_json;
-
+use crate::state::collection::*;
 use std::fs;
 use std::path::Path;
 
@@ -108,6 +108,18 @@ pub fn read_settings_entries(mut data: &mut Data, path: &str) {
 pub fn read_data(path: &str) -> Data {
     let mut data = Data::new();
 
+    let collections = fs::read_dir(path.to_string() + "/collection").unwrap();
+    for coll in collections {
+        let idx = coll
+            .as_ref()
+            .unwrap()
+            .file_name()
+            .into_string()
+            .unwrap();
+        let mut new_col = Collection::new();
+        new_col.read_fs(&(path.to_string() + "/collection/" + &idx), &idx);
+        data.itm.insert(idx, new_col);
+    }
     read_item(&mut data, (path.to_string() + "/item").as_str());
     read_schedule_entries(&mut data, (path.to_string() + "/schedule").as_str());
     read_settings_entries(&mut data, (path.to_string() + "/").as_str());
@@ -181,6 +193,9 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
 }
 
 pub fn write_data(data: &mut Data) {
+    for coll in &data.itm {
+        coll.1.write_fs(&(data.data_path.clone() + "/collection/" + &coll.1.name));
+    }
     write_item_data(data, &data.data_path.clone());
     write_schedule_data(data, &data.data_path.clone());
     write_settings_data(data, &data.data_path.clone());

@@ -3,6 +3,7 @@ mod server;
 mod state;
 
 use crate::notif::gcal::init_google;
+use crate::server::itm::*;
 use crate::server::item::*;
 use crate::server::login::*;
 use crate::server::schedule::*;
@@ -103,6 +104,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(Cors::permissive())
             .wrap(IdentityMiddleware::default())
             .wrap(session_middleware())
+            .route("/itm/edit", web::post().to(itm_edit))
+            .route("/itm/del", web::post().to(itm_del))
+            .route("/itm/list", web::get().to(itm_list))
             .route("/item/edit", web::post().to(item_edit))
             .route("/item/del", web::post().to(item_del))
             .route("/item/done", web::post().to(item_done))
