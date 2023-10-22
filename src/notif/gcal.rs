@@ -34,7 +34,7 @@ pub fn sync_with_google(
     write!(
         file,
         "{}",
-        srv.settings.str_params["sync_google_creds"].clone()
+        srv.settings.strs["sync_google_creds"].clone()
     )
     .ok();
 
@@ -45,9 +45,9 @@ pub fn sync_with_google(
         .arg("-m")
         .arg("igc")
         .arg("-e")
-        .arg(srv.settings.str_params["sync_google_email"].clone())
+        .arg(srv.settings.strs["sync_google_email"].clone())
         .arg("-c")
-        .arg(srv.settings.str_params["sync_google_cal_name"].clone())
+        .arg(srv.settings.strs["sync_google_cal_name"].clone())
         .arg("-creds")
         .arg(creds)
         .arg("-pickle")
@@ -86,7 +86,7 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
     write!(
         file,
         "{}",
-        srv.settings.str_params["sync_google_creds"].clone()
+        srv.settings.strs["sync_google_creds"].clone()
     )
     .ok();
 
@@ -97,9 +97,9 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
         .arg("-m")
         .arg("igc")
         .arg("-e")
-        .arg(srv.settings.str_params["sync_google_email"].clone())
+        .arg(srv.settings.strs["sync_google_email"].clone())
         .arg("-c")
-        .arg(srv.settings.str_params["sync_google_cal_name"].clone())
+        .arg(srv.settings.strs["sync_google_cal_name"].clone())
         .arg("-creds")
         .arg(creds)
         .arg("-pickle")
@@ -133,7 +133,7 @@ pub fn auth_google(srv: &crate::state::data::Data) -> String {
     write!(
         file,
         "{}",
-        srv.settings.str_params["sync_google_creds"].clone()
+        srv.settings.strs["sync_google_creds"].clone()
     )
     .ok();
 
@@ -199,7 +199,7 @@ pub fn auth_google_end(
     write!(
         file,
         "{}",
-        srv.settings.str_params["sync_google_creds"].clone()
+        srv.settings.strs["sync_google_creds"].clone()
     )
     .ok();
 

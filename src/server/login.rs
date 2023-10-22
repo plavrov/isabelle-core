@@ -29,8 +29,8 @@ pub async fn login(
     } else {
         let itm_real = itm.unwrap();
 
-        if itm_real.fields.contains_key("password") &&
-           itm_real.safe_str("password", "".to_string()) == c.password {
+        if itm_real.strs.contains_key("password") &&
+           itm_real.safe_str("password", "") == c.password {
             Identity::login(&request.extensions(), c.username.clone()).unwrap();
             info!("Logged in! {}", c.username);
         } else {
@@ -95,13 +95,13 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
     }
 
     for item in &srv.items {
-        if item.1.fields.contains_key("login")
-            && item.1.fields["login"] == _user.as_ref().unwrap().id().unwrap()
+        if item.1.strs.contains_key("login")
+            && item.1.strs["login"] == _user.as_ref().unwrap().id().unwrap()
         {
-            if item.1.bool_params.contains_key("is_human") {
+            if item.1.bools.contains_key("is_human") {
                 user.username = _user.as_ref().unwrap().id().unwrap();
                 user.id = *item.0;
-                for bp in &item.1.bool_params {
+                for bp in &item.1.bools {
                     if bp.0.starts_with("role_is_") {
                         user.role.push(bp.0[8..].to_string());
                     }

@@ -1,6 +1,6 @@
 use isabelle_dm::util::accessor::unset_id;
 
-use isabelle_dm::data_model::del_param::DelParam;
+use isabelle_dm::data_model::id_param::IdParam;
 use isabelle_dm::data_model::item::Item;
 use std::ops::Deref;
 
@@ -32,12 +32,12 @@ pub async fn item_edit(
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Item edit: no user");
@@ -56,15 +56,15 @@ pub async fn item_edit(
     if c.id == unset_id() {
         info!(
             "Added item {} {} with ID {}",
-            &c.safe_str("firstname", "".to_string()).to_string(),
-            &c.safe_str("surname", "".to_string()).to_string(),
+            &c.safe_str("firstname", "").to_string(),
+            &c.safe_str("surname", "").to_string(),
             idx
         );
     } else {
         info!(
             "Edited item {} {} with ID {}",
-            &c.safe_str("firstname", "".to_string()).to_string(),
-            &c.safe_str("surname", "".to_string()).to_string(),
+            &c.safe_str("firstname", "").to_string(),
+            &c.safe_str("surname", "").to_string(),
             idx
         );
     }
@@ -82,19 +82,19 @@ pub async fn item_del(_user: Identity, data: web::Data<State>, req: HttpRequest)
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Item del: no user");
         return HttpResponse::Unauthorized();
     }
 
-    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+    let params = web::Query::<IdParam>::from_query(req.query_string()).unwrap();
     if srv.items.contains_key(&params.id) {
         srv.items.remove(&params.id);
         info!("Removed item with ID {}", &params.id);
@@ -118,28 +118,28 @@ pub async fn item_done(
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Item done: no user");
         return HttpResponse::Unauthorized();
     }
 
-    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+    let params = web::Query::<IdParam>::from_query(req.query_string()).unwrap();
     if srv.items.contains_key(&params.id) {
         let mut itm = srv.items[&params.id].clone();
 
         srv.items.remove(&params.id);
-        if itm.bool_params.contains_key("done") {
-            let obj = itm.bool_params.get_mut("done").unwrap();
+        if itm.bools.contains_key("done") {
+            let obj = itm.bools.get_mut("done").unwrap();
             *obj = true;
         } else {
-            itm.bool_params.insert("done".to_string(), true);
+            itm.bools.insert("done".to_string(), true);
         }
         srv.items.insert(params.id, itm);
         info!("Marked item with ID {} as done", &params.id);
@@ -159,12 +159,12 @@ pub async fn item_list(_user: Identity, data: web::Data<State>) -> HttpResponse 
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Item list: no user");

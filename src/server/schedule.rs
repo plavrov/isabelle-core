@@ -4,8 +4,8 @@ use isabelle_dm::util::accessor::unset_id;
 
 use std::ops::Deref;
 
-use isabelle_dm::data_model::del_param::DelParam;
-use isabelle_dm::data_model::schedule_entry::ScheduleEntry;
+use isabelle_dm::data_model::id_param::IdParam;
+use isabelle_dm::data_model::item::Item;
 
 use crate::notif::email::*;
 use crate::notif::gcal::*;
@@ -23,28 +23,28 @@ use std::ops::DerefMut;
 
 use crate::server::user_control::*;
 
-pub fn eventname(srv: &crate::state::data::Data, sch: &ScheduleEntry) -> String {
+pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
     let teacher_id = sch.safe_id("teacher", 0);
     if teacher_id == 0 {
         "Training".to_string()
     } else {
         "Training with ".to_owned()
-            + &srv.items[&teacher_id].safe_str("firstname", "<unknown>".to_string())
+            + &srv.items[&teacher_id].safe_str("firstname", "<unknown>")
     }
 }
 
-pub fn entry2datetimestr(entry: &ScheduleEntry) -> String {
+pub fn entry2datetimestr(entry: &Item) -> String {
     #![allow(warnings)]
-    let mut datetime = entry.time;
+    let mut datetime = entry.u64s["time"];
 
     let all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-    let day = entry.safe_str("day_of_the_week", "".to_string());
+    let day = entry.safe_str("day_of_the_week", "");
     if day != "" && day != "unset" {
         let now = Utc::now();
         let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
         datetime = (now.beginning_of_week().timestamp() as u64)
             + 24 * 60 * 60 * tmp_day
-            + (entry.time % (24 * 60 * 60));
+            + (entry.u64s["time"] % (24 * 60 * 60));
     }
 
     if datetime == 0 {
@@ -65,7 +65,7 @@ pub async fn schedule_entry_edit(
 ) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
-    let mut c: ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let mut c: Item = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
     let mut idx = srv.schedule_entry_cnt + 1;
 
@@ -74,12 +74,12 @@ pub async fn schedule_entry_edit(
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Schedule entry edit: no user");
@@ -96,7 +96,7 @@ pub async fn schedule_entry_edit(
 
     if c.id != unset_id() {
         if srv.schedule_entries.contains_key(&c.id) {
-            let time = c.time;
+            let time = c.safe_u64("time", 0);
             if srv.schedule_entry_times.contains_key(&time) {
                 srv.schedule_entry_times
                     .get_mut(&time)
@@ -122,7 +122,7 @@ pub async fn schedule_entry_edit(
         info!("Edited schedule entry with ID {}", idx);
     }
 
-    let time = c.time;
+    let time = c.safe_u64("time", 0);
     if !srv.schedule_entry_times.contains_key(&time) {
         srv.schedule_entry_times.insert(time, Vec::new());
     }
@@ -137,7 +137,7 @@ pub async fn schedule_entry_edit(
             let target_id = c.safe_id(ent, 0);
             if srv.items.contains_key(&target_id) {
                 let target = &srv.items[&target_id];
-                let target_email = target.safe_str(em, "".to_string());
+                let target_email = target.safe_str(em, "");
                 if target.safe_bool("notify_training_email", false) && target_email != "" {
                     send_email(
                         &srv,
@@ -158,7 +158,7 @@ pub async fn schedule_entry_edit(
         let target_id = c.safe_id("student", 0);
         if srv.items.contains_key(&target_id) {
             let target = &srv.items[&target_id];
-            let target_email = target.safe_str("email", "".to_string());
+            let target_email = target.safe_str("email", "");
             if target.safe_bool("notify_training_email", false) && target_email != "" {
                 send_email(
                     &srv,
@@ -192,7 +192,7 @@ pub async fn schedule_entry_done(
 ) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
-    let c: ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let c: Item = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
 
     let current_user = get_user(srv.deref(), _user.id().unwrap());
@@ -200,12 +200,12 @@ pub async fn schedule_entry_done(
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Schedule entry done: no user");
@@ -214,11 +214,11 @@ pub async fn schedule_entry_done(
 
     let mut nc = srv.schedule_entries[&c.id].clone();
 
-    if nc.bool_params.contains_key("done") {
-        let obj = nc.bool_params.get_mut("done").unwrap();
+    if nc.bools.contains_key("done") {
+        let obj = nc.bools.get_mut("done").unwrap();
         *obj = true;
     } else {
-        nc.bool_params.insert("done".to_string(), true);
+        nc.bools.insert("done".to_string(), true);
     }
 
     srv.schedule_entries.remove(&c.id);
@@ -239,7 +239,7 @@ pub async fn schedule_entry_paid(
 ) -> impl Responder {
     info!("Query: {}", &req.query_string());
     let config = Config::new(10, false);
-    let c: ScheduleEntry = config.deserialize_str(&req.query_string()).unwrap();
+    let c: Item = config.deserialize_str(&req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
 
     let current_user = get_user(srv.deref(), _user.id().unwrap());
@@ -247,12 +247,12 @@ pub async fn schedule_entry_paid(
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Schedule entry paid: no user");
@@ -261,11 +261,11 @@ pub async fn schedule_entry_paid(
 
     let mut nc = srv.schedule_entries[&c.id].clone();
 
-    if nc.bool_params.contains_key("paid") {
-        let obj = nc.bool_params.get_mut("paid").unwrap();
+    if nc.bools.contains_key("paid") {
+        let obj = nc.bools.get_mut("paid").unwrap();
         *obj = true;
     } else {
-        nc.bool_params.insert("paid".to_string(), true);
+        nc.bools.insert("paid".to_string(), true);
     }
 
     srv.schedule_entries.remove(&c.id);
@@ -286,19 +286,19 @@ pub async fn schedule_entry_del(
     req: HttpRequest,
 ) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
-    let params = web::Query::<DelParam>::from_query(req.query_string()).unwrap();
+    let params = web::Query::<IdParam>::from_query(req.query_string()).unwrap();
 
     let current_user = get_user(srv.deref(), _user.id().unwrap());
     if current_user == None
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Schedule entry del: no user");
@@ -308,7 +308,7 @@ pub async fn schedule_entry_del(
     init_google(&srv);
 
     if srv.schedule_entries.contains_key(&params.id) {
-        let time = srv.schedule_entries[&params.id].time;
+        let time = srv.schedule_entries[&params.id].u64s["time"];
         {
             if srv.schedule_entry_times.contains_key(&time) {
                 srv.schedule_entry_times
@@ -341,12 +341,12 @@ pub async fn schedule_entry_list(
         || (!current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
             && !current_user
                 .as_ref()
                 .unwrap()
-                .bool_params
+                .bools
                 .contains_key("role_is_teacher"))
     {
         info!("Item list: no user");
@@ -375,14 +375,14 @@ pub async fn schedule_materialize(
 
     let params = web::Query::<WeekSchedule>::from_query(req.query_string()).unwrap();
     let mut srv = data.server.lock().unwrap();
-    let mut vec: Vec<ScheduleEntry> = Vec::new();
+    let mut vec: Vec<Item> = Vec::new();
 
     let current_user = get_user(srv.deref(), _user.id().unwrap());
     if current_user == None
         || !current_user
             .as_ref()
             .unwrap()
-            .bool_params
+            .bools
             .contains_key("role_is_admin")
     {
         info!("Schedule entry paid: no user");
@@ -396,23 +396,23 @@ pub async fn schedule_materialize(
         (now.beginning_of_week().timestamp() as u64) + (60 * 60 * 24 * 7) * params.week;
     let mut final_cnt = srv.schedule_entry_cnt;
     for entry in &srv.schedule_entries {
-        let day = entry.1.safe_str("day_of_the_week", "".to_string());
+        let day = entry.1.safe_str("day_of_the_week", "");
         let pid = entry.1.safe_id("parent_id", u64::MAX);
         if day != "" && day != "unset" && pid == u64::MAX {
-            let mut cp_entry = ScheduleEntry::new();
+            let mut cp_entry = Item::new();
             info!("Found entry that we want to materialize: {}", entry.0);
             let all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
             let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
-            let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.time % (60 * 60 * 24);
-            cp_entry.time = ts;
-            cp_entry.id_params.insert("parent_id".to_string(), *entry.0);
+            let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.u64s["time"] % (60 * 60 * 24);
+            cp_entry.set_u64("time", ts);
+            cp_entry.ids.insert("parent_id".to_string(), *entry.0);
             cp_entry
-                .str_params
+                .strs
                 .insert("day_of_the_week".to_string(), "unset".to_string());
 
             let mut skip = false;
             for tmp__ in &srv.schedule_entries {
-                if tmp__.1.time == cp_entry.time
+                if tmp__.1.u64s["time"] == cp_entry.u64s["time"]
                     && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0
                 {
                     skip = true;

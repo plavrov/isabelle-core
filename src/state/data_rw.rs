@@ -1,12 +1,10 @@
 extern crate serde_json;
 
-use isabelle_dm::data_model::all_settings::AllSettings;
 use std::fs;
 use std::path::Path;
 
 use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
-use isabelle_dm::data_model::schedule_entry::*;
 use log::info;
 
 pub fn get_credentials_json(srv: &crate::state::data::Data) -> String {
@@ -77,7 +75,7 @@ pub fn read_schedule_entries(mut data: &mut Data, path: &str) {
 
         if Path::new(&data_path).is_file() {
             let text = std::fs::read_to_string(data_path).unwrap();
-            let sch: ScheduleEntry = serde_json::from_str(&text).unwrap();
+            let sch: Item = serde_json::from_str(&text).unwrap();
             data.schedule_entries.insert(idx.unwrap(), sch);
         }
     }
@@ -103,7 +101,7 @@ pub fn read_settings_entries(mut data: &mut Data, path: &str) {
         return;
     }
     let text = read_data.unwrap();
-    let settings: AllSettings = serde_json::from_str(&text).unwrap();
+    let settings: Item = serde_json::from_str(&text).unwrap();
     data.settings = settings;
 }
 
@@ -175,9 +173,9 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
     let s = serde_json::to_string(&data.settings);
     std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
 
-    if data.settings.str_params.contains_key("site_name") {
+    if data.settings.strs.contains_key("site_name") {
         let tmp_name_path = path.to_string() + "/site_name.txt";
-        std::fs::write(tmp_name_path, &data.settings.str_params["site_name"])
+        std::fs::write(tmp_name_path, &data.settings.strs["site_name"])
             .expect("Couldn't write to file");
     }
 }
