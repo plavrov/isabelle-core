@@ -1,7 +1,8 @@
+use crate::server::user_control::*;
 use crate::state::state::*;
 use actix_identity::Identity;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
-use log::info;
+use log::{info, error};
 use serde::{Deserialize, Serialize};
 use serde_qs;
 use serde_qs::Config;
@@ -21,29 +22,20 @@ pub async fn login(
 
     let config = Config::new(10, false);
     let c: LoginUser = config.deserialize_str(&request.query_string()).unwrap();
-    let mut found: bool = false;
 
-    for item in &srv.items {
-        if item.1.bool_params.contains_key("is_human") {
-            info!(
-                "{} / {} against {} / {}",
-                item.1.fields["login"], item.1.fields["password"], c.username, c.password
-            );
-        }
-        if item.1.bool_params.contains_key("is_human")
-            && item.1.fields.contains_key("login")
-            && item.1.fields["login"] == c.username
-            && item.1.fields["password"] == c.password
-        {
+    let itm = get_user(&srv, c.username.clone());
+    if itm == None {
+        info!("No user found, couldn't log in");
+    } else {
+        let itm_real = itm.unwrap();
+
+        if itm_real.fields.contains_key("password") &&
+           itm_real.safe_str("password", "".to_string()) == c.password {
             Identity::login(&request.extensions(), c.username.clone()).unwrap();
             info!("Logged in! {}", c.username);
-            found = true;
-            break;
+        } else {
+            error!("Invalid password");
         }
-    }
-
-    if !found {
-        info!("No user found, couldn't log in");
     }
 
     HttpResponse::Ok()
