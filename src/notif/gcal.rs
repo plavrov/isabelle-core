@@ -1,23 +1,25 @@
-use std::time::Duration;
-use std::path::Path;
 use crate::state::data_rw::*;
-use std::process::Command;
-use std::io::Write;
-use std::fs::File;
-use std::fs;
+use log::info;
 use std::env;
+use std::fs;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
+use std::process::Command;
 use std::thread;
-use log::{info};
+use std::time::Duration;
 
-pub fn sync_with_google(srv: &crate::state::data::Data,
-                        add: bool,
-                        name: String,
-                        date_time: String) {
-
-    if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
-       srv.settings.clone().safe_str("sync_google_creds", "") == "" ||
-       srv.settings.clone().safe_str("sync_google_email", "") == "" ||
-       srv.settings.clone().safe_str("sync_google_cal_name", "") == "" {
+pub fn sync_with_google(
+    srv: &crate::state::data::Data,
+    add: bool,
+    name: String,
+    date_time: String,
+) {
+    if !srv.settings.clone().safe_bool("sync_google_cal", false)
+        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
+        || srv.settings.clone().safe_str("sync_google_email", "") == ""
+        || srv.settings.clone().safe_str("sync_google_cal_name", "") == ""
+    {
         info!("Don't sync with google");
         return;
     }
@@ -29,7 +31,12 @@ pub fn sync_with_google(srv: &crate::state::data::Data,
     let pickle = get_pickle(srv);
     let mut file = File::create(creds.clone()).unwrap();
 
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
+    write!(
+        file,
+        "{}",
+        srv.settings.str_params["sync_google_creds"].clone()
+    )
+    .ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -56,11 +63,11 @@ pub fn sync_with_google(srv: &crate::state::data::Data,
 }
 
 pub fn init_google(srv: &crate::state::data::Data) -> String {
-
-    if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
-       srv.settings.clone().safe_str("sync_google_creds", "") == "" ||
-       srv.settings.clone().safe_str("sync_google_email", "") == "" ||
-       srv.settings.clone().safe_str("sync_google_cal_name", "") == "" {
+    if !srv.settings.clone().safe_bool("sync_google_cal", false)
+        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
+        || srv.settings.clone().safe_str("sync_google_email", "") == ""
+        || srv.settings.clone().safe_str("sync_google_cal_name", "") == ""
+    {
         info!("Don't sync with google");
         return "no_sync".to_string();
     }
@@ -76,7 +83,12 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
+    write!(
+        file,
+        "{}",
+        srv.settings.str_params["sync_google_creds"].clone()
+    )
+    .ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -100,9 +112,9 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
 }
 
 pub fn auth_google(srv: &crate::state::data::Data) -> String {
-
-    if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
-       srv.settings.clone().safe_str("sync_google_creds", "") == "" {
+    if !srv.settings.clone().safe_bool("sync_google_cal", false)
+        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
+    {
         info!("Don't auth with google");
         return "no_auth".to_string();
     }
@@ -118,7 +130,12 @@ pub fn auth_google(srv: &crate::state::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
+    write!(
+        file,
+        "{}",
+        srv.settings.str_params["sync_google_creds"].clone()
+    )
+    .ok();
 
     info!("Authentication with Google...");
     /* Run google calendar sync */
@@ -139,28 +156,29 @@ pub fn auth_google(srv: &crate::state::data::Data) -> String {
     info!("Flow is running");
 
     for _i in 1..10 {
-      if Path::new(&(dir.display().to_string() + "/flow.url")).exists() {
-         let s = fs::read_to_string(&(dir.display().to_string() + "/flow.url")).unwrap();
-         info!("URL provided");
-         return s;
-      }
-      thread::sleep(Duration::from_millis(5000));
+        if Path::new(&(dir.display().to_string() + "/flow.url")).exists() {
+            let s = fs::read_to_string(&(dir.display().to_string() + "/flow.url")).unwrap();
+            info!("URL provided");
+            return s;
+        }
+        thread::sleep(Duration::from_millis(5000));
     }
 
     info!("Flow timed out");
 
-
     return "running".to_string();
 }
 
-pub fn auth_google_end(srv: &crate::state::data::Data,
-                       full_query: String,
-                       state: String,
-                       code: String) -> String {
-
+pub fn auth_google_end(
+    srv: &crate::state::data::Data,
+    full_query: String,
+    state: String,
+    code: String,
+) -> String {
     info!("Ending Google authentication...");
-    if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
-       srv.settings.clone().safe_str("sync_google_creds", "") == "" {
+    if !srv.settings.clone().safe_bool("sync_google_cal", false)
+        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
+    {
         info!("Don't auth with google");
         return "no_auth".to_string();
     }
@@ -178,7 +196,12 @@ pub fn auth_google_end(srv: &crate::state::data::Data,
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.str_params["sync_google_creds"].clone()).ok();
+    write!(
+        file,
+        "{}",
+        srv.settings.str_params["sync_google_creds"].clone()
+    )
+    .ok();
 
     info!("Finish Authentication with Google...");
     /* Run google calendar sync */

@@ -1,6 +1,6 @@
-use isabelle_dm::data_model::schedule_entry::*;
-use isabelle_dm::data_model::item::*;
 use isabelle_dm::data_model::all_settings::*;
+use isabelle_dm::data_model::item::*;
+use isabelle_dm::data_model::schedule_entry::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]

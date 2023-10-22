@@ -1,48 +1,46 @@
-mod state;
 mod notif;
 mod server;
+mod state;
 
 use crate::notif::gcal::init_google;
-use actix_session::config::{BrowserSession, CookieContentSecurity};
-use actix_web::{web, App, HttpServer, cookie::Key, cookie::SameSite};
-use actix_web::web::Data;
-use crate::state::state::*;
-use actix_session::storage::CookieSessionStore;
-use actix_session::SessionMiddleware;
-use actix_identity::IdentityMiddleware;
-use actix_cors::Cors;
-use log::{info};
-use std::env;
-use crate::state::data_rw::*;
-use std::ops::DerefMut;
-use crate::server::login::*;
 use crate::server::item::*;
+use crate::server::login::*;
 use crate::server::schedule::*;
 use crate::server::setting::*;
+use crate::state::data_rw::*;
+use crate::state::state::*;
+use actix_cors::Cors;
+use actix_identity::IdentityMiddleware;
+use actix_session::config::{BrowserSession, CookieContentSecurity};
+use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
+use actix_web::web::Data;
+use actix_web::{cookie::Key, cookie::SameSite, web, App, HttpServer};
+use log::info;
+use std::env;
+use std::ops::DerefMut;
 
 fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
-    SessionMiddleware::builder(
-        CookieSessionStore::default(), Key::from(&[0; 64])
-    )
-    .session_lifecycle(BrowserSession::default())
-    .cookie_same_site(SameSite::None)
-    .cookie_path("/".into())
-    .cookie_name(String::from("isabelle-cookie"))
-    .cookie_domain(Some("localhost".into()))
-    .cookie_content_security(CookieContentSecurity::Private)
-    .cookie_http_only(true)
-    .cookie_secure(true)
-    .build()
+    SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
+        .session_lifecycle(BrowserSession::default())
+        .cookie_same_site(SameSite::None)
+        .cookie_path("/".into())
+        .cookie_name(String::from("isabelle-cookie"))
+        .cookie_domain(Some("localhost".into()))
+        .cookie_content_security(CookieContentSecurity::Private)
+        .cookie_http_only(true)
+        .cookie_secure(true)
+        .build()
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    let mut gc_path : String = "".to_string();
-    let mut py_path : String = "".to_string();
-    let mut data_path : String = "sample-data".to_string();
-    let mut pub_path : String = "http://localhost:8081".to_string();
-    let mut port : u16 = 8090;
+    let mut gc_path: String = "".to_string();
+    let mut py_path: String = "".to_string();
+    let mut data_path: String = "sample-data".to_string();
+    let mut pub_path: String = "http://localhost:8081".to_string();
+    let mut port: u16 = 8090;
     let mut gc_next = false;
     let mut py_next = false;
     let mut data_next = false;
@@ -99,7 +97,7 @@ async fn main() -> std::io::Result<()> {
 
     let data = Data::new(state);
     info!("Starting server");
-    HttpServer::new(move ||
+    HttpServer::new(move || {
         App::new()
             .app_data(data.clone())
             .wrap(Cors::permissive())
@@ -114,15 +112,21 @@ async fn main() -> std::io::Result<()> {
             .route("/schedule/list", web::get().to(schedule_entry_list))
             .route("/schedule/done", web::post().to(schedule_entry_done))
             .route("/schedule/paid", web::post().to(schedule_entry_paid))
-            .route("/schedule/materialize", web::post().to(schedule_materialize))
+            .route(
+                "/schedule/materialize",
+                web::post().to(schedule_materialize),
+            )
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
             .route("/is_logged_in", web::get().to(is_logged_in))
             .route("/setting/edit", web::post().to(setting_edit))
             .route("/setting/list", web::get().to(setting_list))
             .route("/setting/gcal_auth", web::post().to(setting_gcal_auth))
-            .route("/setting/gcal_auth_end", web::post().to(setting_gcal_auth_end))
-    )
+            .route(
+                "/setting/gcal_auth_end",
+                web::post().to(setting_gcal_auth_end),
+            )
+    })
     .bind(("127.0.0.1", port))?
     .run()
     .await

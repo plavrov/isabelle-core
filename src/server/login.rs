@@ -1,12 +1,16 @@
+use crate::state::state::*;
+use actix_identity::Identity;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use log::info;
+use serde::{Deserialize, Serialize};
 use serde_qs;
 use serde_qs::Config;
-use actix_identity::Identity;
-use actix_web::{web, HttpMessage, HttpResponse, HttpRequest, Responder};
-use crate::state::state::*;
-use log::{info};
-use serde::{Deserialize, Serialize};
 
-pub async fn login(_user: Option<Identity>, _data: web::Data<State>, request: HttpRequest) -> impl Responder {
+pub async fn login(
+    _user: Option<Identity>,
+    _data: web::Data<State>,
+    request: HttpRequest,
+) -> impl Responder {
     let srv = _data.server.lock().unwrap();
 
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
@@ -16,19 +20,21 @@ pub async fn login(_user: Option<Identity>, _data: web::Data<State>, request: Ht
     }
 
     let config = Config::new(10, false);
-    let c : LoginUser = config.deserialize_str(&request.query_string()).unwrap();
-    let mut found : bool = false;
+    let c: LoginUser = config.deserialize_str(&request.query_string()).unwrap();
+    let mut found: bool = false;
 
     for item in &srv.items {
         if item.1.bool_params.contains_key("is_human") {
-            info!("{} / {} against {} / {}",
-                  item.1.fields["login"], item.1.fields["password"],
-                  c.username, c.password);
+            info!(
+                "{} / {} against {} / {}",
+                item.1.fields["login"], item.1.fields["password"], c.username, c.password
+            );
         }
-        if item.1.bool_params.contains_key("is_human") &&
-           item.1.fields.contains_key("login") &&
-           item.1.fields["login"] == c.username &&
-           item.1.fields["password"] == c.password {
+        if item.1.bool_params.contains_key("is_human")
+            && item.1.fields.contains_key("login")
+            && item.1.fields["login"] == c.username
+            && item.1.fields["password"] == c.password
+        {
             Identity::login(&request.extensions(), c.username.clone()).unwrap();
             info!("Logged in! {}", c.username);
             found = true;
@@ -43,7 +49,11 @@ pub async fn login(_user: Option<Identity>, _data: web::Data<State>, request: Ht
     HttpResponse::Ok()
 }
 
-pub async fn logout(_user: Identity, _data: web::Data<State>, _request: HttpRequest) -> impl Responder {
+pub async fn logout(
+    _user: Identity,
+    _data: web::Data<State>,
+    _request: HttpRequest,
+) -> impl Responder {
     _user.logout();
     info!("Logged out");
 
@@ -63,7 +73,14 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         pub licensed_to: String,
     }
 
-    let mut user : LoginUser = LoginUser { username: "".to_string(), id: 0, role: Vec::new(), site_name: "".to_string(), site_logo: "".to_string(), licensed_to: "".to_string()};
+    let mut user: LoginUser = LoginUser {
+        username: "".to_string(),
+        id: 0,
+        role: Vec::new(),
+        site_name: "".to_string(),
+        site_logo: "".to_string(),
+        licensed_to: "".to_string(),
+    };
 
     user.site_name = srv.settings.clone().safe_str("site_name", "Isabelle");
     if user.site_name == "" {
@@ -82,12 +99,13 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
 
     if _user.is_none() {
         info!("No user");
-        return web::Json(user)
+        return web::Json(user);
     }
 
     for item in &srv.items {
-        if item.1.fields.contains_key("login") &&
-           item.1.fields["login"] == _user.as_ref().unwrap().id().unwrap() {
+        if item.1.fields.contains_key("login")
+            && item.1.fields["login"] == _user.as_ref().unwrap().id().unwrap()
+        {
             if item.1.bool_params.contains_key("is_human") {
                 user.username = _user.as_ref().unwrap().id().unwrap();
                 user.id = *item.0;

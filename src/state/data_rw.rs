@@ -7,7 +7,7 @@ use std::path::Path;
 use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
 use isabelle_dm::data_model::schedule_entry::*;
-use log::{info};
+use log::info;
 
 pub fn get_credentials_json(srv: &crate::state::data::Data) -> String {
     return srv.data_path.clone() + "/credentials.json";
@@ -22,7 +22,13 @@ pub fn read_item(mut data: &mut Data, path: &str) {
 
     for path in paths {
         let data_path = path.as_ref().unwrap().path().display().to_string() + "/data.js";
-        let idx = path.as_ref().unwrap().file_name().into_string().unwrap().parse::<u64>();
+        let idx = path
+            .as_ref()
+            .unwrap()
+            .file_name()
+            .into_string()
+            .unwrap()
+            .parse::<u64>();
 
         if let Err(_e) = idx {
             continue;
@@ -32,8 +38,7 @@ pub fn read_item(mut data: &mut Data, path: &str) {
 
         if Path::new(&data_path).is_file() {
             let text = std::fs::read_to_string(data_path).unwrap();
-            let itm: Item =
-                serde_json::from_str(&text).unwrap();
+            let itm: Item = serde_json::from_str(&text).unwrap();
             data.items.insert(idx.unwrap(), itm);
         }
     }
@@ -56,7 +61,13 @@ pub fn read_schedule_entries(mut data: &mut Data, path: &str) {
 
     for path in paths {
         let data_path = path.as_ref().unwrap().path().display().to_string() + "/data.js";
-        let idx = path.as_ref().unwrap().file_name().into_string().unwrap().parse::<u64>();
+        let idx = path
+            .as_ref()
+            .unwrap()
+            .file_name()
+            .into_string()
+            .unwrap()
+            .parse::<u64>();
 
         if let Err(_e) = idx {
             continue;
@@ -66,8 +77,7 @@ pub fn read_schedule_entries(mut data: &mut Data, path: &str) {
 
         if Path::new(&data_path).is_file() {
             let text = std::fs::read_to_string(data_path).unwrap();
-            let sch: ScheduleEntry =
-                serde_json::from_str(&text).unwrap();
+            let sch: ScheduleEntry = serde_json::from_str(&text).unwrap();
             data.schedule_entries.insert(idx.unwrap(), sch);
         }
     }
@@ -112,8 +122,7 @@ pub fn write_item_data(data: &mut Data, path: &str) {
         let ep_path = ep.unwrap().path().display().to_string();
         if Path::new(&ep_path).is_file() {
             std::fs::remove_file(&ep_path).expect("Couldn't remove file");
-        }
-        else {
+        } else {
             std::fs::remove_dir_all(&ep_path).expect("Couldn't remove directory");
         }
     }
@@ -128,8 +137,8 @@ pub fn write_item_data(data: &mut Data, path: &str) {
         let s = serde_json::to_string(&item.1);
         std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write item");
     }
-    std::fs::write(path.to_string() + "/item/cnt",
-                   data.items_cnt.to_string()).expect("Couldn't write item counter");
+    std::fs::write(path.to_string() + "/item/cnt", data.items_cnt.to_string())
+        .expect("Couldn't write item counter");
 }
 
 pub fn write_schedule_data(data: &mut Data, path: &str) {
@@ -138,8 +147,7 @@ pub fn write_schedule_data(data: &mut Data, path: &str) {
         let ep_path = ep.unwrap().path().display().to_string();
         if Path::new(&ep_path).is_file() {
             std::fs::remove_file(&ep_path).expect("Couldn't remove file");
-        }
-        else {
+        } else {
             std::fs::remove_dir_all(&ep_path).expect("Couldn't remove directory");
         }
     }
@@ -153,8 +161,11 @@ pub fn write_schedule_data(data: &mut Data, path: &str) {
         let s = serde_json::to_string(&sch.1);
         std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write to file");
     }
-    std::fs::write(path.to_string() + "/schedule/cnt",
-                   data.schedule_entry_cnt.to_string()).expect("Couldn't write schedule counter");
+    std::fs::write(
+        path.to_string() + "/schedule/cnt",
+        data.schedule_entry_cnt.to_string(),
+    )
+    .expect("Couldn't write schedule counter");
 }
 
 pub fn write_settings_data(data: &mut Data, path: &str) {
@@ -166,7 +177,8 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
 
     if data.settings.str_params.contains_key("site_name") {
         let tmp_name_path = path.to_string() + "/site_name.txt";
-        std::fs::write(tmp_name_path, &data.settings.str_params["site_name"]).expect("Couldn't write to file");
+        std::fs::write(tmp_name_path, &data.settings.str_params["site_name"])
+            .expect("Couldn't write to file");
     }
 }
 

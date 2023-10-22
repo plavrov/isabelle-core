@@ -1,7 +1,7 @@
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
-use log::{info};
+use log::info;
 
 pub fn send_email(srv: &crate::state::data::Data, to: &str, subject: &str, body: &str) {
     info!("Checking options...");
@@ -13,11 +13,7 @@ pub fn send_email(srv: &crate::state::data::Data, to: &str, subject: &str, body:
 
     info!("Building email...");
 
-    if to == "" ||
-       smtp_server == "" ||
-       smtp_login == "" ||
-       smtp_password == "" ||
-       smtp_from == "" {
+    if to == "" || smtp_server == "" || smtp_login == "" || smtp_password == "" || smtp_from == "" {
         info!("Input options not present");
         return;
     }
