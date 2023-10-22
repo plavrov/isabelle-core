@@ -1,6 +1,6 @@
 use std::time::Duration;
 use std::path::Path;
-use crate::server::data_rw::*;
+use crate::state::data_rw::*;
 use std::process::Command;
 use std::io::Write;
 use std::fs::File;
@@ -9,7 +9,7 @@ use std::env;
 use std::thread;
 use log::{info};
 
-pub fn sync_with_google(srv: &crate::server::data::Data,
+pub fn sync_with_google(srv: &crate::state::data::Data,
                         add: bool,
                         name: String,
                         date_time: String) {
@@ -55,7 +55,7 @@ pub fn sync_with_google(srv: &crate::server::data::Data,
     info!("Synchronization is done");
 }
 
-pub fn init_google(srv: &crate::server::data::Data) -> String {
+pub fn init_google(srv: &crate::state::data::Data) -> String {
 
     if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
        srv.settings.clone().safe_str("sync_google_creds", "") == "" ||
@@ -99,7 +99,7 @@ pub fn init_google(srv: &crate::server::data::Data) -> String {
     return String::from_utf8(res.stdout).unwrap();
 }
 
-pub fn auth_google(srv: &crate::server::data::Data) -> String {
+pub fn auth_google(srv: &crate::state::data::Data) -> String {
 
     if !srv.settings.clone().safe_bool("sync_google_cal", false) ||
        srv.settings.clone().safe_str("sync_google_creds", "") == "" {
@@ -153,7 +153,7 @@ pub fn auth_google(srv: &crate::server::data::Data) -> String {
     return "running".to_string();
 }
 
-pub fn auth_google_end(srv: &crate::server::data::Data,
+pub fn auth_google_end(srv: &crate::state::data::Data,
                        full_query: String,
                        state: String,
                        code: String) -> String {

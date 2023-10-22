@@ -4,16 +4,16 @@ use isabelle_dm::data_model::all_settings::AllSettings;
 use std::fs;
 use std::path::Path;
 
-use crate::server::data::*;
+use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
 use isabelle_dm::data_model::schedule_entry::*;
 use log::{info};
 
-pub fn get_credentials_json(srv: &crate::server::data::Data) -> String {
+pub fn get_credentials_json(srv: &crate::state::data::Data) -> String {
     return srv.data_path.clone() + "/credentials.json";
 }
 
-pub fn get_pickle(srv: &crate::server::data::Data) -> String {
+pub fn get_pickle(srv: &crate::state::data::Data) -> String {
     return srv.data_path.clone() + "/token.pickle";
 }
 

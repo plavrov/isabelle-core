@@ -3,7 +3,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use log::{info};
 
-pub fn send_email(srv: &crate::server::data::Data, to: &str, subject: &str, body: &str) {
+pub fn send_email(srv: &crate::state::data::Data, to: &str, subject: &str, body: &str) {
     info!("Checking options...");
 
     let smtp_server = srv.settings.clone().safe_str("smtp_server", "");
