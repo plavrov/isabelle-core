@@ -57,6 +57,10 @@ impl Collection {
         return false
     }
 
+    pub fn get_all(&self) -> &HashMap<u64, Item> {
+        return &self.items;
+    }
+
     pub fn get_range(&self, id_min: u64, id_max: u64, limit: u64) -> HashMap<u64, Item> {
         let mut res : HashMap<u64, Item> = HashMap::new();
         let mut eff_id_min = id_min;

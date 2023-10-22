@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::login_user::LoginUser;
 use crate::server::user_control::*;
 use crate::state::state::*;
 use actix_identity::Identity;
@@ -9,32 +10,24 @@ use serde_qs::Config;
 
 pub async fn login(
     _user: Option<Identity>,
-    _data: web::Data<State>,
-    request: HttpRequest,
+    data: web::Data<State>,
+    req: HttpRequest,
 ) -> impl Responder {
-    let srv = _data.server.lock().unwrap();
+    let srv = data.server.lock().unwrap();
+    let lu = serde_qs::from_str::<LoginUser>(&req.query_string()).unwrap();
+    let usr = get_user(&srv, lu.username.clone());
 
-    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
-    pub struct LoginUser {
-        pub username: String,
-        pub password: String,
-    }
-
-    let config = Config::new(10, false);
-    let c: LoginUser = config.deserialize_str(&request.query_string()).unwrap();
-
-    let itm = get_user(&srv, c.username.clone());
-    if itm == None {
+    if usr == None {
         info!("No user found, couldn't log in");
     } else {
-        let itm_real = itm.unwrap();
+        let itm_real = usr.unwrap();
 
         if itm_real.strs.contains_key("password") &&
-           itm_real.safe_str("password", "") == c.password {
-            Identity::login(&request.extensions(), c.username.clone()).unwrap();
-            info!("Logged in! {}", c.username);
+           itm_real.safe_str("password", "") == lu.password {
+            Identity::login(&req.extensions(), lu.username.clone()).unwrap();
+            info!("Logged in as {}", lu.username);
         } else {
-            error!("Invalid password");
+            error!("Invalid password for {}", lu.username);
         }
     }
 
@@ -89,12 +82,12 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         user.licensed_to = "end user".to_string();
     }
 
-    if _user.is_none() {
-        info!("No user");
+    if _user.is_none() || !srv.itm.contains_key("user") {
+        info!("No user or user database");
         return web::Json(user);
     }
 
-    for item in &srv.items {
+    for item in srv.itm["user"].get_all() {
         if item.1.strs.contains_key("login")
             && item.1.strs["login"] == _user.as_ref().unwrap().id().unwrap()
         {
