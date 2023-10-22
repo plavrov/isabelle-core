@@ -11,3 +11,10 @@ pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
     }
     return None;
 }
+
+pub fn check_role(user: Option<Item>, role: &str) -> bool {
+    if user == None {
+        return false;
+    }
+    return user.unwrap().safe_bool(&("role_is_".to_owned() + role), false);
+}
