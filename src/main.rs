@@ -4,7 +4,6 @@ mod state;
 
 use crate::notif::gcal::init_google;
 use crate::server::itm::*;
-use crate::server::item::*;
 use crate::server::login::*;
 use crate::server::schedule::*;
 use crate::server::setting::*;
@@ -107,15 +106,7 @@ async fn main() -> std::io::Result<()> {
             .route("/itm/edit", web::post().to(itm_edit))
             .route("/itm/del", web::post().to(itm_del))
             .route("/itm/list", web::get().to(itm_list))
-            .route("/item/edit", web::post().to(item_edit))
-            .route("/item/del", web::post().to(item_del))
-            .route("/item/done", web::post().to(item_done))
-            .route("/item/list", web::get().to(item_list))
-            .route("/schedule/edit", web::post().to(schedule_entry_edit))
-            .route("/schedule/del", web::post().to(schedule_entry_del))
-            .route("/schedule/list", web::get().to(schedule_entry_list))
-            .route("/schedule/done", web::post().to(schedule_entry_done))
-            .route("/schedule/paid", web::post().to(schedule_entry_paid))
+
             .route(
                 "/schedule/materialize",
                 web::post().to(schedule_materialize),
