@@ -25,8 +25,11 @@ pub async fn itm_edit(
     }
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
-    let itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
-
+    let mut itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
+    itm.normalize_negated();
+    for bo in &itm.bools {
+        info!("bool: {}", bo.0);
+    }
     if srv.itm.contains_key(&mc.collection) {
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm.clone(), mc.merge);
