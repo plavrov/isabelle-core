@@ -1,3 +1,5 @@
+use crate::write_data;
+use std::ops::DerefMut;
 use crate::state::collection::Collection;
 use std::collections::HashMap;
 use isabelle_dm::data_model::item::Item;
@@ -34,6 +36,7 @@ pub async fn itm_edit(
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm.clone(), mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
+        write_data(srv.deref_mut());
         return HttpResponse::Ok();
     } else {
         error!("Collection {} doesn't exist", mc.collection);
@@ -61,6 +64,7 @@ pub async fn itm_del(
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
         if coll.del(itm.id) {
             info!("Collection {} element {} removed", mc.collection, itm.id);
+            write_data(srv.deref_mut());
             return HttpResponse::Ok();
         }
     } else {
