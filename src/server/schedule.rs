@@ -1,24 +1,16 @@
 use chrono::DateTime;
 use chrono::NaiveDateTime;
-use isabelle_dm::util::accessor::unset_id;
-
 use std::ops::Deref;
-
-use isabelle_dm::data_model::id_param::IdParam;
 use isabelle_dm::data_model::item::Item;
-
-use crate::notif::email::*;
-use crate::notif::gcal::*;
 use crate::state::data_rw::*;
 use crate::state::state::*;
 use actix_identity::Identity;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use chrono::Utc;
-use log::{error, info};
+use log::{info};
 use now::DateTimeNow;
 use serde::{Deserialize, Serialize};
-use serde_qs;
-use serde_qs::Config;
+
 use std::ops::DerefMut;
 
 use crate::server::user_control::*;
@@ -29,7 +21,7 @@ pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
         "Training".to_string()
     } else {
         "Training with ".to_owned()
-            + &srv.items[&teacher_id].safe_str("firstname", "<unknown>")
+            + &srv.itm["user"].get(teacher_id).unwrap().safe_str("firstname", "<unknown>")
     }
 }
 
@@ -96,8 +88,8 @@ pub async fn schedule_materialize(
     let now = Utc::now();
     let week_start =
         (now.beginning_of_week().timestamp() as u64) + (60 * 60 * 24 * 7) * params.week;
-    let mut final_cnt = srv.schedule_entry_cnt;
-    for entry in &srv.schedule_entries {
+    let mut final_cnt = srv.itm["job"].count;
+    for entry in srv.itm["job"].get_all() {
         let day = entry.1.safe_str("day_of_the_week", "");
         let pid = entry.1.safe_id("parent_id", u64::MAX);
         if day != "" && day != "unset" && pid == u64::MAX {
@@ -113,7 +105,7 @@ pub async fn schedule_materialize(
                 .insert("day_of_the_week".to_string(), "unset".to_string());
 
             let mut skip = false;
-            for tmp__ in &srv.schedule_entries {
+            for tmp__ in srv.itm["job"].get_all() {
                 if tmp__.1.u64s["time"] == cp_entry.u64s["time"]
                     && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0
                 {
@@ -132,10 +124,8 @@ pub async fn schedule_materialize(
 
     for ent in vec {
         info!("Materialized entry with ID {}", ent.id);
-        srv.schedule_entries.insert(ent.id, ent);
+        srv.itm.get_mut("job").unwrap().set(ent.id, ent, false);
     }
-
-    srv.schedule_entry_cnt = final_cnt;
 
     write_data(srv.deref_mut());
 
