@@ -108,6 +108,14 @@ pub async fn itm_list(
         map = coll.get_range(lq.id_min, lq.id_max, lq.limit);
         info!("Collection {} requested range {} - {} limit {}", lq.collection,
               lq.id_min, lq.id_max, lq.limit);
+    } else if lq.id_list.len() > 0 {
+        for id in lq.id_list {
+            let res = coll.get(id);
+            if res != None {
+                map.insert(id, res.unwrap());
+            }
+        }
+        info!("Collection {} requested list of IDs", lq.collection);
     } else {
         error!("Collection {} unknown filter", lq.collection);
         return HttpResponse::BadRequest().into();
