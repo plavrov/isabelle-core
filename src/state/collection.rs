@@ -41,10 +41,13 @@ impl Collection {
                 *m = itm;
             }
         } else {
+            let mut added_itm = itm;
             if ret_id == u64::MAX {
+                self.count += 1;
                 ret_id = self.count;
+                added_itm.id = ret_id;
             }
-            self.items.insert(ret_id, itm);
+            self.items.insert(ret_id, added_itm);
         }
         ret_id
     }
@@ -122,6 +125,7 @@ impl Collection {
 
         self.name = name.to_string();
         self.count = parsed.unwrap();
+        info!("Collection {} has {} items", self.name, self.count);
     }
 
     pub fn write_fs(&self, path: &str) {
