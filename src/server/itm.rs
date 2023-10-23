@@ -121,8 +121,7 @@ pub async fn itm_list(
         }
         info!("Collection {} requested list of IDs", lq.collection);
     } else {
-        error!("Collection {} unknown filter", lq.collection);
-        return HttpResponse::BadRequest().into();
+        info!("Collection {} unknown filter", lq.collection);
     }
 
     HttpResponse::Ok().body(serde_json::to_string(&map).unwrap())
