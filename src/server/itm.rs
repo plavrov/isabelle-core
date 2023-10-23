@@ -20,7 +20,7 @@ pub async fn itm_edit(
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if check_role(usr, "admin") {
+    if !check_role(usr, "admin") {
         return HttpResponse::Forbidden();
     }
 
@@ -47,7 +47,7 @@ pub async fn itm_del(
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if check_role(usr, "admin") {
+    if !check_role(usr, "admin") {
         return HttpResponse::Forbidden();
     }
 
@@ -75,8 +75,8 @@ pub async fn itm_list(
     let srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if check_role(usr, "admin") {
-        return HttpResponse::Unauthorized().into();
+    if !check_role(usr, "admin") {
+        return HttpResponse::Forbidden().into();
     }
 
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
