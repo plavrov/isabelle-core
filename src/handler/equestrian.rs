@@ -153,17 +153,10 @@ pub fn equestrian_schedule_materialize(
 
     let params = web::Query::<WeekSchedule>::from_query(query).unwrap();
     let mut vec: Vec<Item> = Vec::new();
+    let usr = get_user(srv.deref(), user.id().unwrap());
 
-    let current_user = get_user(srv.deref(), user.id().unwrap());
-    if current_user == None
-        || !current_user
-            .as_ref()
-            .unwrap()
-            .bools
-            .contains_key("role_is_admin")
-    {
-        info!("Schedule entry paid: no user");
-        return HttpResponse::Unauthorized().into();
+    if !check_role(&srv, usr, "admin") {
+        return HttpResponse::Forbidden().into();
     }
 
     info!("WEEK: {}", params.week);
