@@ -13,6 +13,7 @@ pub struct Collection {
     pub name: String,
     pub count: u64,
     pub items: HashMap<u64, Item>,
+    pub settings: Item,
 }
 
 impl Collection {
@@ -21,6 +22,7 @@ impl Collection {
             name: "".to_string(),
             count: 0,
             items: HashMap::new(),
+            settings: Item::new(),
         }
     }
 
@@ -125,6 +127,15 @@ impl Collection {
 
         self.name = name.to_string();
         self.count = parsed.unwrap();
+
+        let setting_text = std::fs::read_to_string(path.to_owned() + "/settings.js");
+        match setting_text {
+            Ok(file) => {
+                self.settings = serde_json::from_str(&file).unwrap()
+            },
+            Err(_error) => {},
+        }
+
         info!("Collection {} has {} items", self.name, self.count);
     }
 
@@ -151,5 +162,9 @@ impl Collection {
         }
         std::fs::write(path.to_string() + "/cnt", self.count.to_string())
             .expect("Couldn't write item counter");
+
+        let setting_str = serde_json::to_string(&self.settings);
+        std::fs::write(path.to_string() + "/settings.js", setting_str.unwrap())
+            .expect("Couldn't write settings");
     }
 }

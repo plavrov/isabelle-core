@@ -45,7 +45,7 @@ pub fn read_data(path: &str) -> Data {
     return data;
 }
 
-pub fn write_settings_data(data: &mut Data, path: &str) {
+pub fn write_settings_data(data: &Data, path: &str) {
     let tmp_data_path = path.to_string() + "/settings.js";
     info!("settings path: {}", tmp_data_path);
 
@@ -59,7 +59,7 @@ pub fn write_settings_data(data: &mut Data, path: &str) {
     }
 }
 
-pub fn write_data(data: &mut Data) {
+pub fn write_data(data: &Data) {
     for coll in &data.itm {
         coll.1.write_fs(&(data.data_path.clone() + "/collection/" + &coll.1.name));
     }

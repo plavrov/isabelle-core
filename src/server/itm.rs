@@ -1,3 +1,4 @@
+use crate::handler::route::call_item_route;
 use crate::write_data;
 use std::ops::DerefMut;
 use crate::state::collection::Collection;
@@ -36,7 +37,9 @@ pub async fn itm_edit(
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm.clone(), mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
-        write_data(srv.deref_mut());
+        let route = coll.settings.safe_str("item_route", "").clone();
+        call_item_route(srv.deref_mut(), &route, "job", itm.id, false);
+        write_data(&srv);
         return HttpResponse::Ok();
     } else {
         error!("Collection {} doesn't exist", mc.collection);

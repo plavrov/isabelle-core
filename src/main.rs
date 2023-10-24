@@ -1,3 +1,4 @@
+mod handler;
 mod notif;
 mod server;
 mod state;

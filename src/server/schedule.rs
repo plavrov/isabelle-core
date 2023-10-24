@@ -15,41 +15,6 @@ use std::ops::DerefMut;
 
 use crate::server::user_control::*;
 
-pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
-    let teacher_id = sch.safe_id("teacher", 0);
-    if teacher_id == 0 {
-        "Training".to_string()
-    } else {
-        "Training with ".to_owned()
-            + &srv.itm["user"].get(teacher_id).unwrap().safe_str("firstname", "<unknown>")
-    }
-}
-
-pub fn entry2datetimestr(entry: &Item) -> String {
-    #![allow(warnings)]
-    let mut datetime = entry.u64s["time"];
-
-    let all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-    let day = entry.safe_str("day_of_the_week", "");
-    if day != "" && day != "unset" {
-        let now = Utc::now();
-        let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
-        datetime = (now.beginning_of_week().timestamp() as u64)
-            + 24 * 60 * 60 * tmp_day
-            + (entry.u64s["time"] % (24 * 60 * 60));
-    }
-
-    if datetime == 0 {
-        datetime = chrono::Local::now().timestamp() as u64;
-    }
-
-    let naive = NaiveDateTime::from_timestamp(datetime as i64, 0);
-    let utc_date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
-
-    let newdate = utc_date_time.format("%Y-%m-%d %H:%M");
-    newdate.to_string()
-}
-
 fn unset_week() -> u64 {
     return 0;
 }
