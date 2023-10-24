@@ -85,16 +85,14 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         if item.1.strs.contains_key("login")
             && item.1.strs["login"] == _user.as_ref().unwrap().id().unwrap()
         {
-            if item.1.bools.contains_key("is_human") {
-                user.username = _user.as_ref().unwrap().id().unwrap();
-                user.id = *item.0;
-                for bp in &item.1.bools {
-                    if bp.0.starts_with("role_is_") {
-                        user.role.push(bp.0[8..].to_string());
-                    }
+            user.username = _user.as_ref().unwrap().id().unwrap();
+            user.id = *item.0;
+            for bp in &item.1.bools {
+                if bp.0.starts_with("role_is_") {
+                    user.role.push(bp.0[8..].to_string());
                 }
-                break;
             }
+            break;
         }
     }
 
