@@ -6,7 +6,6 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use log::{info, error};
 use serde::{Deserialize, Serialize};
 use serde_qs;
-use serde_qs::Config;
 
 pub async fn login(
     _user: Option<Identity>,

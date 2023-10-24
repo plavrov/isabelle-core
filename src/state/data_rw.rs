@@ -25,6 +25,19 @@ pub fn read_settings_entries(mut data: &mut Data, path: &str) {
     data.settings = settings;
 }
 
+pub fn read_internals_entries(mut data: &mut Data, path: &str) {
+    let tmp_data_path = path.to_string() + "/internals.js";
+
+    let read_data = std::fs::read_to_string(tmp_data_path);
+    if let Err(_e) = read_data {
+        return;
+    }
+    let text = read_data.unwrap();
+    let settings: Item = serde_json::from_str(&text).unwrap();
+    data.internals = settings;
+}
+
+
 pub fn read_data(path: &str) -> Data {
     let mut data = Data::new();
 
@@ -42,6 +55,7 @@ pub fn read_data(path: &str) -> Data {
     }
 
     read_settings_entries(&mut data, (path.to_string() + "/").as_str());
+    read_internals_entries(&mut data, (path.to_string() + "/").as_str());
     return data;
 }
 

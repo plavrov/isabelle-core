@@ -1,5 +1,4 @@
 use isabelle_dm::data_model::item::Item;
-use std::collections::HashMap;
 use std::ops::Deref;
 
 use actix_identity::Identity;

@@ -3,10 +3,12 @@ mod notif;
 mod server;
 mod state;
 
+use crate::handler::route::url_route;
+use std::collections::HashMap;
 use crate::notif::gcal::init_google;
 use crate::server::itm::*;
 use crate::server::login::*;
-use crate::server::schedule::*;
+
 use crate::server::setting::*;
 use crate::state::data_rw::*;
 use crate::state::state::*;
@@ -79,6 +81,7 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
+    let mut new_routes : HashMap<String, String> = HashMap::new();
     let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
@@ -93,13 +96,20 @@ async fn main() -> std::io::Result<()> {
             info!("Initializing google!");
             let res = init_google(srv.deref_mut());
             info!("Result: {}", res);
+
+            let routes = (*srv.deref_mut()).internals.safe_strstr("extra_route", &HashMap::new());
+            for route in routes {
+                let parts: Vec<&str> = route.1.split(":").collect();
+                new_routes.insert(parts[0].to_string(), parts[1].to_string());
+                info!("Route: {} : {}", parts[0], parts[1]);
+            }
         }
     }
 
     let data = Data::new(state);
     info!("Starting server");
     HttpServer::new(move || {
-        App::new()
+        let mut app = App::new()
             .app_data(data.clone())
             .wrap(Cors::permissive())
             .wrap(IdentityMiddleware::default())
@@ -107,11 +117,6 @@ async fn main() -> std::io::Result<()> {
             .route("/itm/edit", web::post().to(itm_edit))
             .route("/itm/del", web::post().to(itm_del))
             .route("/itm/list", web::get().to(itm_list))
-
-            .route(
-                "/schedule/materialize",
-                web::post().to(schedule_materialize),
-            )
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
             .route("/is_logged_in", web::get().to(is_logged_in))
@@ -121,7 +126,15 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/setting/gcal_auth_end",
                 web::post().to(setting_gcal_auth_end),
-            )
+            );
+        for route in &new_routes {
+            if route.1 == "post" {
+                app = app.route(route.0, web::post().to(url_route))
+            } else if route.1 == "get" {
+                app = app.route(route.0, web::get().to(url_route))
+            }
+        }
+        app
     })
     .bind(("127.0.0.1", port))?
     .run()

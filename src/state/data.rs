@@ -8,6 +8,7 @@ pub struct Data {
     pub itm: HashMap<String, Collection>,
 
     pub settings: Item,
+    pub internals: Item,
 
     pub gc_path: String,
     pub py_path: String,
@@ -23,6 +24,7 @@ impl Data {
             itm: HashMap::new(),
 
             settings: Item::new(),
+            internals: Item::new(),
 
             gc_path: "".to_string(),
             py_path: "".to_string(),
