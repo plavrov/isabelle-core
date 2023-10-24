@@ -31,8 +31,18 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm.clone(), mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
-        let route = coll.settings.safe_str("item_route", "").clone();
-        call_item_route(srv.deref_mut(), &route, "job", itm.id, false);
+
+        /* call hooks */
+        {
+            let routes = srv.internals.safe_strstr("collection_hook", &HashMap::new());
+            for route in routes {
+                let parts: Vec<&str> = route.1.split(":").collect();
+                if parts[0] == mc.collection {
+                    call_item_route(srv.deref_mut(), &parts[1], &mc.collection, itm.id, false);
+                }
+            }
+        }
+
         write_data(&srv);
         return HttpResponse::Ok();
     } else {

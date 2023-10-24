@@ -64,15 +64,17 @@ pub fn equestrian_job_sync(
     del: bool,
 ) {
     if collection != "job" {
-        info!("Not job");
+        info!("Equestrian job sync: not job");
         return;
     }
 
     let j = srv.itm["job"].get(id);
     if j == None {
-        info!("No job");
+        info!("Equestrian job sync: no job");
         return;
     }
+
+    info!("Equestrian job sync: starting");
     let job = j.unwrap();
 
     /* emails */
