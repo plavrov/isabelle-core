@@ -4,7 +4,6 @@ pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
     for item in srv.itm["user"].get_all() {
         if item.1.strs.contains_key("login")
             && item.1.strs["login"] == login
-            && item.1.bools.contains_key("is_human")
         {
             return Some(item.1.clone());
         }
