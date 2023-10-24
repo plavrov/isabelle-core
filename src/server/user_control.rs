@@ -12,12 +12,12 @@ pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
     return None;
 }
 
-pub fn check_role(srv: &crate::state::data::Data, user: Option<Item>, role: &str) -> bool {
+pub fn check_role(srv: &crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
     let role_is = srv.internals.safe_str("user_role_prefix", "role_is_");
-    if user == None {
+    if user.is_none() {
         return false;
     }
-    return user
+    return user.as_ref()
         .unwrap()
         .safe_bool(&(role_is.to_owned() + role), false);
 }

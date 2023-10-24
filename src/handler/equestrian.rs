@@ -155,7 +155,7 @@ pub fn equestrian_schedule_materialize(
     let mut vec: Vec<Item> = Vec::new();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(&srv, usr, "admin") {
+    if !check_role(&srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
     }
 
@@ -214,11 +214,38 @@ pub fn equestrian_pay_find_broken_payments(
 ) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
 
-    if check_role(&srv, usr, "admin") {
+    if check_role(&srv, &usr, "admin") {
         return HttpResponse::Unauthorized().into();
     }
 
     info!("Query: {}", query);
 
     HttpResponse::Ok().into()
+}
+
+pub fn equestrian_itm_edit_auth_hook(
+    srv: &mut crate::state::data::Data,
+    user: Identity,
+    collection: &str,
+    id: u64,
+    del: bool) -> bool {
+    let usr = get_user(srv.deref(), user.id().unwrap());
+
+    if check_role(&srv, &usr, "admin") {
+        return true;
+    }
+
+    if collection == "query" &&
+       (check_role(&srv, &usr, "student") ||
+        check_role(&srv, &usr, "teacher") ||
+        check_role(&srv, &usr, "staff")) {
+        return true;
+
+    }
+
+    if collection == "user" {
+
+    }
+
+    return true;
 }
