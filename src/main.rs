@@ -4,10 +4,10 @@ mod server;
 mod state;
 
 use crate::handler::route::url_route;
-use std::collections::HashMap;
 use crate::notif::gcal::init_google;
 use crate::server::itm::*;
 use crate::server::login::*;
+use std::collections::HashMap;
 
 use crate::server::setting::*;
 use crate::state::data_rw::*;
@@ -81,7 +81,7 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    let mut new_routes : HashMap<String, String> = HashMap::new();
+    let mut new_routes: HashMap<String, String> = HashMap::new();
     let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
@@ -97,7 +97,9 @@ async fn main() -> std::io::Result<()> {
             let res = init_google(srv.deref_mut());
             info!("Result: {}", res);
 
-            let routes = (*srv.deref_mut()).internals.safe_strstr("extra_route", &HashMap::new());
+            let routes = (*srv.deref_mut())
+                .internals
+                .safe_strstr("extra_route", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 new_routes.insert(parts[0].to_string(), parts[1].to_string());

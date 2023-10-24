@@ -31,12 +31,7 @@ pub fn sync_with_google(
     let pickle = get_pickle(srv);
     let mut file = File::create(creds.clone()).unwrap();
 
-    write!(
-        file,
-        "{}",
-        srv.settings.strs["sync_google_creds"].clone()
-    )
-    .ok();
+    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -83,12 +78,7 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(
-        file,
-        "{}",
-        srv.settings.strs["sync_google_creds"].clone()
-    )
-    .ok();
+    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -130,12 +120,7 @@ pub fn auth_google(srv: &crate::state::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(
-        file,
-        "{}",
-        srv.settings.strs["sync_google_creds"].clone()
-    )
-    .ok();
+    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Authentication with Google...");
     /* Run google calendar sync */
@@ -196,12 +181,7 @@ pub fn auth_google_end(
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(
-        file,
-        "{}",
-        srv.settings.strs["sync_google_creds"].clone()
-    )
-    .ok();
+    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Finish Authentication with Google...");
     /* Run google calendar sync */

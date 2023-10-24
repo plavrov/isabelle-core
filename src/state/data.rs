@@ -1,6 +1,6 @@
+use crate::state::collection::*;
 use isabelle_dm::data_model::item::*;
 use std::collections::HashMap;
-use crate::state::collection::*;
 
 #[derive(Debug, Clone)]
 pub struct Data {

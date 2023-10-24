@@ -1,8 +1,8 @@
+use crate::state::data_rw::*;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
-use std::ops::Deref;
 use isabelle_dm::data_model::item::Item;
-use crate::state::data_rw::*;
+use std::ops::Deref;
 
 use actix_identity::Identity;
 use actix_web::{web, HttpResponse};
@@ -14,10 +14,10 @@ use std::ops::DerefMut;
 use crate::server::user_control::*;
 
 use crate::init_google;
-use crate::notif::gcal::sync_with_google;
-use now::DateTimeNow;
 use crate::notif::email::send_email;
+use crate::notif::gcal::sync_with_google;
 use log::info;
+use now::DateTimeNow;
 
 pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
     let teacher_id = sch.safe_id("teacher", 0);
@@ -25,7 +25,10 @@ pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
         "Training".to_string()
     } else {
         "Training with ".to_owned()
-            + &srv.itm["user"].get(teacher_id).unwrap().safe_str("firstname", "<unknown>")
+            + &srv.itm["user"]
+                .get(teacher_id)
+                .unwrap()
+                .safe_str("firstname", "<unknown>")
     }
 }
 
@@ -54,21 +57,25 @@ pub fn entry2datetimestr(entry: &Item) -> String {
     newdate.to_string()
 }
 
+pub fn equestrian_job_sync(
+    srv: &mut crate::state::data::Data,
+    collection: &str,
+    id: u64,
+    del: bool,
+) {
+    if collection != "job" {
+        info!("Not job");
+        return;
+    }
 
-pub fn equestrian_job_sync(srv: & mut crate::state::data::Data, collection: &str, id: u64, del: bool) {
-	if collection != "job" {
-		info!("Not job");
-		return;
-	}
+    let j = srv.itm["job"].get(id);
+    if j == None {
+        info!("No job");
+        return;
+    }
+    let job = j.unwrap();
 
-	let j = srv.itm["job"].get(id);
-	if j == None {
-		info!("No job");
-		return;
-	}
-	let job = j.unwrap();
-
-	/* emails */
+    /* emails */
     let entities: [&str; 2] = ["teacher", "student"];
     let email_entities: [&str; 2] = ["email", "parent_email"];
 
@@ -78,43 +85,62 @@ pub fn equestrian_job_sync(srv: & mut crate::state::data::Data, collection: &str
             let user_id = job.safe_id(ent, 0);
             let user = srv.itm["user"].get(user_id);
             if user != None {
-            	info!("Found user: {}", user.as_ref().unwrap().safe_str("firstname", ""));
+                info!(
+                    "Found user: {}",
+                    user.as_ref().unwrap().safe_str("firstname", "")
+                );
                 let target_email = user.as_ref().unwrap().safe_str(em, "");
-                if user.as_ref().unwrap().safe_bool("notify_training_email", false) &&
-                   target_email != "" {
-                   	info!("Target email found");
-                   	if del {
-                   		send_email(&srv,
-	                        &target_email,
-	                        "Schedule changed",
-	                        "The schedule entry has been removed. Please review your new schedule");
-                   	} else {
-	                    send_email(&srv,
-	                        &target_email,
-	                        "Schedule changed",
-	                        &format!("Please review changes for the following entry:\n{}{}",
-	                        srv.public_url.clone() + "/job/edit?id=",
-	                        &id.to_string()));
-	                }
-	            } else {
-	            	info!("Target email not found");
-	            }
+                if user
+                    .as_ref()
+                    .unwrap()
+                    .safe_bool("notify_training_email", false)
+                    && target_email != ""
+                {
+                    info!("Target email found");
+                    if del {
+                        send_email(
+                            &srv,
+                            &target_email,
+                            "Schedule changed",
+                            "The schedule entry has been removed. Please review your new schedule",
+                        );
+                    } else {
+                        send_email(
+                            &srv,
+                            &target_email,
+                            "Schedule changed",
+                            &format!(
+                                "Please review changes for the following entry:\n{}{}",
+                                srv.public_url.clone() + "/job/edit?id=",
+                                &id.to_string()
+                            ),
+                        );
+                    }
+                } else {
+                    info!("Target email not found");
+                }
             }
         }
     }
 
     init_google(&srv);
-    sync_with_google(&srv,
-                     if del { false } else { true },
-                     eventname(&srv, &job),
-                     entry2datetimestr(&job));
+    sync_with_google(
+        &srv,
+        if del { false } else { true },
+        eventname(&srv, &job),
+        entry2datetimestr(&job),
+    );
 }
 
 fn unset_week() -> u64 {
     return 0;
 }
 
-pub fn equestrian_schedule_materialize(mut srv: & mut crate::state::data::Data, user: Identity, query: &str) -> HttpResponse {
+pub fn equestrian_schedule_materialize(
+    mut srv: &mut crate::state::data::Data,
+    user: Identity,
+    query: &str,
+) -> HttpResponse {
     info!("Query: {}", query);
 
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
@@ -186,8 +212,11 @@ pub fn equestrian_schedule_materialize(mut srv: & mut crate::state::data::Data, 
     HttpResponse::Ok().into()
 }
 
-pub fn equestrian_pay_find_broken_payments(srv: & mut crate::state::data::Data,
-    user: Identity, query: &str) -> HttpResponse {
+pub fn equestrian_pay_find_broken_payments(
+    srv: &mut crate::state::data::Data,
+    user: Identity,
+    query: &str,
+) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
 
     if check_role(usr, "admin") {
@@ -198,4 +227,3 @@ pub fn equestrian_pay_find_broken_payments(srv: & mut crate::state::data::Data,
 
     HttpResponse::Ok().into()
 }
-

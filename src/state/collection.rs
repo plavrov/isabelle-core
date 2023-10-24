@@ -2,9 +2,9 @@ extern crate serde_json;
 
 use log::info;
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::collections::HashMap;
 
 use isabelle_dm::data_model::item::*;
 
@@ -59,7 +59,7 @@ impl Collection {
             self.items.remove(&id);
             return true;
         }
-        return false
+        return false;
     }
 
     pub fn get_all(&self) -> &HashMap<u64, Item> {
@@ -67,7 +67,7 @@ impl Collection {
     }
 
     pub fn get_range(&self, id_min: u64, id_max: u64, limit: u64) -> HashMap<u64, Item> {
-        let mut res : HashMap<u64, Item> = HashMap::new();
+        let mut res: HashMap<u64, Item> = HashMap::new();
         let mut eff_id_min = id_min;
         let eff_id_max = id_max;
         let mut count = 0;
@@ -130,10 +130,8 @@ impl Collection {
 
         let setting_text = std::fs::read_to_string(path.to_owned() + "/settings.js");
         match setting_text {
-            Ok(file) => {
-                self.settings = serde_json::from_str(&file).unwrap()
-            },
-            Err(_error) => {},
+            Ok(file) => self.settings = serde_json::from_str(&file).unwrap(),
+            Err(_error) => {}
         }
 
         info!("Collection {} has {} items", self.name, self.count);

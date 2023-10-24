@@ -1,25 +1,21 @@
 use crate::handler::route::call_item_route;
-use crate::write_data;
-use std::ops::DerefMut;
 use crate::state::collection::Collection;
-use std::collections::HashMap;
-use isabelle_dm::data_model::item::Item;
-use isabelle_dm::data_model::merge_coll::MergeColl;
-use isabelle_dm::data_model::list_query::ListQuery;
-use std::ops::Deref;
-use serde_qs;
+use crate::state::state::*;
+use crate::write_data;
 use actix_identity::Identity;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use crate::state::state::*;
+use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::list_query::ListQuery;
+use isabelle_dm::data_model::merge_coll::MergeColl;
 use log::{error, info};
+use serde_qs;
+use std::collections::HashMap;
+use std::ops::Deref;
+use std::ops::DerefMut;
 
 use crate::server::user_control::*;
 
-pub async fn itm_edit(
-    user: Identity,
-    data: web::Data<State>,
-    req: HttpRequest,
-) -> impl Responder {
+pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
@@ -46,11 +42,7 @@ pub async fn itm_edit(
     return HttpResponse::BadRequest();
 }
 
-pub async fn itm_del(
-    user: Identity,
-    data: web::Data<State>,
-    req: HttpRequest,
-) -> impl Responder {
+pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
@@ -75,11 +67,7 @@ pub async fn itm_del(
     return HttpResponse::BadRequest();
 }
 
-pub async fn itm_list(
-    user: Identity,
-    data: web::Data<State>,
-    req: HttpRequest,
-) -> HttpResponse {
+pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) -> HttpResponse {
     let srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
@@ -94,25 +82,32 @@ pub async fn itm_list(
         return HttpResponse::BadRequest().into();
     }
 
-    let coll : &Collection = &srv.itm[&lq.collection];
-    let mut map : HashMap<u64, Item> = HashMap::new();
+    let coll: &Collection = &srv.itm[&lq.collection];
+    let mut map: HashMap<u64, Item> = HashMap::new();
 
     if lq.id != u64::MAX {
         let res = coll.get(lq.id);
         if res == None {
-            error!("Collection {} requested element {} doesn't exist", lq.collection, lq.id);
+            error!(
+                "Collection {} requested element {} doesn't exist",
+                lq.collection, lq.id
+            );
             return HttpResponse::BadRequest().into();
         }
 
         if lq.limit == u64::MAX || lq.limit >= 1 {
             map.insert(lq.id, res.unwrap());
-            info!("Collection {} requested element {} limit {}", lq.collection,
-                  lq.id, lq.limit);
+            info!(
+                "Collection {} requested element {} limit {}",
+                lq.collection, lq.id, lq.limit
+            );
         }
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
         map = coll.get_range(lq.id_min, lq.id_max, lq.limit);
-        info!("Collection {} requested range {} - {} limit {}", lq.collection,
-              lq.id_min, lq.id_max, lq.limit);
+        info!(
+            "Collection {} requested range {} - {} limit {}",
+            lq.collection, lq.id_min, lq.id_max, lq.limit
+        );
     } else if lq.id_list.len() > 0 {
         for id in lq.id_list {
             let res = coll.get(id);

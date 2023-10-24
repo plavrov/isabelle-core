@@ -1,11 +1,11 @@
 use isabelle_dm::data_model::item::Item;
 
 pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
-
     for item in srv.itm["user"].get_all() {
-        if item.1.strs.contains_key("login") &&
-           item.1.strs["login"] == login &&
-           item.1.bools.contains_key("is_human") {
+        if item.1.strs.contains_key("login")
+            && item.1.strs["login"] == login
+            && item.1.bools.contains_key("is_human")
+        {
             return Some(item.1.clone());
         }
     }
@@ -17,5 +17,7 @@ pub fn check_role(user: Option<Item>, role: &str) -> bool {
     if user == None {
         return false;
     }
-    return user.unwrap().safe_bool(&("role_is_".to_owned() + role), false);
+    return user
+        .unwrap()
+        .safe_bool(&("role_is_".to_owned() + role), false);
 }

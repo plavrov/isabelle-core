@@ -1,9 +1,9 @@
 extern crate serde_json;
 use crate::state::collection::*;
-use std::fs;
 use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
 use log::info;
+use std::fs;
 
 pub fn get_credentials_json(srv: &crate::state::data::Data) -> String {
     return srv.data_path.clone() + "/credentials.json";
@@ -37,18 +37,12 @@ pub fn read_internals_entries(mut data: &mut Data, path: &str) {
     data.internals = settings;
 }
 
-
 pub fn read_data(path: &str) -> Data {
     let mut data = Data::new();
 
     let collections = fs::read_dir(path.to_string() + "/collection").unwrap();
     for coll in collections {
-        let idx = coll
-            .as_ref()
-            .unwrap()
-            .file_name()
-            .into_string()
-            .unwrap();
+        let idx = coll.as_ref().unwrap().file_name().into_string().unwrap();
         let mut new_col = Collection::new();
         new_col.read_fs(&(path.to_string() + "/collection/" + &idx), &idx);
         data.itm.insert(idx, new_col);
@@ -75,7 +69,8 @@ pub fn write_settings_data(data: &Data, path: &str) {
 
 pub fn write_data(data: &Data) {
     for coll in &data.itm {
-        coll.1.write_fs(&(data.data_path.clone() + "/collection/" + &coll.1.name));
+        coll.1
+            .write_fs(&(data.data_path.clone() + "/collection/" + &coll.1.name));
     }
     write_settings_data(data, &data.data_path.clone());
 }

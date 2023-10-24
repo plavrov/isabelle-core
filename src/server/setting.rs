@@ -43,10 +43,7 @@ pub async fn setting_edit(
     let config = Config::new(10, false);
     let c: Item = config.deserialize_str(&_req.query_string()).unwrap();
     _srv.settings = c.clone();
-    info!(
-        "Setting edit: {}",
-        serde_json::to_string(&c.strs).unwrap()
-    );
+    info!("Setting edit: {}", serde_json::to_string(&c.strs).unwrap());
     write_data(_srv.deref_mut());
     HttpResponse::Ok()
 }

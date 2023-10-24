@@ -1,9 +1,9 @@
-use isabelle_dm::data_model::login_user::LoginUser;
 use crate::server::user_control::*;
 use crate::state::state::*;
 use actix_identity::Identity;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
-use log::{info, error};
+use isabelle_dm::data_model::login_user::LoginUser;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use serde_qs;
 
@@ -21,8 +21,9 @@ pub async fn login(
     } else {
         let itm_real = usr.unwrap();
 
-        if itm_real.strs.contains_key("password") &&
-           itm_real.safe_str("password", "") == lu.password {
+        if itm_real.strs.contains_key("password")
+            && itm_real.safe_str("password", "") == lu.password
+        {
             Identity::login(&req.extensions(), lu.username.clone()).unwrap();
             info!("Logged in as {}", lu.username);
         } else {
