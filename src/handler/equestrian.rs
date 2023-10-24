@@ -228,7 +228,7 @@ pub fn equestrian_itm_edit_auth_hook(
     user: Identity,
     collection: &str,
     id: u64,
-    del: bool) -> bool {
+    _del: bool) -> bool {
     let usr = get_user(srv.deref(), user.id().unwrap());
 
     if check_role(&srv, &usr, "admin") {
@@ -239,13 +239,27 @@ pub fn equestrian_itm_edit_auth_hook(
        (check_role(&srv, &usr, "student") ||
         check_role(&srv, &usr, "teacher") ||
         check_role(&srv, &usr, "staff")) {
+        let itm = srv.itm["query"].get(id);
+        if !itm.is_none() &&
+           itm.unwrap().safe_id("requester", u64::MAX) == usr.unwrap().id {
+            return true;
+        }
+        return false;
+    } else if collection == "job" &&
+              (check_role(&srv, &usr, "teacher") ||
+               check_role(&srv, &usr, "staff")) {
         return true;
-
+    } else if collection == "mentee" &&
+              (check_role(&srv, &usr, "teacher") ||
+               check_role(&srv, &usr, "staff")) {
+        return true;
+    } else if collection == "user" {
+        let itm = srv.itm["user"].get(id);
+        if !itm.is_none() && itm.unwrap().id == usr.unwrap().id {
+            return true;
+        }
+        return false;
     }
 
-    if collection == "user" {
-
-    }
-
-    return true;
+    return false;
 }
