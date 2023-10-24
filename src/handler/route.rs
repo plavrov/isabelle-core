@@ -29,7 +29,7 @@ pub fn call_url_route(
         "equestrian_schedule_materialize" => {
             return equestrian_schedule_materialize(srv, user, query);
         }
-        "pay_find_broken_payments" => {
+        "equestrian_pay_find_broken_payments" => {
             return equestrian_pay_find_broken_payments(srv, user, query);
         }
         &_ => {
