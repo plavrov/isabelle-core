@@ -19,7 +19,7 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(usr, "admin") {
+    if !check_role(&srv, usr, "admin") {
         return HttpResponse::Forbidden();
     }
 
@@ -56,7 +56,7 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(usr, "admin") {
+    if !check_role(&srv, usr, "admin") {
         return HttpResponse::Forbidden();
     }
 
@@ -81,7 +81,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     let srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(usr, "admin") {
+    if !check_role(&srv, usr, "admin") {
         return HttpResponse::Forbidden().into();
     }
 

@@ -221,7 +221,7 @@ pub fn equestrian_pay_find_broken_payments(
 ) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
 
-    if check_role(usr, "admin") {
+    if check_role(&srv, usr, "admin") {
         return HttpResponse::Unauthorized().into();
     }
 
