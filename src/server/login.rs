@@ -67,20 +67,14 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         licensed_to: "".to_string(),
     };
 
-    user.site_name = srv.settings.clone().safe_str("site_name", "Isabelle");
-    if user.site_name == "" {
-        user.site_name = "Isabelle".to_string();
-    }
+    user.site_name = srv.settings.clone().safe_str("site_name",
+        &srv.internals.safe_str("default_site_name", "Isabelle"));
 
-    user.site_logo = srv.settings.clone().safe_str("site_logo", "");
-    if user.site_logo == "" {
-        user.site_logo = "logo.png".to_string();
-    }
+    user.site_logo = srv.settings.clone().safe_str("site_logo",
+        &srv.internals.safe_str("default_site_logo", "logo.png"));
 
-    user.licensed_to = srv.settings.clone().safe_str("licensed_to", "");
-    if user.licensed_to == "" {
-        user.licensed_to = "end user".to_string();
-    }
+    user.licensed_to = srv.settings.clone().safe_str("licensed_to",
+        &srv.internals.safe_str("default_licensed_to", "end user"));
 
     if _user.is_none() || !srv.itm.contains_key("user") {
         info!("No user or user database");
