@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::item::Item;
 use crate::handler::equestrian::*;
 use crate::State;
 use actix_identity::Identity;
@@ -16,6 +17,19 @@ pub fn call_item_route(
     match hndl {
         "equestrian_job_sync" => equestrian_job_sync(srv, collection, id, del),
         &_ => {}
+    }
+}
+
+pub fn call_itm_auth_hook(
+    srv: &mut crate::state::data::Data,
+    hndl: &str,
+    user: &Option<Item>,
+    collection: &str,
+    id: u64,
+    del: bool) -> bool {
+    match hndl {
+        "equestrian_itm_auth_hook" => { return equestrian_itm_auth_hook(srv, user, collection, id, del) },
+        &_ => { return false }
     }
 }
 

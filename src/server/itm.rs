@@ -1,4 +1,4 @@
-use crate::handler::route::call_item_route;
+use crate::handler::route::*;
 use crate::state::collection::Collection;
 use crate::state::state::*;
 use crate::write_data;
@@ -19,12 +19,19 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(&srv, &usr, "admin") {
-        return HttpResponse::Forbidden();
-    }
-
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let mut itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
+
+    /* call auth hooks */
+    {
+        let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
+        for route in routes {
+            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, false) {
+                return HttpResponse::Forbidden().into();
+            }
+        }
+    }
+
     itm.normalize_negated();
 
     if srv.itm.contains_key(&mc.collection) {
@@ -81,9 +88,11 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     let srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
+    /*
     if !check_role(&srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
     }
+    */
 
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
 

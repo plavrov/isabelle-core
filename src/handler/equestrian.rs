@@ -223,39 +223,39 @@ pub fn equestrian_pay_find_broken_payments(
     HttpResponse::Ok().into()
 }
 
-pub fn equestrian_itm_edit_auth_hook(
+pub fn equestrian_itm_auth_hook(
     srv: &mut crate::state::data::Data,
-    user: Identity,
+    user: &Option<Item>,
     collection: &str,
     id: u64,
     _del: bool) -> bool {
-    let usr = get_user(srv.deref(), user.id().unwrap());
-
-    if check_role(&srv, &usr, "admin") {
+    if check_role(&srv, &user, "admin") {
         return true;
     }
 
+    info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
+
     if collection == "query" &&
-       (check_role(&srv, &usr, "student") ||
-        check_role(&srv, &usr, "teacher") ||
-        check_role(&srv, &usr, "staff")) {
+       (check_role(&srv, &user, "student") ||
+        check_role(&srv, &user, "teacher") ||
+        check_role(&srv, &user, "staff")) {
         let itm = srv.itm["query"].get(id);
         if !itm.is_none() &&
-           itm.unwrap().safe_id("requester", u64::MAX) == usr.unwrap().id {
+           itm.unwrap().safe_id("requester", u64::MAX) == user.as_ref().unwrap().id {
             return true;
         }
         return false;
     } else if collection == "job" &&
-              (check_role(&srv, &usr, "teacher") ||
-               check_role(&srv, &usr, "staff")) {
+              (check_role(&srv, &user, "teacher") ||
+               check_role(&srv, &user, "staff")) {
         return true;
     } else if collection == "mentee" &&
-              (check_role(&srv, &usr, "teacher") ||
-               check_role(&srv, &usr, "staff")) {
+              (check_role(&srv, &user, "teacher") ||
+               check_role(&srv, &user, "staff")) {
         return true;
     } else if collection == "user" {
         let itm = srv.itm["user"].get(id);
-        if !itm.is_none() && itm.unwrap().id == usr.unwrap().id {
+        if !itm.is_none() && itm.unwrap().id == user.as_ref().unwrap().id {
             return true;
         }
         return false;
