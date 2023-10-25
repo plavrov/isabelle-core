@@ -270,6 +270,7 @@ pub fn equestrian_itm_filter_hook(
     user: &Option<Item>,
     collection: &str,
     map: &mut HashMap<u64, Item>) {
+
     if check_role(&srv, &user, "admin") {
         return;
     }
@@ -278,7 +279,9 @@ pub fn equestrian_itm_filter_hook(
 
     if collection == "user" {
         for el in map {
-            el.1.strs.remove("password");
+            if *el.0 != user.as_ref().unwrap().id {
+                el.1.strs.remove("password");
+            }
         }
     }
 }

@@ -94,12 +94,6 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     let srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    /*
-    if !check_role(&srv, &usr, "admin") {
-        return HttpResponse::Forbidden().into();
-    }
-    */
-
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
 
     if !srv.itm.contains_key(&lq.collection) {
@@ -147,7 +141,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
 
     /* itm filter hooks */
     {
-        let routes = srv.internals.safe_strstr("itm_filter_hook", &HashMap::new());
+        let routes = srv.internals.safe_strstr("itm_list_filter_hook", &HashMap::new());
         for route in routes {
             call_itm_list_filter_hook(&srv, &route.1, &usr, &lq.collection, &mut map);
         }
