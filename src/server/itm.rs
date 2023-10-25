@@ -145,5 +145,13 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         info!("Collection {} unknown filter", lq.collection);
     }
 
+    /* itm filter hooks */
+    {
+        let routes = srv.internals.safe_strstr("itm_filter_hook", &HashMap::new());
+        for route in routes {
+            call_itm_list_filter_hook(&srv, &route.1, &usr, &lq.collection, &mut map);
+        }
+    }
+
     HttpResponse::Ok().body(serde_json::to_string(&map).unwrap())
 }

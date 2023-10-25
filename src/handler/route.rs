@@ -33,6 +33,18 @@ pub fn call_itm_auth_hook(
     }
 }
 
+pub fn call_itm_list_filter_hook(
+    srv: &crate::state::data::Data,
+    hndl: &str,
+    user: &Option<Item>,
+    collection: &str,
+    map: &mut HashMap<u64, Item>) {
+    match hndl {
+        "equestrian_itm_filter_hook" => { return equestrian_itm_filter_hook(srv, user, collection, map) },
+        &_ => { }
+    }
+}
+
 pub fn call_url_route(
     srv: &mut crate::state::data::Data,
     user: Identity,

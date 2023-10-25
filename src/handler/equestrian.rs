@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::state::data_rw::*;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
@@ -262,4 +263,22 @@ pub fn equestrian_itm_auth_hook(
     }
 
     return false;
+}
+
+pub fn equestrian_itm_filter_hook(
+    srv: &crate::state::data::Data,
+    user: &Option<Item>,
+    collection: &str,
+    map: &mut HashMap<u64, Item>) {
+    if check_role(&srv, &user, "admin") {
+        return;
+    }
+
+    info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
+
+    if collection == "user" {
+        for el in map {
+            el.1.strs.remove("password");
+        }
+    }
 }
