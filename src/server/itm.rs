@@ -63,12 +63,18 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(&srv, &usr, "admin") {
-        return HttpResponse::Forbidden();
-    }
-
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
+
+    /* call auth hooks */
+    {
+        let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
+        for route in routes {
+            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, true) {
+                return HttpResponse::Forbidden().into();
+            }
+        }
+    }
 
     if srv.itm.contains_key(&mc.collection) {
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
