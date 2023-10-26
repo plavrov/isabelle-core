@@ -281,6 +281,7 @@ pub fn equestrian_itm_filter_hook(
         for el in map {
             if *el.0 != user.as_ref().unwrap().id {
                 el.1.strs.remove("password");
+                el.1.strs.insert("password".to_string(), "<hidden>".to_string());
             }
         }
     }
