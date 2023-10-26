@@ -229,6 +229,7 @@ pub fn equestrian_itm_auth_hook(
     user: &Option<Item>,
     collection: &str,
     id: u64,
+    new_item: Option<Item>,
     _del: bool) -> bool {
     if check_role(&srv, &user, "admin") {
         return true;
@@ -240,12 +241,20 @@ pub fn equestrian_itm_auth_hook(
        (check_role(&srv, &user, "student") ||
         check_role(&srv, &user, "teacher") ||
         check_role(&srv, &user, "staff")) {
+        let mut accept = true;
         let itm = srv.itm["query"].get(id);
+
         if !itm.is_none() &&
-           itm.unwrap().safe_id("requester", u64::MAX) == user.as_ref().unwrap().id {
-            return true;
+           itm.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id {
+            accept = false;
         }
-        return false;
+
+        if !new_item.is_none() &&
+           new_item.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id {
+            accept = false;
+        }
+
+        return accept;
     } else if collection == "job" &&
               (check_role(&srv, &user, "teacher") ||
                check_role(&srv, &user, "staff")) {

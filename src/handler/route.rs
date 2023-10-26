@@ -26,9 +26,10 @@ pub fn call_itm_auth_hook(
     user: &Option<Item>,
     collection: &str,
     id: u64,
+    new_item: Option<Item>,
     del: bool) -> bool {
     match hndl {
-        "equestrian_itm_auth_hook" => { return equestrian_itm_auth_hook(srv, user, collection, id, del) },
+        "equestrian_itm_auth_hook" => { return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del) },
         &_ => { return false }
     }
 }

@@ -26,7 +26,7 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
     {
         let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
-            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, false) {
+            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, Some(itm.clone()), false) {
                 return HttpResponse::Forbidden().into();
             }
         }
@@ -70,7 +70,7 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
     {
         let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
-            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, true) {
+            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true) {
                 return HttpResponse::Forbidden().into();
             }
         }
