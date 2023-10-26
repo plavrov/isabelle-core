@@ -292,6 +292,9 @@ pub fn equestrian_itm_filter_hook(
                 itm.id = *el.0;
                 itm.strs.insert("firstname".to_string(), el.1.safe_str("firstname", ""));
                 itm.strs.insert("surname".to_string(), el.1.safe_str("surname", ""));
+                itm.bools.insert("role_is_teacher".to_string(), el.1.safe_bool("role_is_teacher", false));
+                itm.bools.insert("role_is_student".to_string(), el.1.safe_bool("role_is_student", false));
+                itm.bools.insert("role_is_staff".to_string(), el.1.safe_bool("role_is_staff", false));
                 short_map.insert(*el.0, itm);
             } else if collection == "payment" {
                 let mut itm = Item::new();
@@ -317,8 +320,23 @@ pub fn equestrian_itm_filter_hook(
                     itm.id = *el.0;
                     itm.strs.insert("firstname".to_string(), el.1.safe_str("firstname", ""));
                     itm.strs.insert("surname".to_string(), el.1.safe_str("surname", ""));
+                    itm.bools.insert("role_is_teacher".to_string(), el.1.safe_bool("role_is_teacher", false));
+                    itm.bools.insert("role_is_student".to_string(), el.1.safe_bool("role_is_student", false));
+                    itm.bools.insert("role_is_staff".to_string(), el.1.safe_bool("role_is_staff", false));
                     short_map.insert(*el.0, itm);
                 } else {
+                    short_map.insert(*el.0, el.1.clone());
+                }
+            }
+        } else if collection == "job" {
+            for el in &mut *map {
+                if el.1.safe_id("student", u64::MAX) == user.as_ref().unwrap().id {
+                    short_map.insert(*el.0, el.1.clone());
+                }
+            }
+        } else if collection == "query" {
+            for el in &mut *map {
+                if el.1.safe_id("requester", u64::MAX) == user.as_ref().unwrap().id {
                     short_map.insert(*el.0, el.1.clone());
                 }
             }
