@@ -287,6 +287,15 @@ pub fn equestrian_itm_filter_hook(
                 itm.strs.insert("firstname".to_string(), el.1.safe_str("firstname", ""));
                 itm.strs.insert("surname".to_string(), el.1.safe_str("surname", ""));
                 short_map.insert(*el.0, itm);
+            } else if collection == "payment" {
+                let mut itm = Item::new();
+                itm.id = *el.0;
+                itm.ids.insert("requester".to_string(), el.1.safe_id("requester", u64::MAX));
+                itm.strs.insert("payment_type".to_string(), el.1.safe_str("payment_type", ""));
+                itm.strs.insert("target_month".to_string(), el.1.safe_str("target_month", ""));
+                itm.strs.insert("target_year".to_string(), el.1.safe_str("target_year", ""));
+                itm.u64s.insert("no_lessons".to_string(), el.1.safe_u64("no_lessons", 0));
+                short_map.insert(*el.0, itm);
             } else {
                 let mut itm = Item::new();
                 itm.id = *el.0;
