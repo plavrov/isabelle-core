@@ -269,6 +269,7 @@ pub fn equestrian_itm_filter_hook(
     srv: &crate::state::data::Data,
     user: &Option<Item>,
     collection: &str,
+    context: &str,
     map: &mut HashMap<u64, Item>) {
 
     if check_role(&srv, &user, "admin") {
@@ -277,11 +278,30 @@ pub fn equestrian_itm_filter_hook(
 
     info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
 
-    if collection == "user" {
-        for el in map {
-            if *el.0 != user.as_ref().unwrap().id {
-                el.1.strs.remove("password");
-                el.1.strs.insert("password".to_string(), "<hidden>".to_string());
+    if context == "list" {
+        let mut short_map: HashMap<u64, Item> = HashMap::new();
+        for el in &mut *map {
+            if collection == "user" {
+                let mut itm = Item::new();
+                itm.id = *el.0;
+                itm.strs.insert("firstname".to_string(), el.1.safe_str("firstname", ""));
+                itm.strs.insert("surname".to_string(), el.1.safe_str("surname", ""));
+                short_map.insert(*el.0, itm);
+            } else {
+                let mut itm = Item::new();
+                itm.id = *el.0;
+                itm.strs.insert("name".to_string(), el.1.safe_str("name", ""));
+                short_map.insert(*el.0, itm);
+            }
+        }
+        *map = short_map;
+    } else {
+        if collection == "user" {
+            for el in &mut *map {
+                if *el.0 != user.as_ref().unwrap().id {
+                    el.1.strs.remove("password");
+                    el.1.strs.insert("password".to_string(), "<hidden>".to_string());
+                }
             }
         }
     }

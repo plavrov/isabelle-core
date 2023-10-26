@@ -38,9 +38,10 @@ pub fn call_itm_list_filter_hook(
     hndl: &str,
     user: &Option<Item>,
     collection: &str,
+    context: &str,
     map: &mut HashMap<u64, Item>) {
     match hndl {
-        "equestrian_itm_filter_hook" => { return equestrian_itm_filter_hook(srv, user, collection, map) },
+        "equestrian_itm_filter_hook" => { return equestrian_itm_filter_hook(srv, user, collection, context, map) },
         &_ => { }
     }
 }

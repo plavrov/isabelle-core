@@ -143,7 +143,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     {
         let routes = srv.internals.safe_strstr("itm_list_filter_hook", &HashMap::new());
         for route in routes {
-            call_itm_list_filter_hook(&srv, &route.1, &usr, &lq.collection, &mut map);
+            call_itm_list_filter_hook(&srv, &route.1, &usr, &lq.collection, &lq.context, &mut map);
         }
     }
 
