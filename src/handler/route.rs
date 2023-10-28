@@ -60,6 +60,9 @@ pub fn call_url_route(
         "equestrian_pay_find_broken_payments" => {
             return equestrian_pay_find_broken_payments(srv, user, query);
         }
+        "equestrian_pay_deactivate_expired_payments" => {
+            return equestrian_pay_deactivate_expired_payments(srv, user, query);
+        }
         &_ => {
             return HttpResponse::NotFound().into();
         }

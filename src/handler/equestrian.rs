@@ -215,7 +215,23 @@ pub fn equestrian_pay_find_broken_payments(
 ) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
 
-    if check_role(&srv, &usr, "admin") {
+    if !check_role(&srv, &usr, "admin") {
+        return HttpResponse::Unauthorized().into();
+    }
+
+    info!("Query: {}", query);
+
+    HttpResponse::Ok().into()
+}
+
+pub fn equestrian_pay_deactivate_expired_payments(
+    srv: &mut crate::state::data::Data,
+    user: Identity,
+    query: &str,
+) -> HttpResponse {
+    let usr = get_user(&srv, user.id().unwrap());
+
+    if !check_role(&srv, &usr, "admin") {
         return HttpResponse::Unauthorized().into();
     }
 
