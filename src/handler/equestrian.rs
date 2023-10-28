@@ -20,6 +20,15 @@ use crate::notif::gcal::sync_with_google;
 use log::info;
 use now::DateTimeNow;
 
+pub fn date2ts(date: String, time: String) -> u64 {
+    #![allow(warnings)]
+    let ndt = NaiveDateTime::parse_from_str(
+        &(date.to_string() + " " + &time.to_string()),
+        "%Y-%m-%d %H:%M",
+    );
+    return ndt.unwrap().timestamp() as u64;
+}
+
 pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
     let teacher_id = sch.safe_id("teacher", 0);
     if teacher_id == 0 {
@@ -227,15 +236,52 @@ pub fn equestrian_pay_find_broken_payments(
 pub fn equestrian_pay_deactivate_expired_payments(
     srv: &mut crate::state::data::Data,
     user: Identity,
-    query: &str,
+    _query: &str,
 ) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
+    let now_time = chrono::Local::now().timestamp() as u64;
 
     if !check_role(&srv, &usr, "admin") {
         return HttpResponse::Unauthorized().into();
     }
 
-    info!("Query: {}", query);
+    info!("Deactivate expired payments");
+
+    let mut updated_payments : Vec<Item> = Vec::new();
+    for pay in srv.itm["payment"].get_all() {
+        if pay.1.safe_str("payment_type", "") == "monthly" {
+            let time: u64;
+            let months = [ "jan", "feb", "mar",
+                "apr", "may", "jun",
+                "jul", "aug", "sep",
+                "oct", "nov", "dec" ];
+            let mon_str = pay.1.safe_str("target_month", "jan");
+            let year_str = pay.1.safe_str("target_year", "0");
+            let mut mon = months.iter().position(|&x| x == mon_str).unwrap() + 1 + 1;
+            let mut year = year_str.parse::<u64>().unwrap();
+            if mon == 13 {
+                mon = 1;
+                year += 1;
+            }
+
+            time = date2ts(year.to_string() + "-" + &mon.to_string() + "-01",
+                           "00:00".to_string());
+            info!("Payment ID {}: time {} {} / {} {} = {} vs now {}",
+                  pay.0,
+                  mon_str, year_str,
+                  mon.to_string(), year.to_string(), time, now_time);
+            if time < now_time {
+                info!("Expire payment with ID {}", pay.0);
+                let mut new_pay = pay.1.clone();
+                new_pay.set_bool("inactive", true);
+                updated_payments.push(new_pay);
+            }
+        }
+    }
+
+    for pay in updated_payments {
+        srv.itm.get_mut("payment").unwrap().set(pay.id, pay, false);
+    }
 
     HttpResponse::Ok().into()
 }
