@@ -248,7 +248,11 @@ pub fn equestrian_pay_deactivate_expired_payments(
     info!("Deactivate expired payments");
 
     let mut updated_payments : Vec<Item> = Vec::new();
+    let jobs = srv.itm["job"].get_all();
     for pay in srv.itm["payment"].get_all() {
+        let id = pay.0;
+        let mut new_pay = pay.1.clone();
+        let mut use_new = false;
         if pay.1.safe_str("payment_type", "") == "monthly" {
             let time: u64;
             let months = [ "jan", "feb", "mar",
@@ -272,11 +276,24 @@ pub fn equestrian_pay_deactivate_expired_payments(
                   mon.to_string(), year.to_string(), time, now_time);
             if time < now_time {
                 info!("Expire payment with ID {}", pay.0);
-                let mut new_pay = pay.1.clone();
                 new_pay.set_bool("inactive", true);
-                updated_payments.push(new_pay);
+                use_new = true;
             }
         }
+
+        let assoc_jobs : Vec<_> = jobs.iter().filter(|x| &x.1.safe_id("payment_id", u64::MAX) == id).collect();
+        let no_lessons = new_pay.safe_u64("no_lessons", 0);
+        let real_used_lessons = assoc_jobs.len() as u64;
+        if pay.1.safe_u64("used_lessons", 0) != real_used_lessons {
+            new_pay.set_u64("used_lessons", real_used_lessons);
+            use_new = true;
+            new_pay.set_bool("broken", real_used_lessons > no_lessons);
+        }
+
+        if use_new {
+            updated_payments.push(new_pay);
+        }
+
     }
 
     for pay in updated_payments {
