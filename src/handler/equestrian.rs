@@ -253,6 +253,7 @@ pub fn equestrian_pay_deactivate_expired_payments(
         let id = pay.0;
         let mut new_pay = pay.1.clone();
         let mut use_new = false;
+
         if pay.1.safe_str("payment_type", "") == "monthly" {
             let time: u64;
             let months = [ "jan", "feb", "mar",
@@ -285,9 +286,10 @@ pub fn equestrian_pay_deactivate_expired_payments(
         let no_lessons = new_pay.safe_u64("no_lessons", 0);
         let real_used_lessons = assoc_jobs.len() as u64;
         if pay.1.safe_u64("used_lessons", 0) != real_used_lessons {
+            info!("Break payment with ID {}: {}", pay.0, real_used_lessons > no_lessons);
             new_pay.set_u64("used_lessons", real_used_lessons);
-            use_new = true;
             new_pay.set_bool("broken", real_used_lessons > no_lessons);
+            use_new = true;
         }
 
         if use_new {
