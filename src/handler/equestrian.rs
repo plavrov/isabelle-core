@@ -38,7 +38,7 @@ pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
             + &srv.itm["user"]
                 .get(teacher_id)
                 .unwrap()
-                .safe_str("firstname", "<unknown>")
+                .safe_str("name", "<unknown>")
     }
 }
 
@@ -99,7 +99,7 @@ pub fn equestrian_job_sync(
             if user != None {
                 info!(
                     "Found user: {}",
-                    user.as_ref().unwrap().safe_str("firstname", "")
+                    user.as_ref().unwrap().safe_str("name", "")
                 );
                 let target_email = user.as_ref().unwrap().safe_str(em, "");
                 if user
@@ -380,8 +380,7 @@ pub fn equestrian_itm_filter_hook(
             if collection == "user" {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.strs.insert("firstname".to_string(), el.1.safe_str("firstname", ""));
-                itm.strs.insert("surname".to_string(), el.1.safe_str("surname", ""));
+                itm.strs.insert("name".to_string(), el.1.safe_str("name", ""));
                 itm.bools.insert("role_is_teacher".to_string(), el.1.safe_bool("role_is_teacher", false));
                 itm.bools.insert("role_is_student".to_string(), el.1.safe_bool("role_is_student", false));
                 itm.bools.insert("role_is_staff".to_string(), el.1.safe_bool("role_is_staff", false));
@@ -408,8 +407,7 @@ pub fn equestrian_itm_filter_hook(
                 if *el.0 != user.as_ref().unwrap().id {
                     let mut itm = Item::new();
                     itm.id = *el.0;
-                    itm.strs.insert("firstname".to_string(), el.1.safe_str("firstname", ""));
-                    itm.strs.insert("surname".to_string(), el.1.safe_str("surname", ""));
+                    itm.strs.insert("name".to_string(), el.1.safe_str("name", ""));
                     itm.bools.insert("role_is_teacher".to_string(), el.1.safe_bool("role_is_teacher", false));
                     itm.bools.insert("role_is_student".to_string(), el.1.safe_bool("role_is_student", false));
                     itm.bools.insert("role_is_staff".to_string(), el.1.safe_bool("role_is_staff", false));
