@@ -1,6 +1,6 @@
 extern crate serde_json;
 
-use log::info;
+use log::{info, error};
 
 use std::collections::HashMap;
 use std::fs;
@@ -117,11 +117,13 @@ impl Collection {
 
         let cnt_str = std::fs::read_to_string(path.to_string() + "/cnt");
         if let Err(_e) = cnt_str {
+            error!("Failed to read counter");
             return;
         }
 
-        let parsed = cnt_str.unwrap().parse::<u64>();
+        let parsed = cnt_str.as_ref().unwrap().trim().parse::<u64>();
         if let Err(_e) = parsed {
+            error!("Failed to parse counter {}", cnt_str.as_ref().unwrap());
             return;
         }
 
