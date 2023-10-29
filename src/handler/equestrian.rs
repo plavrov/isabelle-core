@@ -175,7 +175,6 @@ pub fn equestrian_schedule_materialize(
     let now = Utc::now();
     let week_start =
         (now.beginning_of_week().timestamp() as u64) + (60 * 60 * 24 * 7) * params.week;
-    let mut final_cnt = srv.itm["job"].count;
     for entry in srv.itm["job"].get_all() {
         let day = entry.1.safe_str("day_of_the_week", "");
         let pid = entry.1.safe_id("parent_id", u64::MAX);
@@ -202,8 +201,6 @@ pub fn equestrian_schedule_materialize(
             }
 
             if !skip {
-                final_cnt += 1;
-                cp_entry.id = final_cnt;
                 vec.push(cp_entry);
             }
         }
