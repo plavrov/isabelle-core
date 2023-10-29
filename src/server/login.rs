@@ -17,7 +17,7 @@ pub async fn login(
     let usr = get_user(&srv, lu.username.clone());
 
     if usr == None {
-        info!("No user found, couldn't log in");
+        info!("No user {} found, couldn't log in", lu.username.clone());
     } else {
         let itm_real = usr.unwrap();
 
