@@ -4,7 +4,7 @@ use actix_identity::Identity;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
-use isabelle_dm::data_model::login_result::LoginResult;
+use isabelle_dm::data_model::process_result::ProcessResult;
 use isabelle_dm::data_model::login_user::LoginUser;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
@@ -38,7 +38,7 @@ pub async fn login(
 
     if usr == None {
         info!("No user {} found, couldn't log in", lu.username.clone());
-        return web::Json(LoginResult {
+        return web::Json(ProcessResult {
             succeeded: false,
             error: "Invalid login/password".to_string(),
         });
@@ -52,14 +52,14 @@ pub async fn login(
             info!("Logged in as {}", lu.username);
         } else {
             error!("Invalid password for {}", lu.username);
-            return web::Json(LoginResult {
+            return web::Json(ProcessResult {
                 succeeded: false,
                 error: "Invalid login/password".to_string(),
             });
         }
     }
 
-    return web::Json(LoginResult {
+    return web::Json(ProcessResult {
         succeeded: true,
         error: "".to_string(),
     });
