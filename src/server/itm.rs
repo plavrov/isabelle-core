@@ -12,16 +12,33 @@ use serde_qs;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::ops::DerefMut;
-
+use actix_multipart::Multipart;
+use futures_util::TryStreamExt;
 use crate::server::user_control::*;
 
-pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
+pub async fn itm_edit(user: Identity,
+                      data: web::Data<State>,
+                      req: HttpRequest,
+                      mut payload: Multipart) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let mut itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
 
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        while let Ok(Some(chunk)) = field.try_next().await {
+            let data = chunk;
+
+            if field.name() == "item" {
+                let new_itm : Item = serde_json::from_str(
+                    std::str::from_utf8(&data.to_vec()).unwrap())
+                    .unwrap();
+                println!("Found item");
+                itm.merge(&new_itm);
+            }
+        }
+    }
     /* call auth hooks */
     {
         let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
@@ -44,7 +61,35 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
 
     if srv.itm.contains_key(&mc.collection) {
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
-        coll.set(itm.id, itm.clone(), mc.merge);
+        let mut itm_clone = itm.clone();
+
+        let old_itm = coll.get(itm.id);
+        if mc.collection == "user" &&
+           old_itm != None &&
+           itm.strs.contains_key("password") {
+            error!("Can't edit password directly");
+            return HttpResponse::Forbidden().into();
+        }
+        if mc.collection == "user" &&
+           old_itm != None &&
+           itm.strs.contains_key("__password") &&
+           itm.strs.contains_key("__new_password1") &&
+           itm.strs.contains_key("__new_password2") {
+            if old_itm.unwrap().safe_str("password", "<bad1>") !=
+                 itm.safe_str("__password", "<bad2>") ||
+               itm.safe_str("__new_password1", "<bad1>") !=
+                 itm.safe_str("__new_password2", "<bad2>") {
+                error!("Password change challenge failed");
+                return HttpResponse::Forbidden().into();
+            }
+            let new_pw = itm.safe_str("__new_password1", "");
+            itm_clone.strs.remove("__password");
+            itm_clone.strs.remove("__new_password1");
+            itm_clone.strs.remove("__new_password2");
+            itm_clone.set_str("password", &new_pw);
+        }
+
+        coll.set(itm.id, itm_clone, mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
 
         /* call hooks */
