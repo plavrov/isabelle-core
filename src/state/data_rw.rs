@@ -69,6 +69,10 @@ pub fn write_settings_data(data: &Data, path: &str) {
 
 pub fn write_data(data: &Data) {
     for coll in &data.itm {
+        if &coll.1.name == "" {
+            info!("Unknown collection");
+            continue;
+        }
         coll.1
             .write_fs(&(data.data_path.clone() + "/collection/" + &coll.1.name));
     }
