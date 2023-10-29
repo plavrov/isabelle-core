@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::state::data_rw::*;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
@@ -214,7 +215,11 @@ pub fn equestrian_schedule_materialize(
     }
 
     write_data(srv.deref_mut());
-    HttpResponse::Ok().into()
+    HttpResponse::Ok().body(
+        serde_json::to_string(&ProcessResult {
+            succeeded: true,
+            error: "".to_string(),
+        }).unwrap())
 }
 
 pub fn equestrian_pay_find_broken_payments(
