@@ -368,13 +368,17 @@ pub fn equestrian_itm_filter_hook(
         return;
     }
 
-    info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
-
     if context == "full" {
         list = false;
     }
 
     let mut short_map: HashMap<u64, Item> = HashMap::new();
+    if user.is_none() {
+        *map = short_map;
+        return;
+    }
+
+    info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
     if list {
         for el in &mut *map {
             if collection == "user" {
