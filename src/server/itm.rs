@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::handler::route::*;
 use crate::state::collection::Collection;
 use crate::state::state::*;
@@ -19,7 +20,7 @@ use crate::server::user_control::*;
 pub async fn itm_edit(user: Identity,
                       data: web::Data<State>,
                       req: HttpRequest,
-                      mut payload: Multipart) -> impl Responder {
+                      mut payload: Multipart) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
@@ -68,7 +69,11 @@ pub async fn itm_edit(user: Identity,
            old_itm != None &&
            itm.strs.contains_key("password") {
             error!("Can't edit password directly");
-            return HttpResponse::Forbidden().into();
+            return HttpResponse::Ok().body(
+                    serde_json::to_string(&ProcessResult {
+                        succeeded: false,
+                        error: "Can't edit password directly".to_string(),
+                    }).unwrap());
         }
         if mc.collection == "user" &&
            old_itm != None &&
@@ -80,7 +85,11 @@ pub async fn itm_edit(user: Identity,
                itm.safe_str("__new_password1", "<bad1>") !=
                  itm.safe_str("__new_password2", "<bad2>") {
                 error!("Password change challenge failed");
-                return HttpResponse::Forbidden().into();
+                return HttpResponse::Ok().body(
+                    serde_json::to_string(&ProcessResult {
+                        succeeded: false,
+                        error: "Password change challenge failed".to_string(),
+                    }).unwrap());
             }
             let new_pw = itm.safe_str("__new_password1", "");
             itm_clone.strs.remove("__password");
@@ -106,12 +115,16 @@ pub async fn itm_edit(user: Identity,
         }
 
         write_data(&srv);
-        return HttpResponse::Ok();
+        return HttpResponse::Ok().body(
+            serde_json::to_string(&ProcessResult {
+                succeeded: true,
+                error: "".to_string(),
+            }).unwrap());
     } else {
         error!("Collection {} doesn't exist", mc.collection);
     }
 
-    return HttpResponse::BadRequest();
+    return HttpResponse::BadRequest().into();
 }
 
 pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
