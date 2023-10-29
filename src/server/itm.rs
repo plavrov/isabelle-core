@@ -26,7 +26,15 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
     {
         let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
-            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, Some(itm.clone()), false) {
+            if !call_itm_auth_hook(
+                &mut srv,
+                &route.1,
+                &usr,
+                &mc.collection,
+                itm.id,
+                Some(itm.clone()),
+                false,
+            ) {
                 return HttpResponse::Forbidden().into();
             }
         }
@@ -41,7 +49,9 @@ pub async fn itm_edit(user: Identity, data: web::Data<State>, req: HttpRequest) 
 
         /* call hooks */
         {
-            let routes = srv.internals.safe_strstr("collection_hook", &HashMap::new());
+            let routes = srv
+                .internals
+                .safe_strstr("collection_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
@@ -141,7 +151,9 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
 
     /* itm filter hooks */
     {
-        let routes = srv.internals.safe_strstr("itm_list_filter_hook", &HashMap::new());
+        let routes = srv
+            .internals
+            .safe_strstr("itm_list_filter_hook", &HashMap::new());
         for route in routes {
             call_itm_list_filter_hook(&srv, &route.1, &usr, &lq.collection, &lq.context, &mut map);
         }

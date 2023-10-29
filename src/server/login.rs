@@ -1,21 +1,24 @@
-use isabelle_dm::data_model::login_result::LoginResult;
 use crate::server::user_control::*;
 use crate::state::state::*;
 use actix_identity::Identity;
+use actix_multipart::Multipart;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use futures_util::TryStreamExt;
+use isabelle_dm::data_model::login_result::LoginResult;
 use isabelle_dm::data_model::login_user::LoginUser;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
-use actix_multipart::Multipart;
-use futures_util::TryStreamExt;
 
 pub async fn login(
     _user: Option<Identity>,
     data: web::Data<State>,
     mut payload: Multipart,
-    req: HttpRequest
+    req: HttpRequest,
 ) -> impl Responder {
-    let mut lu = LoginUser { username: "".to_string(), password: "".to_string() };
+    let mut lu = LoginUser {
+        username: "".to_string(),
+        password: "".to_string(),
+    };
 
     while let Ok(Some(mut field)) = payload.try_next().await {
         while let Ok(Some(chunk)) = field.try_next().await {
@@ -35,7 +38,10 @@ pub async fn login(
 
     if usr == None {
         info!("No user {} found, couldn't log in", lu.username.clone());
-        return web::Json(LoginResult { succeeded: false, error: "Invalid login/password".to_string() });
+        return web::Json(LoginResult {
+            succeeded: false,
+            error: "Invalid login/password".to_string(),
+        });
     } else {
         let itm_real = usr.unwrap();
 
@@ -46,11 +52,17 @@ pub async fn login(
             info!("Logged in as {}", lu.username);
         } else {
             error!("Invalid password for {}", lu.username);
-            return web::Json(LoginResult { succeeded: false, error: "Invalid login/password".to_string() });
+            return web::Json(LoginResult {
+                succeeded: false,
+                error: "Invalid login/password".to_string(),
+            });
         }
     }
 
-    return web::Json(LoginResult { succeeded: true, error: "".to_string() });
+    return web::Json(LoginResult {
+        succeeded: true,
+        error: "".to_string(),
+    });
 }
 
 pub async fn logout(

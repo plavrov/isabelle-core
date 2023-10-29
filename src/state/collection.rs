@@ -1,6 +1,6 @@
 extern crate serde_json;
 
-use log::{info, error};
+use log::{error, info};
 
 use std::collections::HashMap;
 use std::fs;

@@ -49,7 +49,9 @@ pub async fn setting_list(
     }
 
     let st = srv.settings.clone();
-    HttpResponse::Ok().body(serde_json::to_string(&st).unwrap()).into()
+    HttpResponse::Ok()
+        .body(serde_json::to_string(&st).unwrap())
+        .into()
 }
 
 pub async fn setting_gcal_auth(
@@ -90,10 +92,12 @@ pub async fn setting_gcal_auth_end(
     let config = Config::new(10, false);
     let data: AuthEndData = config.deserialize_str(&_req.query_string()).unwrap();
 
-    HttpResponse::Ok().body(auth_google_end(
-        &srv,
-        srv.public_url.clone() + "/?" + _req.query_string(),
-        data.state,
-        data.code,
-    )).into()
+    HttpResponse::Ok()
+        .body(auth_google_end(
+            &srv,
+            srv.public_url.clone() + "/?" + _req.query_string(),
+            data.state,
+            data.code,
+        ))
+        .into()
 }

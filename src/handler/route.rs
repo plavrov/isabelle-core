@@ -1,9 +1,9 @@
-use isabelle_dm::data_model::item::Item;
 use crate::handler::equestrian::*;
 use crate::State;
 use actix_identity::Identity;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
+use isabelle_dm::data_model::item::Item;
 use log::info;
 use std::collections::HashMap;
 
@@ -27,10 +27,13 @@ pub fn call_itm_auth_hook(
     collection: &str,
     id: u64,
     new_item: Option<Item>,
-    del: bool) -> bool {
+    del: bool,
+) -> bool {
     match hndl {
-        "equestrian_itm_auth_hook" => { return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del) },
-        &_ => { return false }
+        "equestrian_itm_auth_hook" => {
+            return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del)
+        }
+        &_ => return false,
     }
 }
 
@@ -40,10 +43,13 @@ pub fn call_itm_list_filter_hook(
     user: &Option<Item>,
     collection: &str,
     context: &str,
-    map: &mut HashMap<u64, Item>) {
+    map: &mut HashMap<u64, Item>,
+) {
     match hndl {
-        "equestrian_itm_filter_hook" => { return equestrian_itm_filter_hook(srv, user, collection, context, map) },
-        &_ => { }
+        "equestrian_itm_filter_hook" => {
+            return equestrian_itm_filter_hook(srv, user, collection, context, map)
+        }
+        &_ => {}
     }
 }
 

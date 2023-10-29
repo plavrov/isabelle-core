@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use crate::state::data_rw::*;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use isabelle_dm::data_model::item::Item;
+use std::collections::HashMap;
 use std::ops::Deref;
 
 use actix_identity::Identity;
@@ -247,7 +247,7 @@ pub fn equestrian_pay_deactivate_expired_payments(
 
     info!("Deactivate expired payments");
 
-    let mut updated_payments : Vec<Item> = Vec::new();
+    let mut updated_payments: Vec<Item> = Vec::new();
     let jobs = srv.itm["job"].get_all();
     for pay in srv.itm["payment"].get_all() {
         let id = pay.0;
@@ -256,10 +256,9 @@ pub fn equestrian_pay_deactivate_expired_payments(
 
         if pay.1.safe_str("payment_type", "") == "monthly" {
             let time: u64;
-            let months = [ "jan", "feb", "mar",
-                "apr", "may", "jun",
-                "jul", "aug", "sep",
-                "oct", "nov", "dec" ];
+            let months = [
+                "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+            ];
             let mon_str = pay.1.safe_str("target_month", "jan");
             let year_str = pay.1.safe_str("target_year", "0");
             let mut mon = months.iter().position(|&x| x == mon_str).unwrap() + 1 + 1;
@@ -269,12 +268,20 @@ pub fn equestrian_pay_deactivate_expired_payments(
                 year += 1;
             }
 
-            time = date2ts(year.to_string() + "-" + &mon.to_string() + "-01",
-                           "00:00".to_string());
-            info!("Payment ID {}: time {} {} / {} {} = {} vs now {}",
-                  pay.0,
-                  mon_str, year_str,
-                  mon.to_string(), year.to_string(), time, now_time);
+            time = date2ts(
+                year.to_string() + "-" + &mon.to_string() + "-01",
+                "00:00".to_string(),
+            );
+            info!(
+                "Payment ID {}: time {} {} / {} {} = {} vs now {}",
+                pay.0,
+                mon_str,
+                year_str,
+                mon.to_string(),
+                year.to_string(),
+                time,
+                now_time
+            );
             if time < now_time {
                 info!("Expire payment with ID {}", pay.0);
                 new_pay.set_bool("inactive", true);
@@ -282,11 +289,18 @@ pub fn equestrian_pay_deactivate_expired_payments(
             }
         }
 
-        let assoc_jobs : Vec<_> = jobs.iter().filter(|x| &x.1.safe_id("payment_id", u64::MAX) == id).collect();
+        let assoc_jobs: Vec<_> = jobs
+            .iter()
+            .filter(|x| &x.1.safe_id("payment_id", u64::MAX) == id)
+            .collect();
         let no_lessons = new_pay.safe_u64("no_lessons", 0);
         let real_used_lessons = assoc_jobs.len() as u64;
         if pay.1.safe_u64("used_lessons", 0) != real_used_lessons {
-            info!("Break payment with ID {}: {}", pay.0, real_used_lessons > no_lessons);
+            info!(
+                "Break payment with ID {}: {}",
+                pay.0,
+                real_used_lessons > no_lessons
+            );
             new_pay.set_u64("used_lessons", real_used_lessons);
             new_pay.set_bool("broken", real_used_lessons > no_lessons);
             use_new = true;
@@ -295,7 +309,6 @@ pub fn equestrian_pay_deactivate_expired_payments(
         if use_new {
             updated_payments.push(new_pay);
         }
-
     }
 
     for pay in updated_payments {
@@ -311,38 +324,46 @@ pub fn equestrian_itm_auth_hook(
     collection: &str,
     id: u64,
     new_item: Option<Item>,
-    _del: bool) -> bool {
+    _del: bool,
+) -> bool {
     if check_role(&srv, &user, "admin") {
         return true;
     }
 
-    info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
+    info!(
+        "Checking collection {} user id {}",
+        collection,
+        user.as_ref().unwrap().id
+    );
 
-    if collection == "query" &&
-       (check_role(&srv, &user, "student") ||
-        check_role(&srv, &user, "teacher") ||
-        check_role(&srv, &user, "staff")) {
+    if collection == "query"
+        && (check_role(&srv, &user, "student")
+            || check_role(&srv, &user, "teacher")
+            || check_role(&srv, &user, "staff"))
+    {
         let mut accept = true;
         let itm = srv.itm["query"].get(id);
 
-        if !itm.is_none() &&
-           itm.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id {
+        if !itm.is_none()
+            && itm.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id
+        {
             accept = false;
         }
 
-        if !new_item.is_none() &&
-           new_item.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id {
+        if !new_item.is_none()
+            && new_item.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id
+        {
             accept = false;
         }
 
         return accept;
-    } else if collection == "job" &&
-              (check_role(&srv, &user, "teacher") ||
-               check_role(&srv, &user, "staff")) {
+    } else if collection == "job"
+        && (check_role(&srv, &user, "teacher") || check_role(&srv, &user, "staff"))
+    {
         return true;
-    } else if collection == "mentee" &&
-              (check_role(&srv, &user, "teacher") ||
-               check_role(&srv, &user, "staff")) {
+    } else if collection == "mentee"
+        && (check_role(&srv, &user, "teacher") || check_role(&srv, &user, "staff"))
+    {
         return true;
     } else if collection == "user" {
         let itm = srv.itm["user"].get(id);
@@ -360,8 +381,8 @@ pub fn equestrian_itm_filter_hook(
     user: &Option<Item>,
     collection: &str,
     context: &str,
-    map: &mut HashMap<u64, Item>) {
-
+    map: &mut HashMap<u64, Item>,
+) {
     let mut list = true;
 
     if check_role(&srv, &user, "admin") {
@@ -378,30 +399,54 @@ pub fn equestrian_itm_filter_hook(
         return;
     }
 
-    info!("Checking collection {} user id {}", collection, user.as_ref().unwrap().id);
+    info!(
+        "Checking collection {} user id {}",
+        collection,
+        user.as_ref().unwrap().id
+    );
     if list {
         for el in &mut *map {
             if collection == "user" {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.strs.insert("name".to_string(), el.1.safe_str("name", ""));
-                itm.bools.insert("role_is_teacher".to_string(), el.1.safe_bool("role_is_teacher", false));
-                itm.bools.insert("role_is_student".to_string(), el.1.safe_bool("role_is_student", false));
-                itm.bools.insert("role_is_staff".to_string(), el.1.safe_bool("role_is_staff", false));
+                itm.strs
+                    .insert("name".to_string(), el.1.safe_str("name", ""));
+                itm.bools.insert(
+                    "role_is_teacher".to_string(),
+                    el.1.safe_bool("role_is_teacher", false),
+                );
+                itm.bools.insert(
+                    "role_is_student".to_string(),
+                    el.1.safe_bool("role_is_student", false),
+                );
+                itm.bools.insert(
+                    "role_is_staff".to_string(),
+                    el.1.safe_bool("role_is_staff", false),
+                );
                 short_map.insert(*el.0, itm);
             } else if collection == "payment" {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.ids.insert("requester".to_string(), el.1.safe_id("requester", u64::MAX));
-                itm.strs.insert("payment_type".to_string(), el.1.safe_str("payment_type", ""));
-                itm.strs.insert("target_month".to_string(), el.1.safe_str("target_month", ""));
-                itm.strs.insert("target_year".to_string(), el.1.safe_str("target_year", ""));
-                itm.u64s.insert("no_lessons".to_string(), el.1.safe_u64("no_lessons", 0));
+                itm.ids
+                    .insert("requester".to_string(), el.1.safe_id("requester", u64::MAX));
+                itm.strs.insert(
+                    "payment_type".to_string(),
+                    el.1.safe_str("payment_type", ""),
+                );
+                itm.strs.insert(
+                    "target_month".to_string(),
+                    el.1.safe_str("target_month", ""),
+                );
+                itm.strs
+                    .insert("target_year".to_string(), el.1.safe_str("target_year", ""));
+                itm.u64s
+                    .insert("no_lessons".to_string(), el.1.safe_u64("no_lessons", 0));
                 short_map.insert(*el.0, itm);
             } else {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.strs.insert("name".to_string(), el.1.safe_str("name", ""));
+                itm.strs
+                    .insert("name".to_string(), el.1.safe_str("name", ""));
                 short_map.insert(*el.0, itm);
             }
         }
@@ -411,10 +456,20 @@ pub fn equestrian_itm_filter_hook(
                 if *el.0 != user.as_ref().unwrap().id {
                     let mut itm = Item::new();
                     itm.id = *el.0;
-                    itm.strs.insert("name".to_string(), el.1.safe_str("name", ""));
-                    itm.bools.insert("role_is_teacher".to_string(), el.1.safe_bool("role_is_teacher", false));
-                    itm.bools.insert("role_is_student".to_string(), el.1.safe_bool("role_is_student", false));
-                    itm.bools.insert("role_is_staff".to_string(), el.1.safe_bool("role_is_staff", false));
+                    itm.strs
+                        .insert("name".to_string(), el.1.safe_str("name", ""));
+                    itm.bools.insert(
+                        "role_is_teacher".to_string(),
+                        el.1.safe_bool("role_is_teacher", false),
+                    );
+                    itm.bools.insert(
+                        "role_is_student".to_string(),
+                        el.1.safe_bool("role_is_student", false),
+                    );
+                    itm.bools.insert(
+                        "role_is_staff".to_string(),
+                        el.1.safe_bool("role_is_staff", false),
+                    );
                     short_map.insert(*el.0, itm);
                 } else {
                     short_map.insert(*el.0, el.1.clone());
