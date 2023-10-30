@@ -1,4 +1,6 @@
+use crate::state::collection::Collection;
 use crate::handler::equestrian::*;
+use crate::handler::security::*;
 use crate::State;
 use actix_identity::Identity;
 use actix_web::HttpRequest;
@@ -94,4 +96,14 @@ pub async fn url_route(
     }
 
     HttpResponse::NotFound().into()
+}
+
+pub fn call_collection_read_hook(hndl: &str, collection: &str, new_col: & mut Collection) {
+    match hndl {
+        "security_collection_read_hook" => {
+            return security_collection_read_hook(collection, new_col);
+        }
+        _ => {
+        }
+    }
 }

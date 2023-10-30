@@ -1,6 +1,6 @@
 extern crate serde_json;
-use crate::util::crypto::get_password_hash;
-use crate::util::crypto::get_new_salt;
+use crate::handler::route::*;
+use std::collections::HashMap;
 use crate::state::collection::*;
 use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
@@ -42,37 +42,23 @@ pub fn read_internals_entries(mut data: &mut Data, path: &str) {
 pub fn read_data(path: &str) -> Data {
     let mut data = Data::new();
 
+    read_internals_entries(&mut data, (path.to_string() + "/").as_str());
+    read_settings_entries(&mut data, (path.to_string() + "/").as_str());
+
+    let collection_routes = data.internals.safe_strstr("collection_read_hook", &HashMap::new());
     let collections = fs::read_dir(path.to_string() + "/collection").unwrap();
     for coll in collections {
         let idx = coll.as_ref().unwrap().file_name().into_string().unwrap();
         let mut new_col = Collection::new();
         new_col.read_fs(&(path.to_string() + "/collection/" + &idx), &idx);
-        if idx.to_string() == "user" {
-            let mut replace : Vec<Item> = Vec::new();
-            for pair in &new_col.items {
-                let mut new_itm = pair.1.clone();
-                if !pair.1.strs.contains_key("salt") {
-                    let salt = get_new_salt();
-                    new_itm.set_str("salt", &salt);
-                    info!("There is no salt for user {}, created new", pair.0);
-                    if pair.1.strs.contains_key("password") {
-                        let pw_old = pair.1.safe_str("password", "");
-                        let hash = get_password_hash(&pw_old, &salt);
-                        new_itm.set_str("password", &hash);
-                        info!("Rehashed password for user {}", pair.0);
-                    }
-                    replace.push(new_itm);
-                }
-            }
-            for itm in replace {
-                new_col.set(itm.id, itm, false);
-            }
+        for collection_route in &collection_routes {
+            call_collection_read_hook(&collection_route.1,
+                                      &idx,
+                                      & mut new_col);
         }
         data.itm.insert(idx, new_col);
     }
 
-    read_settings_entries(&mut data, (path.to_string() + "/").as_str());
-    read_internals_entries(&mut data, (path.to_string() + "/").as_str());
     return data;
 }
 
