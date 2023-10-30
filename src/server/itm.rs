@@ -80,8 +80,8 @@ pub async fn itm_edit(user: Identity,
            itm.strs.contains_key("__password") &&
            itm.strs.contains_key("__new_password1") &&
            itm.strs.contains_key("__new_password2") {
-            if old_itm.unwrap().safe_str("password", "<bad1>") !=
-                 itm.safe_str("__password", "<bad2>") ||
+            if old_itm.unwrap().safe_str("password", "") !=
+                 itm.safe_str("__password", "") ||
                itm.safe_str("__new_password1", "<bad1>") !=
                  itm.safe_str("__new_password2", "<bad2>") {
                 error!("Password change challenge failed");
