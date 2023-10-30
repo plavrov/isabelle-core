@@ -16,6 +16,13 @@ use std::ops::DerefMut;
 use actix_multipart::Multipart;
 use futures_util::TryStreamExt;
 use crate::server::user_control::*;
+use argon2::{
+    password_hash::{
+        rand_core::OsRng,
+        PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+    },
+    Argon2
+};
 
 pub async fn itm_edit(user: Identity,
                       data: web::Data<State>,
@@ -67,7 +74,7 @@ pub async fn itm_edit(user: Identity,
         let old_itm = coll.get(itm.id);
         if mc.collection == "user" &&
            old_itm != None &&
-           itm.strs.contains_key("password") {
+           (itm.strs.contains_key("password") || itm.strs.contains_key("salt")) {
             error!("Can't edit password directly");
             return HttpResponse::Ok().body(
                     serde_json::to_string(&ProcessResult {
@@ -75,12 +82,19 @@ pub async fn itm_edit(user: Identity,
                         error: "Can't edit password directly".to_string(),
                     }).unwrap());
         }
+
+        if mc.collection == "user" && old_itm.is_none() {
+            /* Add salt when creating new user */
+            let salt = SaltString::generate(&mut OsRng);
+            itm_clone.set_str("salt", &salt.to_string());
+        }
+
         if mc.collection == "user" &&
            old_itm != None &&
            itm.strs.contains_key("__password") &&
            itm.strs.contains_key("__new_password1") &&
            itm.strs.contains_key("__new_password2") {
-            if old_itm.unwrap().safe_str("password", "") !=
+            if old_itm.as_ref().unwrap().safe_str("password", "") !=
                  itm.safe_str("__password", "") ||
                itm.safe_str("__new_password1", "<bad1>") !=
                  itm.safe_str("__new_password2", "<bad2>") {
