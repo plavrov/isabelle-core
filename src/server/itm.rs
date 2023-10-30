@@ -33,10 +33,11 @@ pub async fn itm_edit(user: Identity,
             let data = chunk;
 
             if field.name() == "item" {
+                let v = &data.to_vec();
+                let strv = std::str::from_utf8(v).unwrap_or("{}");
                 let new_itm : Item = serde_json::from_str(
-                    std::str::from_utf8(&data.to_vec()).unwrap())
-                    .unwrap();
-                println!("Found item");
+                    strv)
+                    .unwrap_or(Item::new());
                 itm.merge(&new_itm);
             }
         }
