@@ -1,4 +1,6 @@
 extern crate serde_json;
+use crate::util::crypto::get_password_hash;
+use crate::util::crypto::get_new_salt;
 use crate::state::collection::*;
 use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
@@ -45,6 +47,27 @@ pub fn read_data(path: &str) -> Data {
         let idx = coll.as_ref().unwrap().file_name().into_string().unwrap();
         let mut new_col = Collection::new();
         new_col.read_fs(&(path.to_string() + "/collection/" + &idx), &idx);
+        if idx.to_string() == "user" {
+            let mut replace : Vec<Item> = Vec::new();
+            for pair in &new_col.items {
+                let mut new_itm = pair.1.clone();
+                if !pair.1.strs.contains_key("salt") {
+                    let salt = get_new_salt();
+                    new_itm.set_str("salt", &salt);
+                    info!("There is no salt for user {}, created new", pair.0);
+                    if pair.1.strs.contains_key("password") {
+                        let pw_old = pair.1.safe_str("password", "");
+                        let hash = get_password_hash(&pw_old, &salt);
+                        new_itm.set_str("password", &hash);
+                        info!("Rehashed password for user {}", pair.0);
+                    }
+                    replace.push(new_itm);
+                }
+            }
+            for itm in replace {
+                new_col.set(itm.id, itm, false);
+            }
+        }
         data.itm.insert(idx, new_col);
     }
 
