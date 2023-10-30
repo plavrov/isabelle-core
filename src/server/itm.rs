@@ -1,3 +1,6 @@
+use crate::verify_password;
+use crate::get_new_salt;
+use crate::get_password_hash;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::handler::route::*;
 use crate::state::collection::Collection;
@@ -16,13 +19,6 @@ use std::ops::DerefMut;
 use actix_multipart::Multipart;
 use futures_util::TryStreamExt;
 use crate::server::user_control::*;
-use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-    },
-    Argon2
-};
 
 pub async fn itm_edit(user: Identity,
                       data: web::Data<State>,
@@ -70,6 +66,7 @@ pub async fn itm_edit(user: Identity,
     if srv.itm.contains_key(&mc.collection) {
         let coll = srv.itm.get_mut(&mc.collection).unwrap();
         let mut itm_clone = itm.clone();
+        let mut salt : String = "<empty salt>".to_string();
 
         let old_itm = coll.get(itm.id);
         if mc.collection == "user" &&
@@ -83,10 +80,14 @@ pub async fn itm_edit(user: Identity,
                     }).unwrap());
         }
 
-        if mc.collection == "user" && old_itm.is_none() {
-            /* Add salt when creating new user */
-            let salt = SaltString::generate(&mut OsRng);
-            itm_clone.set_str("salt", &salt.to_string());
+        if mc.collection == "user" {
+            if old_itm.is_none() {
+                /* Add salt when creating new user */
+                salt = get_new_salt();
+                itm_clone.set_str("salt", &salt);
+            } else {
+                salt = old_itm.as_ref().unwrap().safe_str("salt", "<empty salt>");
+            }
         }
 
         if mc.collection == "user" &&
@@ -94,8 +95,11 @@ pub async fn itm_edit(user: Identity,
            itm.strs.contains_key("__password") &&
            itm.strs.contains_key("__new_password1") &&
            itm.strs.contains_key("__new_password2") {
-            if old_itm.as_ref().unwrap().safe_str("password", "") !=
-                 itm.safe_str("__password", "") ||
+            let old_pw_hash = old_itm.as_ref().unwrap().safe_str("password", "");
+            let old_checked_pw = itm.safe_str("__password", "");
+            let res = verify_password(&old_checked_pw,
+                                      &old_pw_hash);
+            if !res ||
                itm.safe_str("__new_password1", "<bad1>") !=
                  itm.safe_str("__new_password2", "<bad2>") {
                 error!("Password change challenge failed");
@@ -109,7 +113,10 @@ pub async fn itm_edit(user: Identity,
             itm_clone.strs.remove("__password");
             itm_clone.strs.remove("__new_password1");
             itm_clone.strs.remove("__new_password2");
-            itm_clone.set_str("password", &new_pw);
+
+            let pw_hash = get_password_hash(&new_pw,
+                &salt);
+            itm_clone.set_str("password", &pw_hash);
         }
 
         coll.set(itm.id, itm_clone, mc.merge);
