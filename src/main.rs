@@ -2,6 +2,7 @@ mod handler;
 mod notif;
 mod server;
 mod state;
+mod util;
 
 use crate::handler::route::url_route;
 use crate::notif::gcal::init_google;
