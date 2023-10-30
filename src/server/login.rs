@@ -1,3 +1,4 @@
+use crate::util::crypto::verify_password;
 use crate::server::user_control::*;
 use crate::state::state::*;
 use actix_identity::Identity;
@@ -45,9 +46,7 @@ pub async fn login(
     } else {
         let itm_real = usr.unwrap();
 
-        if itm_real.strs.contains_key("password")
-            && itm_real.safe_str("password", "") == lu.password
-        {
+        if verify_password(&lu.password, &itm_real.safe_str("password", "")) {
             Identity::login(&req.extensions(), lu.username.clone()).unwrap();
             info!("Logged in as {}", lu.username);
         } else {
