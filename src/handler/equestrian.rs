@@ -387,7 +387,7 @@ pub fn equestrian_itm_filter_hook(
 ) {
     let mut list = true;
 
-    if check_role(&srv, &user, "admin") {
+    if check_role(&srv, &user, "admin") && collection != "user" {
         return;
     }
 
@@ -474,7 +474,14 @@ pub fn equestrian_itm_filter_hook(
                     );
                     short_map.insert(*el.0, itm);
                 } else {
-                    short_map.insert(*el.0, el.1.clone());
+                    let mut itm = el.1.clone();
+                    if itm.strs.contains_key("salt") {
+                        itm.strs.remove("salt");
+                    }
+                    if itm.strs.contains_key("password") {
+                        itm.strs.remove("password");
+                    }
+                    short_map.insert(*el.0, itm);
                 }
             }
         } else if collection == "job" {
