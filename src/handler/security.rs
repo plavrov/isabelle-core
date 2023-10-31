@@ -49,9 +49,11 @@ pub fn security_password_challenge_pre_edit_hook(
        itm.strs.contains_key("__new_password1") &&
        itm.strs.contains_key("__new_password2") {
         let old_pw_hash = old_itm.as_ref().unwrap().safe_str("password", "");
+        let old_otp = old_itm.as_ref().unwrap().safe_str("otp", "");
         let old_checked_pw = itm.safe_str("__password", "");
         let res = verify_password(&old_checked_pw,
-                                  &old_pw_hash);
+                                  &old_pw_hash) ||
+                  (old_otp != "" && old_otp == old_checked_pw);
         if !res ||
            itm.safe_str("__new_password1", "<bad1>") !=
              itm.safe_str("__new_password2", "<bad2>") {
@@ -65,9 +67,13 @@ pub fn security_password_challenge_pre_edit_hook(
         itm.strs.remove("__password");
         itm.strs.remove("__new_password1");
         itm.strs.remove("__new_password2");
+        itm.strs.remove("otp");
 
         let pw_hash = get_password_hash(&new_pw,
             &salt);
+        if itm.strs.contains_key("otp") {
+            itm.strs.remove("otp");
+        }
         itm.set_str("password", &pw_hash);
     }
     return ProcessResult {
