@@ -63,11 +63,35 @@ pub async fn itm_edit(user: Identity,
     itm.normalize_negated();
 
     if srv.itm.contains_key(&mc.collection) {
-        let coll = srv.itm.get_mut(&mc.collection).unwrap();
+        let srv_mut = srv.deref_mut();
         let mut itm_clone = itm.clone();
-        let mut salt : String = "<empty salt>".to_string();
 
-        let old_itm = coll.get(itm.id);
+        let old_itm = srv_mut.itm.get_mut(&mc.collection).unwrap().get(itm.id);
+        /* call pre edit ooks */
+        {
+            let routes = srv_mut
+                .internals
+                .safe_strstr("item_pre_edit_hook", &HashMap::new());
+            for route in &routes {
+                let parts: Vec<&str> = route.1.split(":").collect();
+                if parts[0] == mc.collection {
+                    let res = call_item_pre_edit_hook(
+                        srv_mut,
+                        parts[1],
+                        &mc.collection,
+                        old_itm.clone(),
+                        &mut itm_clone,
+                        false);
+                    if !res.succeeded {
+                        info!("Item pre edit hook failed: {}", parts[1]);
+                        let s = serde_json::to_string(&res);
+                        return HttpResponse::Ok().body(s.unwrap_or("{}".to_string()));
+                    }
+                }
+            }
+        }
+        /*
+        let mut salt : String = "<empty salt>".to_string();
         if mc.collection == "user" &&
            old_itm != None &&
            (itm.strs.contains_key("password") || itm.strs.contains_key("salt")) {
@@ -117,7 +141,8 @@ pub async fn itm_edit(user: Identity,
                 &salt);
             itm_clone.set_str("password", &pw_hash);
         }
-
+        */
+        let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm_clone, mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
 

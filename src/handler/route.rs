@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::state::collection::Collection;
 use crate::handler::equestrian::*;
 use crate::handler::security::*;
@@ -8,6 +9,24 @@ use actix_web::HttpResponse;
 use isabelle_dm::data_model::item::Item;
 use log::info;
 use std::collections::HashMap;
+
+pub fn call_item_pre_edit_hook(
+    srv: &mut crate::state::data::Data,
+    hndl: &str,
+    collection: &str,
+    old_itm: Option<Item>,
+    itm: & mut Item,
+    del: bool,
+) -> ProcessResult {
+    match hndl {
+        "security_password_challenge_pre_edit_hook" => {
+            return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del);
+        },
+        &_ => {
+            return ProcessResult { succeeded: true, error: "".to_string() };
+        }
+    }
+}
 
 pub fn call_item_post_edit_hook(
     srv: &mut crate::state::data::Data,
