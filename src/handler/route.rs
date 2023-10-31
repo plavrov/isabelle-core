@@ -22,6 +22,9 @@ pub fn call_item_pre_edit_hook(
         "security_password_challenge_pre_edit_hook" => {
             return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del);
         },
+        "security_check_unique_login_email" => {
+            return security_check_unique_login_email(srv, collection, old_itm, itm, del);
+        },
         &_ => {
             return ProcessResult { succeeded: true, error: "".to_string() };
         }

@@ -7,6 +7,52 @@ use crate::state::collection::Collection;
 use crate::util::crypto::get_password_hash;
 use log::{info, error};
 
+pub fn security_check_unique_login_email(
+    srv: &mut crate::state::data::Data,
+    collection: &str,
+    old_itm: Option<Item>,
+    itm: & mut Item,
+    del: bool,
+) -> ProcessResult {
+    if del {
+        return ProcessResult {
+            succeeded: true,
+            error: "".to_string(),
+        };
+    }
+    let email = itm.safe_str("email", "");
+    let login = itm.safe_str("login", "");
+
+    if email == "" {
+        return ProcessResult {
+            succeeded: false,
+            error: "E-Mail must not be empty".to_string(),
+        };
+    }
+
+    for usr in srv.itm["user"].get_all() {
+        if *usr.0 != itm.id {
+            if login != "" && login == usr.1.safe_str("login", "") {
+                return ProcessResult {
+                    succeeded: false,
+                    error: "Login mustn't match already existing one".to_string(),
+                };
+            }
+            if email == usr.1.safe_str("email", "") {
+                return ProcessResult {
+                    succeeded: false,
+                    error: "E-Mail mustn't match already existing one".to_string(),
+                };
+            }
+        }
+    }
+
+    return ProcessResult {
+        succeeded: true,
+        error: "".to_string(),
+    };
+}
+
 pub fn security_password_challenge_pre_edit_hook(
     _srv: &mut crate::state::data::Data,
     collection: &str,
