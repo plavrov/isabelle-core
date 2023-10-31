@@ -5,6 +5,9 @@ pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
         if item.1.strs.contains_key("login") && item.1.strs["login"] == login {
             return Some(item.1.clone());
         }
+        if item.1.strs.contains_key("email") && item.1.strs["email"] == login {
+            return Some(item.1.clone());
+        }
     }
 
     return None;
