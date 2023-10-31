@@ -1,15 +1,14 @@
-use rand::Rng;
 use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-    },
-    Argon2
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
 };
+use rand::Rng;
 
 pub fn verify_password(pw: &str, pw_hash: &str) -> bool {
     let parsed_hash = PasswordHash::new(&pw_hash);
-    Argon2::default().verify_password(pw.as_bytes(), &parsed_hash.unwrap()).is_ok()
+    Argon2::default()
+        .verify_password(pw.as_bytes(), &parsed_hash.unwrap())
+        .is_ok()
 }
 
 pub fn get_new_salt() -> String {

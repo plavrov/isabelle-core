@@ -1,17 +1,17 @@
 use crate::notif::email::send_email;
-use crate::util::crypto::verify_password;
-use isabelle_dm::data_model::process_result::ProcessResult;
-use isabelle_dm::data_model::item::Item;
-use crate::util::crypto::get_new_salt;
 use crate::state::collection::Collection;
+use crate::util::crypto::get_new_salt;
 use crate::util::crypto::get_password_hash;
-use log::{info, error};
+use crate::util::crypto::verify_password;
+use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::process_result::ProcessResult;
+use log::{error, info};
 
 pub fn security_check_unique_login_email(
     srv: &mut crate::state::data::Data,
     _collection: &str,
     _old_itm: Option<Item>,
-    itm: & mut Item,
+    itm: &mut Item,
     del: bool,
 ) -> ProcessResult {
     if del {
@@ -57,10 +57,10 @@ pub fn security_password_challenge_pre_edit_hook(
     _srv: &mut crate::state::data::Data,
     collection: &str,
     old_itm: Option<Item>,
-    itm: & mut Item,
+    itm: &mut Item,
     del: bool,
 ) -> ProcessResult {
-    let mut salt : String = "<empty salt>".to_string();
+    let mut salt: String = "<empty salt>".to_string();
 
     if del {
         return ProcessResult {
@@ -69,9 +69,10 @@ pub fn security_password_challenge_pre_edit_hook(
         };
     }
 
-    if collection == "user" &&
-       old_itm != None &&
-       (itm.strs.contains_key("password") || itm.strs.contains_key("salt")) {
+    if collection == "user"
+        && old_itm != None
+        && (itm.strs.contains_key("password") || itm.strs.contains_key("salt"))
+    {
         error!("Can't edit password directly");
         return ProcessResult {
             succeeded: false,
@@ -89,20 +90,21 @@ pub fn security_password_challenge_pre_edit_hook(
         }
     }
 
-    if collection == "user" &&
-       old_itm != None &&
-       itm.strs.contains_key("__password") &&
-       itm.strs.contains_key("__new_password1") &&
-       itm.strs.contains_key("__new_password2") {
+    if collection == "user"
+        && old_itm != None
+        && itm.strs.contains_key("__password")
+        && itm.strs.contains_key("__new_password1")
+        && itm.strs.contains_key("__new_password2")
+    {
         let old_pw_hash = old_itm.as_ref().unwrap().safe_str("password", "");
         let old_otp = old_itm.as_ref().unwrap().safe_str("otp", "");
         let old_checked_pw = itm.safe_str("__password", "");
-        let res = verify_password(&old_checked_pw,
-                                  &old_pw_hash) ||
-                  (old_otp != "" && old_otp == old_checked_pw);
-        if !res ||
-           itm.safe_str("__new_password1", "<bad1>") !=
-             itm.safe_str("__new_password2", "<bad2>") {
+        let res = verify_password(&old_checked_pw, &old_pw_hash)
+            || (old_otp != "" && old_otp == old_checked_pw);
+        if !res
+            || itm.safe_str("__new_password1", "<bad1>")
+                != itm.safe_str("__new_password2", "<bad2>")
+        {
             error!("Password change challenge failed");
             return ProcessResult {
                 succeeded: false,
@@ -115,8 +117,7 @@ pub fn security_password_challenge_pre_edit_hook(
         itm.strs.remove("__new_password2");
         itm.strs.remove("otp");
 
-        let pw_hash = get_password_hash(&new_pw,
-            &salt);
+        let pw_hash = get_password_hash(&new_pw, &salt);
         if itm.strs.contains_key("otp") {
             itm.strs.remove("otp");
         }
@@ -128,9 +129,9 @@ pub fn security_password_challenge_pre_edit_hook(
     };
 }
 
-pub fn security_collection_read_hook(collection: &str, new_col: & mut Collection) {
+pub fn security_collection_read_hook(collection: &str, new_col: &mut Collection) {
     if collection == "user" {
-        let mut replace : Vec<Item> = Vec::new();
+        let mut replace: Vec<Item> = Vec::new();
         for pair in &new_col.items {
             let mut new_itm = pair.1.clone();
             if !pair.1.strs.contains_key("salt") {
@@ -152,13 +153,17 @@ pub fn security_collection_read_hook(collection: &str, new_col: & mut Collection
     }
 }
 
-pub fn security_otp_send_email(srv: &mut crate::state::data::Data,
-                               itm: Item) {
+pub fn security_otp_send_email(srv: &mut crate::state::data::Data, itm: Item) {
     let email = itm.safe_str("email", "");
     let otp = itm.safe_str("otp", "");
     if email == "" || otp == "" {
         return;
     }
 
-    send_email(srv, &email, "Your login code", &format!("Enter this as password: {}", otp));
+    send_email(
+        srv,
+        &email,
+        "Your login code",
+        &format!("Enter this as password: {}", otp),
+    );
 }

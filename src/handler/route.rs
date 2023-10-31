@@ -1,12 +1,12 @@
-use isabelle_dm::data_model::process_result::ProcessResult;
-use crate::state::collection::Collection;
 use crate::handler::equestrian::*;
 use crate::handler::security::*;
+use crate::state::collection::Collection;
 use crate::State;
 use actix_identity::Identity;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::process_result::ProcessResult;
 use log::info;
 use std::collections::HashMap;
 
@@ -15,18 +15,21 @@ pub fn call_item_pre_edit_hook(
     hndl: &str,
     collection: &str,
     old_itm: Option<Item>,
-    itm: & mut Item,
+    itm: &mut Item,
     del: bool,
 ) -> ProcessResult {
     match hndl {
         "security_password_challenge_pre_edit_hook" => {
             return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del);
-        },
+        }
         "security_check_unique_login_email" => {
             return security_check_unique_login_email(srv, collection, old_itm, itm, del);
-        },
+        }
         &_ => {
-            return ProcessResult { succeeded: true, error: "".to_string() };
+            return ProcessResult {
+                succeeded: true,
+                error: "".to_string(),
+            };
         }
     }
 }
@@ -120,24 +123,20 @@ pub async fn url_route(
     HttpResponse::NotFound().into()
 }
 
-pub fn call_collection_read_hook(hndl: &str, collection: &str, new_col: & mut Collection) {
+pub fn call_collection_read_hook(hndl: &str, collection: &str, new_col: &mut Collection) {
     match hndl {
         "security_collection_read_hook" => {
             return security_collection_read_hook(collection, new_col);
         }
-        _ => {
-        }
+        _ => {}
     }
 }
 
-pub fn call_otp_hook(srv: &mut crate::state::data::Data,
-                     hndl: &str,
-                     itm: Item) {
+pub fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
     match hndl {
         "security_otp_send_email" => {
             security_otp_send_email(srv, itm);
         }
-        _ => {
-        }
+        _ => {}
     }
 }

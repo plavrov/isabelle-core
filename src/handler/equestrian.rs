@@ -1,8 +1,8 @@
-use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::state::data_rw::*;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::process_result::ProcessResult;
 use std::collections::HashMap;
 use std::ops::Deref;
 
@@ -216,7 +216,9 @@ pub fn equestrian_schedule_materialize(
         serde_json::to_string(&ProcessResult {
             succeeded: true,
             error: "".to_string(),
-        }).unwrap())
+        })
+        .unwrap(),
+    )
 }
 
 pub fn equestrian_pay_find_broken_payments(

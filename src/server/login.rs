@@ -1,17 +1,17 @@
 use crate::handler::route::call_otp_hook;
-use std::collections::HashMap;
-use crate::util::crypto::get_otp_code;
-use crate::util::crypto::verify_password;
 use crate::server::user_control::*;
 use crate::state::state::*;
+use crate::util::crypto::get_otp_code;
+use crate::util::crypto::verify_password;
 use actix_identity::Identity;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_multipart::Multipart;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
-use isabelle_dm::data_model::process_result::ProcessResult;
 use isabelle_dm::data_model::login_user::LoginUser;
+use isabelle_dm::data_model::process_result::ProcessResult;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub async fn gen_otp(
     _user: Option<Identity>,
@@ -45,9 +45,17 @@ pub async fn gen_otp(
             error: "Invalid login".to_string(),
         });
     } else {
-        let mut new_usr_itm = srv.itm.get_mut("user").unwrap().get(usr.clone().unwrap().id).unwrap();
+        let mut new_usr_itm = srv
+            .itm
+            .get_mut("user")
+            .unwrap()
+            .get(usr.clone().unwrap().id)
+            .unwrap();
         new_usr_itm.set_str("otp", &get_otp_code());
-        srv.itm.get_mut("user").unwrap().set(usr.unwrap().id, new_usr_itm.clone(), false);
+        srv.itm
+            .get_mut("user")
+            .unwrap()
+            .set(usr.unwrap().id, new_usr_itm.clone(), false);
 
         let routes = srv.internals.safe_strstr("otp_hook", &HashMap::new());
         for route in routes {
@@ -101,8 +109,7 @@ pub async fn login(
 
         let pw = itm_real.safe_str("password", "");
         let otp = itm_real.safe_str("otp", "");
-        if (pw != "" && verify_password(&lu.password, &pw)) ||
-           (otp != "" && lu.password == otp) {
+        if (pw != "" && verify_password(&lu.password, &pw)) || (otp != "" && lu.password == otp) {
             Identity::login(&req.extensions(), itm_real.safe_str("email", "")).unwrap();
             info!("Logged in as {}", lu.username);
         } else {

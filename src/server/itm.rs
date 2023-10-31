@@ -1,26 +1,28 @@
-use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::handler::route::*;
+use crate::server::user_control::*;
 use crate::state::collection::Collection;
 use crate::state::state::*;
 use crate::write_data;
 use actix_identity::Identity;
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use futures_util::TryStreamExt;
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::list_query::ListQuery;
 use isabelle_dm::data_model::merge_coll::MergeColl;
+use isabelle_dm::data_model::process_result::ProcessResult;
 use log::{error, info};
 use serde_qs;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::ops::DerefMut;
-use actix_multipart::Multipart;
-use futures_util::TryStreamExt;
-use crate::server::user_control::*;
 
-pub async fn itm_edit(user: Identity,
-                      data: web::Data<State>,
-                      req: HttpRequest,
-                      mut payload: Multipart) -> HttpResponse {
+pub async fn itm_edit(
+    user: Identity,
+    data: web::Data<State>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
@@ -34,9 +36,7 @@ pub async fn itm_edit(user: Identity,
             if field.name() == "item" {
                 let v = &data.to_vec();
                 let strv = std::str::from_utf8(v).unwrap_or("{}");
-                let new_itm : Item = serde_json::from_str(
-                    strv)
-                    .unwrap_or(Item::new());
+                let new_itm: Item = serde_json::from_str(strv).unwrap_or(Item::new());
                 itm.merge(&new_itm);
             }
         }
@@ -80,7 +80,8 @@ pub async fn itm_edit(user: Identity,
                         &mc.collection,
                         old_itm.clone(),
                         &mut itm_clone,
-                        false);
+                        false,
+                    );
                     if !res.succeeded {
                         info!("Item pre edit hook failed: {}", parts[1]);
                         let s = serde_json::to_string(&res);
@@ -102,7 +103,13 @@ pub async fn itm_edit(user: Identity,
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(srv.deref_mut(), &parts[1], &mc.collection, itm.id, false);
+                    call_item_post_edit_hook(
+                        srv.deref_mut(),
+                        &parts[1],
+                        &mc.collection,
+                        itm.id,
+                        false,
+                    );
                 }
             }
         }
@@ -112,7 +119,9 @@ pub async fn itm_edit(user: Identity,
             serde_json::to_string(&ProcessResult {
                 succeeded: true,
                 error: "".to_string(),
-            }).unwrap());
+            })
+            .unwrap(),
+        );
     } else {
         error!("Collection {} doesn't exist", mc.collection);
     }

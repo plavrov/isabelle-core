@@ -1,10 +1,10 @@
 extern crate serde_json;
 use crate::handler::route::*;
-use std::collections::HashMap;
 use crate::state::collection::*;
 use crate::state::data::*;
 use isabelle_dm::data_model::item::*;
 use log::info;
+use std::collections::HashMap;
 use std::fs;
 
 pub fn get_credentials_json(srv: &crate::state::data::Data) -> String {
@@ -45,16 +45,16 @@ pub fn read_data(path: &str) -> Data {
     read_internals_entries(&mut data, (path.to_string() + "/").as_str());
     read_settings_entries(&mut data, (path.to_string() + "/").as_str());
 
-    let collection_routes = data.internals.safe_strstr("collection_read_hook", &HashMap::new());
+    let collection_routes = data
+        .internals
+        .safe_strstr("collection_read_hook", &HashMap::new());
     let collections = fs::read_dir(path.to_string() + "/collection").unwrap();
     for coll in collections {
         let idx = coll.as_ref().unwrap().file_name().into_string().unwrap();
         let mut new_col = Collection::new();
         new_col.read_fs(&(path.to_string() + "/collection/" + &idx), &idx);
         for collection_route in &collection_routes {
-            call_collection_read_hook(&collection_route.1,
-                                      &idx,
-                                      & mut new_col);
+            call_collection_read_hook(&collection_route.1, &idx, &mut new_col);
         }
         data.itm.insert(idx, new_col);
     }
