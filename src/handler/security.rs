@@ -11,9 +11,16 @@ pub fn security_password_challenge_pre_edit_hook(
     collection: &str,
     old_itm: Option<Item>,
     itm: & mut Item,
-    _del: bool,
+    del: bool,
 ) -> ProcessResult {
     let mut salt : String = "<empty salt>".to_string();
+
+    if del {
+        return ProcessResult {
+            succeeded: true,
+            error: "".to_string(),
+        };
+    }
 
     if collection == "user" &&
        old_itm != None &&
