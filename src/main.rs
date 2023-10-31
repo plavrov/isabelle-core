@@ -121,6 +121,7 @@ async fn main() -> std::io::Result<()> {
             .route("/itm/del", web::post().to(itm_del))
             .route("/itm/list", web::get().to(itm_list))
             .route("/login", web::post().to(login))
+            .route("/gen_otp", web::post().to(gen_otp))
             .route("/logout", web::post().to(logout))
             .route("/is_logged_in", web::get().to(is_logged_in))
             .route("/setting/edit", web::post().to(setting_edit))

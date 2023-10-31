@@ -1,3 +1,6 @@
+use crate::handler::route::call_otp_hook;
+use std::collections::HashMap;
+use crate::util::crypto::get_otp_code;
 use crate::util::crypto::verify_password;
 use crate::server::user_control::*;
 use crate::state::state::*;
@@ -9,6 +12,54 @@ use isabelle_dm::data_model::process_result::ProcessResult;
 use isabelle_dm::data_model::login_user::LoginUser;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
+
+pub async fn gen_otp(
+    _user: Option<Identity>,
+    data: web::Data<State>,
+    mut payload: Multipart,
+    _req: HttpRequest,
+) -> impl Responder {
+    let mut lu = LoginUser {
+        username: "".to_string(),
+        password: "".to_string(),
+    };
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        while let Ok(Some(chunk)) = field.try_next().await {
+            let data = chunk;
+
+            if field.name() == "username" {
+                lu.username = std::str::from_utf8(&data.to_vec()).unwrap().to_string();
+            }
+        }
+    }
+
+    let mut srv = data.server.lock().unwrap();
+    info!("User name: {}", lu.username.clone());
+    let usr = get_user(&srv, lu.username.clone());
+
+    if usr == None {
+        info!("No user {} found, couldn't log in", lu.username.clone());
+        return web::Json(ProcessResult {
+            succeeded: false,
+            error: "Invalid login".to_string(),
+        });
+    } else {
+        let mut new_usr_itm = srv.itm.get_mut("user").unwrap().get(usr.clone().unwrap().id).unwrap();
+        new_usr_itm.set_str("otp", &get_otp_code());
+        srv.itm.get_mut("user").unwrap().set(usr.unwrap().id, new_usr_itm.clone(), false);
+
+        let routes = srv.internals.safe_strstr("otp_hook", &HashMap::new());
+        for route in routes {
+            call_otp_hook(&mut srv, &route.1, new_usr_itm.clone());
+        }
+    }
+
+    return web::Json(ProcessResult {
+        succeeded: true,
+        error: "".to_string(),
+    });
+}
 
 pub async fn login(
     _user: Option<Identity>,
@@ -33,7 +84,7 @@ pub async fn login(
         }
     }
 
-    let srv = data.server.lock().unwrap();
+    let mut srv = data.server.lock().unwrap();
     info!("User name: {}", lu.username.clone());
     let usr = get_user(&srv, lu.username.clone());
 
@@ -46,7 +97,12 @@ pub async fn login(
     } else {
         let itm_real = usr.unwrap();
 
-        if verify_password(&lu.password, &itm_real.safe_str("password", "")) {
+        clear_otp(&mut srv, lu.username.clone());
+
+        let pw = itm_real.safe_str("password", "");
+        let otp = itm_real.safe_str("otp", "");
+        if (pw != "" && verify_password(&lu.password, &pw)) ||
+           (otp != "" && lu.password == otp) {
             Identity::login(&req.extensions(), itm_real.safe_str("email", "")).unwrap();
             info!("Logged in as {}", lu.username);
         } else {
