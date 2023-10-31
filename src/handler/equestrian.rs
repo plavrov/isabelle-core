@@ -140,12 +140,7 @@ pub fn equestrian_job_sync(
     }
 
     init_google(&srv);
-    sync_with_google(
-        &srv,
-        !del,
-        eventname(&srv, &job),
-        entry2datetimestr(&job),
-    );
+    sync_with_google(&srv, !del, eventname(&srv, &job), entry2datetimestr(&job));
 }
 
 fn unset_week() -> u64 {
