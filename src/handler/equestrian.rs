@@ -139,7 +139,7 @@ pub fn equestrian_job_sync(
     init_google(&srv);
     sync_with_google(
         &srv,
-        if del { false } else { true },
+        !del,
         eventname(&srv, &job),
         entry2datetimestr(&job),
     );
