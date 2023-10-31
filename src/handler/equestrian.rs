@@ -31,8 +31,11 @@ pub fn date2ts(date: String, time: String) -> u64 {
 }
 
 pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
-    let teacher_id = sch.safe_id("teacher", 0);
+    let mut teacher_id = sch.safe_id("teacher", u64::MAX);
     if teacher_id == 0 {
+        teacher_id = u64::MAX;
+    }
+    if teacher_id == u64::MAX {
         "Training".to_string()
     } else {
         "Training with ".to_owned()
