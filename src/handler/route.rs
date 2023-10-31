@@ -126,3 +126,15 @@ pub fn call_collection_read_hook(hndl: &str, collection: &str, new_col: & mut Co
         }
     }
 }
+
+pub fn call_otp_hook(srv: &mut crate::state::data::Data,
+                     hndl: &str,
+                     itm: Item) {
+    match hndl {
+        "security_otp_send_email" => {
+            security_otp_send_email(srv, itm);
+        }
+        _ => {
+        }
+    }
+}

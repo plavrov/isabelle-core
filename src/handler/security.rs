@@ -1,3 +1,4 @@
+use crate::notif::email::send_email;
 use crate::util::crypto::verify_password;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use isabelle_dm::data_model::item::Item;
@@ -97,4 +98,15 @@ pub fn security_collection_read_hook(collection: &str, new_col: & mut Collection
             new_col.set(itm.id, itm, false);
         }
     }
+}
+
+pub fn security_otp_send_email(srv: &mut crate::state::data::Data,
+                               itm: Item) {
+    let email = itm.safe_str("email", "");
+    let otp = itm.safe_str("otp", "");
+    if email == "" || otp == "" {
+        return;
+    }
+
+    send_email(srv, &email, "Your login code", &format!("Enter this as password: {}", otp));
 }
