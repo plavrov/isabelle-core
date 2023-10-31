@@ -1,3 +1,4 @@
+use rand::Rng;
 use argon2::{
     password_hash::{
         rand_core::OsRng,
@@ -23,4 +24,9 @@ pub fn get_password_hash(pw: &str, salt: &str) -> String {
     let password_hash = argon2.hash_password(pw.as_bytes(), saltstr.as_salt());
 
     return password_hash.unwrap().serialize().as_str().to_string();
+}
+
+pub fn get_otp_code() -> String {
+    let num = rand::thread_rng().gen_range(100000000..999999999);
+    num.to_string()
 }
