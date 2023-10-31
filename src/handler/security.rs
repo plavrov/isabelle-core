@@ -9,8 +9,8 @@ use log::{info, error};
 
 pub fn security_check_unique_login_email(
     srv: &mut crate::state::data::Data,
-    collection: &str,
-    old_itm: Option<Item>,
+    _collection: &str,
+    _old_itm: Option<Item>,
     itm: & mut Item,
     del: bool,
 ) -> ProcessResult {
