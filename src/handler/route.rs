@@ -9,7 +9,7 @@ use isabelle_dm::data_model::item::Item;
 use log::info;
 use std::collections::HashMap;
 
-pub fn call_item_route(
+pub fn call_item_post_edit_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
     collection: &str,

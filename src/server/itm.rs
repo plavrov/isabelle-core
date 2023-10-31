@@ -125,11 +125,11 @@ pub async fn itm_edit(user: Identity,
         {
             let routes = srv
                 .internals
-                .safe_strstr("collection_hook", &HashMap::new());
+                .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_route(srv.deref_mut(), &parts[1], &mc.collection, itm.id, false);
+                    call_item_post_edit_hook(srv.deref_mut(), &parts[1], &mc.collection, itm.id, false);
                 }
             }
         }
@@ -164,8 +164,22 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
         }
     }
 
-    if srv.itm.contains_key(&mc.collection) {
-        let coll = srv.itm.get_mut(&mc.collection).unwrap();
+    let srv_mut = srv.deref_mut();
+    if srv_mut.itm.contains_key(&mc.collection) {
+        /* call hooks */
+        {
+            let routes = srv_mut
+                .internals
+                .safe_strstr("item_post_edit_hook", &HashMap::new());
+            for route in routes {
+                let parts: Vec<&str> = route.1.split(":").collect();
+                if parts[0] == mc.collection {
+                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true);
+                }
+            }
+        }
+
+        let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
         if coll.del(itm.id) {
             info!("Collection {} element {} removed", mc.collection, itm.id);
             write_data(srv.deref_mut());
