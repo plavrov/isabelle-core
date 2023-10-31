@@ -47,7 +47,7 @@ pub async fn login(
         let itm_real = usr.unwrap();
 
         if verify_password(&lu.password, &itm_real.safe_str("password", "")) {
-            Identity::login(&req.extensions(), lu.username.clone()).unwrap();
+            Identity::login(&req.extensions(), itm_real.safe_str("email", "")).unwrap();
             info!("Logged in as {}", lu.username);
         } else {
             error!("Invalid password for {}", lu.username);
@@ -120,8 +120,8 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
 
     let role_is = srv.internals.safe_str("user_role_prefix", "role_is_");
     for item in srv.itm["user"].get_all() {
-        if item.1.strs.contains_key("login")
-            && item.1.strs["login"] == _user.as_ref().unwrap().id().unwrap()
+        if item.1.strs.contains_key("email")
+            && item.1.strs["email"] == _user.as_ref().unwrap().id().unwrap()
         {
             user.username = _user.as_ref().unwrap().id().unwrap();
             user.id = *item.0;
