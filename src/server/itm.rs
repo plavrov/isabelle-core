@@ -90,58 +90,7 @@ pub async fn itm_edit(user: Identity,
                 }
             }
         }
-        /*
-        let mut salt : String = "<empty salt>".to_string();
-        if mc.collection == "user" &&
-           old_itm != None &&
-           (itm.strs.contains_key("password") || itm.strs.contains_key("salt")) {
-            error!("Can't edit password directly");
-            return HttpResponse::Ok().body(
-                    serde_json::to_string(&ProcessResult {
-                        succeeded: false,
-                        error: "Can't edit password directly".to_string(),
-                    }).unwrap());
-        }
 
-        if mc.collection == "user" {
-            if old_itm.is_none() {
-                /* Add salt when creating new user */
-                salt = get_new_salt();
-                itm_clone.set_str("salt", &salt);
-            } else {
-                salt = old_itm.as_ref().unwrap().safe_str("salt", "<empty salt>");
-            }
-        }
-
-        if mc.collection == "user" &&
-           old_itm != None &&
-           itm.strs.contains_key("__password") &&
-           itm.strs.contains_key("__new_password1") &&
-           itm.strs.contains_key("__new_password2") {
-            let old_pw_hash = old_itm.as_ref().unwrap().safe_str("password", "");
-            let old_checked_pw = itm.safe_str("__password", "");
-            let res = verify_password(&old_checked_pw,
-                                      &old_pw_hash);
-            if !res ||
-               itm.safe_str("__new_password1", "<bad1>") !=
-                 itm.safe_str("__new_password2", "<bad2>") {
-                error!("Password change challenge failed");
-                return HttpResponse::Ok().body(
-                    serde_json::to_string(&ProcessResult {
-                        succeeded: false,
-                        error: "Password change challenge failed".to_string(),
-                    }).unwrap());
-            }
-            let new_pw = itm.safe_str("__new_password1", "");
-            itm_clone.strs.remove("__password");
-            itm_clone.strs.remove("__new_password1");
-            itm_clone.strs.remove("__new_password2");
-
-            let pw_hash = get_password_hash(&new_pw,
-                &salt);
-            itm_clone.set_str("password", &pw_hash);
-        }
-        */
         let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm_clone, mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
