@@ -91,6 +91,25 @@ pub async fn itm_edit(
             }
         }
 
+        /* call hooks */
+        if old_itm != None {
+            let routes = srv_mut
+                .internals
+                .safe_strstr("item_post_edit_hook", &HashMap::new());
+            for route in routes {
+                let parts: Vec<&str> = route.1.split(":").collect();
+                if parts[0] == mc.collection {
+                    call_item_post_edit_hook(
+                        srv_mut,
+                        &parts[1],
+                        &mc.collection,
+                        itm.id,
+                        true,
+                    );
+                }
+            }
+        }
+
         let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
         coll.set(itm.id, itm_clone, mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
