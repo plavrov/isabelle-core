@@ -16,8 +16,6 @@ Isabelle is a Rust-based framework for building safe and performant servers for 
 
  - Python 3 is needed for Google Calendar integration
 
-RUST_LOG=info ./target/debug/isabelle-core --port "${port}" --pub-url "${pub_url}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}"
-
 ## Building
 
 Building Isabelle is as easy as Cargo invocation:
