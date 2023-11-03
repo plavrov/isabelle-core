@@ -23,7 +23,7 @@ pipeline {
       parallel {
         stage('Build (Linux)') {
           steps {
-            sh 'env PATH=/root/.cargo/bin:/.cargo/bin:${PATH} cargo build --release'
+            sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo build --release'
           }
         }
       }
