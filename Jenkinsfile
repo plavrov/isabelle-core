@@ -23,7 +23,6 @@ pipeline {
       parallel {
         stage('Build (Linux)') {
           steps {
-            sh 'env PATH=${HOME}/.cargo/bin:${PATH} find / -name rustc'
             sh 'env PATH=${HOME}/.cargo/bin:${PATH} rustc --version'
           }
         }
