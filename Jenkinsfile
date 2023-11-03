@@ -32,7 +32,7 @@ pipeline {
       stages {
         stage('Prepare artifacts (branch)') {
           steps {
-            sh 'mkdir -p build'
+            sh 'mkdir -p build && (rm -rf build/* || true)'
             /* Create branch-build-linux and doc-branch-build */
             sh './tools/release.sh --out build/isabelle-core-${BRANCH_NAME}-${BUILD_NUMBER}-linux-x86_64.tar.xz'
             /* Copy branch-build-linux to branch-latest-linux */
