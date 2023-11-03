@@ -3,7 +3,7 @@ FROM ubuntu:23.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y build-essential cargo curl
+    apt-get install -y build-essential cargo curl libssl-dev pkg-config
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
