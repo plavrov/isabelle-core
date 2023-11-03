@@ -8,5 +8,3 @@ RUN apt-get update && \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 RUN mkdir /.cargo && chmod -R 777 /.cargo
-
-RUN cargo search --limit 0
