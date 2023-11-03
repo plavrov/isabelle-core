@@ -23,7 +23,7 @@ pipeline {
       parallel {
         stage('Build (Linux)') {
           steps {
-            sh 'env PATH=${HOME}/.cargo/bin:${PATH} rustc --version'
+            sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo build --release'
           }
         }
       }
