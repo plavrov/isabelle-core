@@ -1,6 +1,7 @@
 use crate::state::collection::*;
 use isabelle_dm::data_model::item::*;
 use std::collections::HashMap;
+use crate::state::store_local::StoreLocal;
 
 #[derive(Debug, Clone)]
 pub struct Data {
@@ -10,6 +11,7 @@ pub struct Data {
     pub settings: Item,
     pub internals: Item,
 
+    pub rw: StoreLocal,
     pub gc_path: String,
     pub py_path: String,
     pub data_path: String,
@@ -25,6 +27,8 @@ impl Data {
 
             settings: Item::new(),
             internals: Item::new(),
+
+            rw: StoreLocal::new(),
 
             gc_path: "".to_string(),
             py_path: "".to_string(),

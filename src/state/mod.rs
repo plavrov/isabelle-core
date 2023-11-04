@@ -1,4 +1,5 @@
 pub mod collection;
 pub mod data;
-pub mod data_rw_local;
+pub mod store;
+pub mod store_local;
 pub mod state;

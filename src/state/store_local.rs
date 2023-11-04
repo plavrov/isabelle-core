@@ -6,6 +6,56 @@ use isabelle_dm::data_model::item::*;
 use log::info;
 use std::collections::HashMap;
 use std::fs;
+use crate::state::store::Store;
+
+#[derive(Debug, Clone)]
+pub struct StoreLocal {
+    pub path: String,
+}
+
+impl StoreLocal {
+    pub fn new() -> Self {
+        Self {
+            path: "".to_string(),
+        }
+    }
+
+/*
+    pub fn read_internals_entries(mut data: &mut Data, path: &str) {
+        let tmp_data_path = path.to_string() + "/internals.js";
+
+        let read_data = std::fs::read_to_string(tmp_data_path);
+        if let Err(_e) = read_data {
+            return;
+        }
+        let text = read_data.unwrap();
+        let settings: Item = serde_json::from_str(&text).unwrap();
+        data.internals = settings;
+    }
+*/
+}
+
+impl Store for StoreLocal {
+    fn connect(&mut self, url: &str) {
+        self.path = url.to_string();
+    }
+
+    fn disconnect(&mut self) {
+
+    }
+
+    fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
+        return None;
+    }
+
+    fn set_item(&mut self, collection: &str, itm: &Item) {
+
+    }
+
+    fn del_item(&mut self, collection: &str, id: u64) {
+
+    }
+}
 
 pub fn get_credentials_json(srv: &crate::state::data::Data) -> String {
     return srv.data_path.clone() + "/credentials.json";
