@@ -7,10 +7,10 @@ use actix_identity::Identity;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
-use isabelle_dm::data_model::login_user::LoginUser;
+use isabelle_dm::transfer_model::detailed_login_user::DetailedLoginUser;
+use isabelle_dm::transfer_model::login_user::LoginUser;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use log::{error, info};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub async fn gen_otp(
@@ -141,17 +141,7 @@ pub async fn logout(
 pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
     let srv = data.server.lock().unwrap();
 
-    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
-    pub struct LoginUser {
-        pub username: String,
-        pub id: u64,
-        pub role: Vec<String>,
-        pub site_name: String,
-        pub site_logo: String,
-        pub licensed_to: String,
-    }
-
-    let mut user: LoginUser = LoginUser {
+    let mut user: DetailedLoginUser = DetailedLoginUser {
         username: "".to_string(),
         id: 0,
         role: Vec::new(),
