@@ -15,7 +15,7 @@ use log::info;
 
 use crate::notif::gcal::*;
 use crate::server::user_control::*;
-use crate::state::data_rw::*;
+use crate::state::data_rw_local::*;
 use serde::{Deserialize, Serialize};
 use std::ops::DerefMut;
 

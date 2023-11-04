@@ -11,7 +11,7 @@ use crate::server::login::*;
 use std::collections::HashMap;
 
 use crate::server::setting::*;
-use crate::state::data_rw::*;
+use crate::state::data_rw_local::*;
 use crate::state::state::*;
 use actix_cors::Cors;
 use actix_identity::IdentityMiddleware;
