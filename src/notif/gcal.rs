@@ -13,12 +13,13 @@ pub fn sync_with_google(
     srv: &mut crate::state::data::Data,
     add: bool,
     name: String,
-    date_time: String,
-) {
-    if !srv.settings.clone().safe_bool("sync_google_cal", false)
-        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
-        || srv.settings.clone().safe_str("sync_google_email", "") == ""
-        || srv.settings.clone().safe_str("sync_google_cal_name", "") == ""
+    date_time: String) {
+
+    let settings = srv.rw.get_settings();
+    if !settings.safe_bool("sync_google_cal", false)
+        || settings.safe_str("sync_google_creds", "") == ""
+        || settings.safe_str("sync_google_email", "") == ""
+        || settings.safe_str("sync_google_cal_name", "") == ""
     {
         info!("Don't sync with google");
         return;
@@ -31,7 +32,7 @@ pub fn sync_with_google(
     let pickle = srv.rw.get_pickle();
     let mut file = File::create(creds.clone()).unwrap();
 
-    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
+    write!(file, "{}", settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -40,9 +41,9 @@ pub fn sync_with_google(
         .arg("-m")
         .arg("igc")
         .arg("-e")
-        .arg(srv.settings.strs["sync_google_email"].clone())
+        .arg(settings.strs["sync_google_email"].clone())
         .arg("-c")
-        .arg(srv.settings.strs["sync_google_cal_name"].clone())
+        .arg(settings.strs["sync_google_cal_name"].clone())
         .arg("-creds")
         .arg(creds)
         .arg("-pickle")
@@ -58,10 +59,11 @@ pub fn sync_with_google(
 }
 
 pub fn init_google(srv: &mut crate::state::data::Data) -> String {
-    if !srv.settings.clone().safe_bool("sync_google_cal", false)
-        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
-        || srv.settings.clone().safe_str("sync_google_email", "") == ""
-        || srv.settings.clone().safe_str("sync_google_cal_name", "") == ""
+    let settings = srv.rw.get_settings();
+    if !settings.safe_bool("sync_google_cal", false)
+        || settings.safe_str("sync_google_creds", "") == ""
+        || settings.safe_str("sync_google_email", "") == ""
+        || settings.safe_str("sync_google_cal_name", "") == ""
     {
         info!("Don't sync with google");
         return "no_sync".to_string();
@@ -78,7 +80,7 @@ pub fn init_google(srv: &mut crate::state::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
+    write!(file, "{}", settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Syncing entry with Google...");
     /* Run google calendar sync */
@@ -87,9 +89,9 @@ pub fn init_google(srv: &mut crate::state::data::Data) -> String {
         .arg("-m")
         .arg("igc")
         .arg("-e")
-        .arg(srv.settings.strs["sync_google_email"].clone())
+        .arg(settings.strs["sync_google_email"].clone())
         .arg("-c")
-        .arg(srv.settings.strs["sync_google_cal_name"].clone())
+        .arg(settings.strs["sync_google_cal_name"].clone())
         .arg("-creds")
         .arg(creds)
         .arg("-pickle")
@@ -102,8 +104,9 @@ pub fn init_google(srv: &mut crate::state::data::Data) -> String {
 }
 
 pub fn auth_google(srv: &mut crate::state::data::Data) -> String {
-    if !srv.settings.clone().safe_bool("sync_google_cal", false)
-        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
+    let settings = srv.rw.get_settings();
+    if !settings.safe_bool("sync_google_cal", false)
+        || settings.safe_str("sync_google_creds", "") == ""
     {
         info!("Don't auth with google");
         return "no_auth".to_string();
@@ -120,7 +123,7 @@ pub fn auth_google(srv: &mut crate::state::data::Data) -> String {
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
+    write!(file, "{}", settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Authentication with Google...");
     /* Run google calendar sync */
@@ -160,9 +163,10 @@ pub fn auth_google_end(
     state: String,
     code: String,
 ) -> String {
+    let settings = srv.rw.get_settings();
     info!("Ending Google authentication...");
-    if !srv.settings.clone().safe_bool("sync_google_cal", false)
-        || srv.settings.clone().safe_str("sync_google_creds", "") == ""
+    if !settings.safe_bool("sync_google_cal", false)
+        || settings.safe_str("sync_google_creds", "") == ""
     {
         info!("Don't auth with google");
         return "no_auth".to_string();
@@ -181,7 +185,7 @@ pub fn auth_google_end(
     }
 
     let mut file = File::create(creds.clone()).unwrap();
-    write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
+    write!(file, "{}", settings.strs["sync_google_creds"].clone()).ok();
 
     info!("Finish Authentication with Google...");
     /* Run google calendar sync */

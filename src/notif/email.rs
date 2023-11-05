@@ -1,15 +1,18 @@
+use crate::state::store::Store;
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use log::info;
 
-pub fn send_email(srv: &crate::state::data::Data, to: &str, subject: &str, body: &str) {
+pub fn send_email(srv: &mut crate::state::data::Data, to: &str, subject: &str, body: &str) {
     info!("Checking options...");
 
-    let smtp_server = srv.settings.clone().safe_str("smtp_server", "");
-    let smtp_login = srv.settings.clone().safe_str("smtp_login", "");
-    let smtp_password = srv.settings.clone().safe_str("smtp_password", "");
-    let smtp_from = srv.settings.clone().safe_str("smtp_from", "");
+    let settings = srv.rw.get_settings().clone();
+
+    let smtp_server = settings.safe_str("smtp_server", "");
+    let smtp_login = settings.safe_str("smtp_login", "");
+    let smtp_password = settings.safe_str("smtp_password", "");
+    let smtp_from = settings.safe_str("smtp_from", "");
 
     info!("Building email...");
 

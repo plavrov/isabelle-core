@@ -43,7 +43,6 @@ pub async fn setting_edit(
         }
     }
 
-    srv.settings = itm.clone();
     info!("Settings edited");
     srv.rw.set_settings(itm.clone());
     //write_data(srv.deref_mut());
@@ -68,7 +67,7 @@ pub async fn setting_list(
         return HttpResponse::Forbidden().into();
     }
 
-    let st = srv.settings.clone();
+    let st = srv.rw.get_settings().clone();
     HttpResponse::Ok()
         .body(serde_json::to_string(&st).unwrap())
         .into()

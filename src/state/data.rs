@@ -8,8 +8,6 @@ pub struct Data {
     pub itm_cnt: HashMap<String, u64>,
     pub itm: HashMap<String, Collection>,
 
-    pub settings: Item,
-
     pub rw: StoreLocal,
     pub gc_path: String,
     pub py_path: String,
@@ -23,8 +21,6 @@ impl Data {
         Self {
             itm_cnt: HashMap::new(),
             itm: HashMap::new(),
-
-            settings: Item::new(),
 
             rw: StoreLocal::new(),
 

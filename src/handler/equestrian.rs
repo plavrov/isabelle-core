@@ -72,7 +72,7 @@ pub fn entry2datetimestr(entry: &Item) -> String {
 }
 
 pub fn equestrian_job_sync(
-    srv: &mut crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     collection: &str,
     id: u64,
     del: bool,
@@ -115,19 +115,20 @@ pub fn equestrian_job_sync(
                     info!("Target email found");
                     if del {
                         send_email(
-                            &srv,
+                            &mut srv,
                             &target_email,
                             "Schedule changed",
                             "The schedule entry has been removed. Please review your new schedule",
                         );
                     } else {
+                        let public_url = srv.public_url.clone();
                         send_email(
-                            &srv,
+                            &mut srv,
                             &target_email,
                             "Schedule changed",
                             &format!(
                                 "Please review changes for the following entry:\n{}{}",
-                                srv.public_url.clone() + "/job/edit?id=",
+                                public_url + "/job/edit?id=",
                                 &id.to_string()
                             ),
                         );
