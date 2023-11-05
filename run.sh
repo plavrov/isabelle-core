@@ -38,4 +38,4 @@ if [ "$gc_path" == "" ] ; then
 	gc_path="$(pwd)/isabelle-gc"
 fi
 
-RUST_LOG=info ./target/debug/isabelle-core --port "${port}" --pub-url "${pub_url}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}"
+RUST_LOG=info RUST_BACKTRACE=1 ./target/debug/isabelle-core --port "${port}" --pub-url "${pub_url}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}"
