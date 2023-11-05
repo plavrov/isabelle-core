@@ -35,10 +35,9 @@ impl Store for StoreLocal {
         for coll in collections {
             let idx = coll.as_ref().unwrap().file_name().into_string().unwrap();
             let new_col: HashMap<u64, bool> = HashMap::new();
-            self.items
-                .insert(self.items.len().try_into().unwrap(), new_col);
-            self.collections
-                .insert(idx.clone(), (self.items.len() - 1).try_into().unwrap());
+            let coll_index = self.items.len().try_into().unwrap();
+            self.items.insert(coll_index, new_col);
+            self.collections.insert(idx.clone(), coll_index);
             info!("New collection {}", idx.clone());
 
             let cnt_str =
@@ -58,13 +57,30 @@ impl Store for StoreLocal {
                 .insert(self.collections[&idx], *parsed.as_ref().unwrap());
             info!(" - index: {}", self.collections[&idx]);
             info!(" - counter: {}", parsed.as_ref().unwrap());
+
+            let data_files = fs::read_dir(self.path.to_string() + "/collection/" + &idx).unwrap();
+            for data_file in data_files {
+                let data_file_idx = data_file.as_ref().unwrap().file_name().into_string().unwrap();
+                let tmp_path = self.path.to_string() + "/collection/" + &idx + "/" + &data_file_idx;
+                if Path::new(&tmp_path).is_dir() {
+                    let m = self.items.get_mut(&coll_index).unwrap();
+                    (*m).insert(data_file_idx.parse::<u64>().unwrap(), true);
+                    info!("{}: idx {}", &idx, &data_file_idx);
+                }
+            }
         }
     }
 
     fn disconnect(&mut self) {}
 
+    fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
+        return self.get_items(collection, u64::MAX, u64::MAX, u64::MAX);
+    }
+
     fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
-        let tmp_path = self.path.to_string() + "/collection/" + collection + "/" + &id.to_string();
+        let tmp_path = self.path.to_string() +
+            "/collection/" + collection +
+            "/" + &id.to_string() + "/data.js";
         if Path::new(&tmp_path).is_file() {
             let text = std::fs::read_to_string(tmp_path).unwrap();
             let itm: Item = serde_json::from_str(&text).unwrap();
@@ -94,6 +110,7 @@ impl Store for StoreLocal {
             eff_id_min = 0;
         }
 
+        info!("Getting {} in range {} - {} limit {}", &collection, eff_id_min, eff_id_max, limit);
         for itm in itms {
             if itm.0 >= eff_id_min && itm.0 <= eff_id_max {
                 let new_item = self.get_item(collection, itm.0);
@@ -106,48 +123,55 @@ impl Store for StoreLocal {
                 }
             }
         }
+        info!(" - result: {} items", count);
 
         return map;
     }
 
-    fn set_item(&mut self, collection: &str, itm: &Item) {
+    fn set_item(&mut self, collection: &str, itm: &Item, merge: bool) {
+        let old_itm = self.get_item(collection, itm.id);
+        let mut new_itm = itm.clone();
+        if !old_itm.is_none() && merge {
+            new_itm = old_itm.unwrap().clone();
+            new_itm.merge(itm);
+        }
         let tmp_path =
-            self.path.to_string() + "/collection/" + collection + "/" + &itm.id.to_string();
+            self.path.to_string() + "/collection/" + collection + "/" + &new_itm.id.to_string();
 
         std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
 
         let tmp_data_path = tmp_path.clone() + "/data.js";
-        let s = serde_json::to_string(&itm);
+        let s = serde_json::to_string(&new_itm);
         std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write item");
 
         let coll_id = self.collections[collection];
         if self.items.contains_key(&coll_id) {
             let coll = self.items.get_mut(&coll_id).unwrap();
-            if coll.contains_key(&itm.id) {
-                *(coll.get_mut(&itm.id).unwrap()) = true;
+            if coll.contains_key(&new_itm.id) {
+                *(coll.get_mut(&new_itm.id).unwrap()) = true;
             } else {
-                coll.insert(itm.id, true);
+                coll.insert(new_itm.id, true);
             }
             if self.items_count.contains_key(&coll_id) {
                 let cnt = self.items_count.get_mut(&coll_id).unwrap();
-                if itm.id >= *cnt {
-                    *cnt = itm.id + 1;
+                if new_itm.id >= *cnt {
+                    *cnt = new_itm.id + 1;
                     let _res = std::fs::write(
                         self.path.to_string() + "/collection/" + collection + "/cnt",
-                        (itm.id + 1).to_string(),
+                        (new_itm.id + 1).to_string(),
                     );
                 }
             } else {
-                self.items_count.insert(coll_id, itm.id + 1);
+                self.items_count.insert(coll_id, new_itm.id + 1);
                 let _res = std::fs::write(
                     self.path.to_string() + "/collection/" + collection + "/cnt",
-                    (itm.id + 1).to_string(),
+                    (new_itm.id + 1).to_string(),
                 );
             }
         }
     }
 
-    fn del_item(&mut self, collection: &str, id: u64) {
+    fn del_item(&mut self, collection: &str, id: u64) -> bool {
         let tmp_path = self.path.to_string() + "/" + collection + "/" + &id.to_string();
         let path = Path::new(&tmp_path);
         if path.exists() {
@@ -158,9 +182,12 @@ impl Store for StoreLocal {
             let coll = self.items.get_mut(&coll_id).unwrap();
             if coll.contains_key(&id) {
                 coll.remove(&id);
+                return true;
             }
         }
+        return false;
     }
+
     fn get_credentials(&mut self) -> String {
         return self.path.clone() + "/credentials.json";
     }

@@ -5,6 +5,7 @@ pub trait Store {
     fn connect(&mut self, addr: &str);
     fn disconnect(&mut self);
 
+    fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item>;
     fn get_item(&mut self, collection: &str, id: u64) -> Option<Item>;
     fn get_items(
         &mut self,
@@ -14,8 +15,8 @@ pub trait Store {
         limit: u64,
     ) -> HashMap<u64, Item>;
 
-    fn set_item(&mut self, collection: &str, itm: &Item);
-    fn del_item(&mut self, collection: &str, id: u64);
+    fn set_item(&mut self, collection: &str, itm: &Item, merge: bool);
+    fn del_item(&mut self, collection: &str, id: u64) -> bool;
 
     fn get_credentials(&mut self) -> String;
     fn get_pickle(&mut self) -> String;

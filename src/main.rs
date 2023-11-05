@@ -81,10 +81,11 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
     let mut new_routes: HashMap<String, String> = HashMap::new();
-    let state = Box::new(State::new());
+    let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
         {
@@ -113,7 +114,6 @@ async fn main() -> std::io::Result<()> {
     }
 
     let data = Data::new(state);
-
     info!("Starting server");
     HttpServer::new(move || {
         let mut app = App::new()

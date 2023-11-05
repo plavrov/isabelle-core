@@ -1,12 +1,6 @@
-use crate::state::collection::*;
 use crate::state::store_local::*;
 
-use std::collections::HashMap;
-
 pub struct Data {
-    pub itm_cnt: HashMap<String, u64>,
-    pub itm: HashMap<String, Collection>,
-
     pub rw: StoreLocal,
     pub gc_path: String,
     pub py_path: String,
@@ -18,9 +12,6 @@ pub struct Data {
 impl Data {
     pub fn new() -> Self {
         Self {
-            itm_cnt: HashMap::new(),
-            itm: HashMap::new(),
-
             rw: StoreLocal::new(),
 
             gc_path: "".to_string(),
@@ -29,5 +20,9 @@ impl Data {
             public_url: "".to_string(),
             port: 8090,
         }
+    }
+
+    pub fn has_collection(&mut self, collection: &str) -> bool {
+        return self.rw.collections.contains_key(collection);
     }
 }

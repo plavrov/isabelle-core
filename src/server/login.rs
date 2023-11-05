@@ -37,7 +37,7 @@ pub async fn gen_otp(
 
     let mut srv = data.server.lock().unwrap();
     info!("User name: {}", lu.username.clone());
-    let usr = get_user(&srv, lu.username.clone());
+    let usr = get_user(&mut srv, lu.username.clone());
 
     if usr == None {
         info!("No user {} found, couldn't log in", lu.username.clone());
@@ -46,17 +46,9 @@ pub async fn gen_otp(
             error: "Invalid login".to_string(),
         });
     } else {
-        let mut new_usr_itm = srv
-            .itm
-            .get_mut("user")
-            .unwrap()
-            .get(usr.clone().unwrap().id)
-            .unwrap();
+        let mut new_usr_itm = srv.rw.get_item("user", usr.clone().unwrap().id).unwrap();
         new_usr_itm.set_str("otp", &get_otp_code());
-        srv.itm
-            .get_mut("user")
-            .unwrap()
-            .set(usr.unwrap().id, new_usr_itm.clone(), false);
+        srv.rw.set_item("user", &new_usr_itm, false);
 
         let routes = srv
             .rw
@@ -98,7 +90,7 @@ pub async fn login(
 
     let mut srv = data.server.lock().unwrap();
     info!("User name: {}", lu.username.clone());
-    let usr = get_user(&srv, lu.username.clone());
+    let usr = get_user(&mut srv, lu.username.clone());
 
     if usr == None {
         info!("No user {} found, couldn't log in", lu.username.clone());
@@ -179,7 +171,7 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
             .safe_str("default_licensed_to", "end user");
     }
 
-    if _user.is_none() || !srv.itm.contains_key("user") {
+    if _user.is_none() || !srv.has_collection("user") {
         info!("No user or user database");
         return web::Json(user);
     }
@@ -188,7 +180,8 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         .rw
         .get_internals()
         .safe_str("user_role_prefix", "role_is_");
-    for item in srv.itm["user"].get_all() {
+    let all_users = srv.rw.get_all_items("user");
+    for item in &all_users {
         if item.1.strs.contains_key("email")
             && item.1.strs["email"] == _user.as_ref().unwrap().id().unwrap()
         {

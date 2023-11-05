@@ -28,19 +28,18 @@ pub fn date2ts(date: String, time: String) -> u64 {
     return ndt.unwrap().timestamp() as u64;
 }
 
-pub fn eventname(srv: &crate::state::data::Data, sch: &Item) -> String {
+pub fn eventname(srv: &mut crate::state::data::Data, sch: &Item) -> String {
     let mut teacher_id = sch.safe_id("teacher", u64::MAX);
     if teacher_id == 0 {
         teacher_id = u64::MAX;
     }
-    if teacher_id == u64::MAX {
+
+    let itm = srv.rw.get_item("user", teacher_id);
+    if teacher_id == u64::MAX || itm.is_none() {
         "Training".to_string()
     } else {
         "Training with ".to_owned()
-            + &srv.itm["user"]
-                .get(teacher_id)
-                .unwrap()
-                .safe_str("name", "<unknown>")
+            + &itm.unwrap().safe_str("name", "<unknown>")
     }
 }
 
@@ -80,7 +79,7 @@ pub fn equestrian_job_sync(
         return;
     }
 
-    let j = srv.itm["job"].get(id);
+    let j = srv.rw.get_item("job", id);
     if j == None {
         info!("Equestrian job sync: no job");
         return;
@@ -97,7 +96,7 @@ pub fn equestrian_job_sync(
     for ent in &entities {
         for em in &email_entities {
             let user_id = job.safe_id(ent, 0);
-            let user = srv.itm["user"].get(user_id);
+            let user = srv.rw.get_item("user", user_id);
             if user != None {
                 info!(
                     "Found user: {}",
@@ -139,7 +138,8 @@ pub fn equestrian_job_sync(
     }
 
     init_google(srv);
-    sync_with_google(srv, !del, eventname(&srv, &job), entry2datetimestr(&job));
+    let event_name = eventname(&mut srv, &job);
+    sync_with_google(&mut srv, !del, event_name, entry2datetimestr(&job));
 }
 
 fn unset_week() -> u64 {
@@ -161,7 +161,7 @@ pub fn equestrian_schedule_materialize(
 
     let params = web::Query::<WeekSchedule>::from_query(query).unwrap();
     let mut vec: Vec<Item> = Vec::new();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
@@ -172,7 +172,8 @@ pub fn equestrian_schedule_materialize(
     let now = Utc::now();
     let week_start =
         (now.beginning_of_week().timestamp() as u64) + (60 * 60 * 24 * 7) * params.week;
-    for entry in srv.itm["job"].get_all() {
+    let all_jobs = srv.rw.get_all_items("job");
+    for entry in &all_jobs {
         let day = entry.1.safe_str("day_of_the_week", "");
         let pid = entry.1.safe_id("parent_id", u64::MAX);
         if day != "" && day != "unset" && pid == u64::MAX {
@@ -188,7 +189,7 @@ pub fn equestrian_schedule_materialize(
                 .insert("day_of_the_week".to_string(), "unset".to_string());
 
             let mut skip = false;
-            for tmp__ in srv.itm["job"].get_all() {
+            for tmp__ in &all_jobs {
                 if tmp__.1.u64s["time"] == cp_entry.u64s["time"]
                     && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0
                 {
@@ -205,11 +206,7 @@ pub fn equestrian_schedule_materialize(
 
     for ent in vec {
         info!("Materialized entry with ID {}", ent.id);
-        srv.itm
-            .get_mut("job")
-            .unwrap()
-            .set(ent.id, ent.clone(), false);
-        srv.rw.set_item("job", &ent.clone());
+        srv.rw.set_item("job", &ent.clone(), false);
     }
 
     //write_data(srv.deref_mut());
@@ -227,7 +224,7 @@ pub fn equestrian_pay_find_broken_payments(
     user: Identity,
     query: &str,
 ) -> HttpResponse {
-    let usr = get_user(&srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Unauthorized().into();
@@ -243,7 +240,7 @@ pub fn equestrian_pay_deactivate_expired_payments(
     user: Identity,
     _query: &str,
 ) -> HttpResponse {
-    let usr = get_user(&srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
     let now_time = chrono::Local::now().timestamp() as u64;
 
     if !check_role(&mut srv, &usr, "admin") {
@@ -253,8 +250,9 @@ pub fn equestrian_pay_deactivate_expired_payments(
     info!("Deactivate expired payments");
 
     let mut updated_payments: Vec<Item> = Vec::new();
-    let jobs = srv.itm["job"].get_all();
-    for pay in srv.itm["payment"].get_all() {
+    let jobs = srv.rw.get_all_items("job");
+    let payments = srv.rw.get_all_items("payment");
+    for pay in &payments {
         let id = pay.0;
         let mut new_pay = pay.1.clone();
         let mut use_new = false;
@@ -317,7 +315,7 @@ pub fn equestrian_pay_deactivate_expired_payments(
     }
 
     for pay in updated_payments {
-        srv.itm.get_mut("payment").unwrap().set(pay.id, pay, false);
+        srv.rw.set_item("payment", &pay, false);
     }
 
     HttpResponse::Ok().into()
@@ -347,7 +345,7 @@ pub fn equestrian_itm_auth_hook(
             || check_role(&mut srv, &user, "staff"))
     {
         let mut accept = true;
-        let itm = srv.itm["query"].get(id);
+        let itm = srv.rw.get_item("query", id);
 
         if !itm.is_none()
             && itm.unwrap().safe_id("requester", u64::MAX) != user.as_ref().unwrap().id
@@ -371,7 +369,7 @@ pub fn equestrian_itm_auth_hook(
     {
         return true;
     } else if collection == "user" {
-        let itm = srv.itm["user"].get(id);
+        let itm = srv.rw.get_item("user", id);
         if !itm.is_none() && itm.unwrap().id == user.as_ref().unwrap().id {
             return true;
         }

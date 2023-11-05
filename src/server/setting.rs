@@ -22,7 +22,7 @@ pub async fn setting_edit(
     mut payload: Multipart,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
@@ -61,7 +61,7 @@ pub async fn setting_list(
     _req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
@@ -79,7 +79,7 @@ pub async fn setting_gcal_auth(
     _req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
@@ -94,7 +94,7 @@ pub async fn setting_gcal_auth_end(
     _req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();

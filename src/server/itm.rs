@@ -24,7 +24,7 @@ pub async fn itm_edit(
     mut payload: Multipart,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let mut itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
@@ -64,11 +64,11 @@ pub async fn itm_edit(
 
     itm.normalize_negated();
 
-    if srv.itm.contains_key(&mc.collection) {
+    if srv.has_collection(&mc.collection) {
         let srv_mut = srv.deref_mut();
         let mut itm_clone = itm.clone();
 
-        let old_itm = srv_mut.itm.get_mut(&mc.collection).unwrap().get(itm.id);
+        let old_itm = srv_mut.rw.get_item(&mc.collection, itm.id);
         /* call pre edit ooks */
         {
             let routes = srv_mut
@@ -109,8 +109,7 @@ pub async fn itm_edit(
             }
         }
 
-        let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
-        coll.set(itm.id, itm_clone.clone(), mc.merge);
+        srv_mut.rw.set_item(&mc.collection, &itm_clone, mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
 
         /* call hooks */
@@ -133,7 +132,6 @@ pub async fn itm_edit(
             }
         }
 
-        srv.rw.set_item(&mc.collection, &itm_clone.clone());
         //write_data(&srv);
         return HttpResponse::Ok().body(
             serde_json::to_string(&ProcessResult {
@@ -151,7 +149,7 @@ pub async fn itm_edit(
 
 pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
@@ -170,7 +168,7 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
     }
 
     let srv_mut = srv.deref_mut();
-    if srv_mut.itm.contains_key(&mc.collection) {
+    if srv_mut.has_collection(&mc.collection) {
         /* call hooks */
         {
             let routes = srv_mut
@@ -185,10 +183,9 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
             }
         }
 
-        let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
-        if coll.del(itm.id) {
+        //let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
+        if srv_mut.rw.del_item(&mc.collection, itm.id) {
             info!("Collection {} element {} removed", mc.collection, itm.id);
-            srv.rw.del_item(&mc.collection, itm.id);
             //write_data(srv.deref_mut());
             return HttpResponse::Ok();
         }
@@ -201,20 +198,19 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 
 pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(srv.deref(), user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap());
 
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
 
-    if !srv.itm.contains_key(&lq.collection) {
+    if !srv.has_collection(&lq.collection) {
         error!("Collection {} doesn't exist", lq.collection);
         return HttpResponse::BadRequest().into();
     }
 
-    let coll: &Collection = &srv.itm[&lq.collection];
     let mut map: HashMap<u64, Item> = HashMap::new();
 
     if lq.id != u64::MAX {
-        let res = coll.get(lq.id);
+        let res = srv.rw.get_item(&lq.collection, lq.id);
         if res == None {
             error!(
                 "Collection {} requested element {} doesn't exist",
@@ -231,14 +227,14 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             );
         }
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
-        map = coll.get_range(lq.id_min, lq.id_max, lq.limit);
+        map = srv.rw.get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit);
         info!(
             "Collection {} requested range {} - {} limit {}",
             lq.collection, lq.id_min, lq.id_max, lq.limit
         );
     } else if lq.id_list.len() > 0 {
         for id in lq.id_list {
-            let res = coll.get(id);
+            let res = srv.rw.get_item(&lq.collection, id);
             if res != None {
                 map.insert(id, res.unwrap());
             }

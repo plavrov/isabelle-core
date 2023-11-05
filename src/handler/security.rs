@@ -1,3 +1,4 @@
+use crate::state::store::Store;
 use crate::notif::email::send_email;
 use crate::state::collection::Collection;
 use crate::util::crypto::get_new_salt;
@@ -30,7 +31,8 @@ pub fn security_check_unique_login_email(
         };
     }
 
-    for usr in srv.itm["user"].get_all() {
+    let users = srv.rw.get_all_items("user");
+    for usr in &users {
         if *usr.0 != itm.id {
             if login != "" && login == usr.1.safe_str("login", "") {
                 return ProcessResult {

@@ -1,8 +1,11 @@
 use crate::state::store::Store;
 use isabelle_dm::data_model::item::Item;
+use log::info;
 
-pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
-    for item in srv.itm["user"].get_all() {
+pub fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
+    let users = srv.rw.get_all_items("user");
+    info!("Users: {}", users.len());
+    for item in &users {
         if item.1.strs.contains_key("login") && item.1.strs["login"] == login {
             return Some(item.1.clone());
         }
@@ -29,8 +32,8 @@ pub fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role:
 }
 
 pub fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
-    let user_col = srv.itm.get_mut("user").unwrap();
-    for item in user_col.get_all() {
+    let users = srv.rw.get_all_items("user");
+    for item in &users {
         if item.1.strs.contains_key("login")
             && item.1.strs["login"] == login
             && item.1.strs.contains_key("email")
@@ -38,7 +41,7 @@ pub fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
         {
             let mut itm = item.1.clone();
             itm.set_str("otp", "");
-            user_col.set(*item.0, itm, false);
+            srv.rw.set_item("user", &itm, false);
             return;
         }
     }
