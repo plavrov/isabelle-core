@@ -157,7 +157,7 @@ impl Store for StoreLocal {
         let tmp_path =
             self.path.to_string() + "/collection/" + collection + "/" + &new_itm.id.to_string();
 
-        std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
+        let _dir_create_err = std::fs::create_dir(&tmp_path);
 
         let tmp_data_path = tmp_path.clone() + "/data.js";
         let s = serde_json::to_string(&new_itm);
