@@ -1,6 +1,6 @@
+use async_trait::async_trait;
 use isabelle_dm::data_model::item::Item;
 use std::collections::HashMap;
-use async_trait::async_trait;
 
 #[async_trait]
 pub trait Store {

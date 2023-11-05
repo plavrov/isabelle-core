@@ -20,7 +20,8 @@ pub async fn call_item_pre_edit_hook(
 ) -> ProcessResult {
     match hndl {
         "security_password_challenge_pre_edit_hook" => {
-            return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del).await;
+            return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del)
+                .await;
         }
         "security_check_unique_login_email" => {
             return security_check_unique_login_email(srv, collection, old_itm, itm, del).await;
@@ -110,7 +111,8 @@ pub async fn url_route(
     let mut srv = data.server.lock().unwrap();
     let routes = srv
         .rw
-        .get_internals().await
+        .get_internals()
+        .await
         .safe_strstr("extra_route", &HashMap::new());
 
     info!("Custom URL: {}", req.path());

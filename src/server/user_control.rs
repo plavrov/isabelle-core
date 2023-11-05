@@ -17,7 +17,11 @@ pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Opti
     return None;
 }
 
-pub async fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
+pub async fn check_role(
+    srv: &mut crate::state::data::Data,
+    user: &Option<Item>,
+    role: &str,
+) -> bool {
     let role_is = srv
         .rw
         .get_internals()

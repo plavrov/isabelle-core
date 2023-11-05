@@ -46,7 +46,11 @@ pub async fn gen_otp(
             error: "Invalid login".to_string(),
         });
     } else {
-        let mut new_usr_itm = srv.rw.get_item("user", usr.clone().unwrap().id).await.unwrap();
+        let mut new_usr_itm = srv
+            .rw
+            .get_item("user", usr.clone().unwrap().id)
+            .await
+            .unwrap();
         new_usr_itm.set_str("otp", &get_otp_code());
         srv.rw.set_item("user", &new_usr_itm, false).await;
 
@@ -147,7 +151,12 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         licensed_to: "".to_string(),
     };
 
-    user.site_name = srv.rw.get_settings().await.clone().safe_str("site_name", "");
+    user.site_name = srv
+        .rw
+        .get_settings()
+        .await
+        .clone()
+        .safe_str("site_name", "");
     if user.site_name == "" {
         user.site_name = srv
             .rw
@@ -156,7 +165,12 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
             .safe_str("default_site_name", "Isabelle");
     }
 
-    user.site_logo = srv.rw.get_settings().await.clone().safe_str("site_logo", "");
+    user.site_logo = srv
+        .rw
+        .get_settings()
+        .await
+        .clone()
+        .safe_str("site_logo", "");
     if user.site_logo == "" {
         user.site_logo = srv
             .rw
@@ -166,7 +180,12 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
     }
     info!("Site logo: {}", user.site_logo);
 
-    user.licensed_to = srv.rw.get_settings().await.clone().safe_str("licensed_to", "");
+    user.licensed_to = srv
+        .rw
+        .get_settings()
+        .await
+        .clone()
+        .safe_str("licensed_to", "");
     if user.licensed_to == "" {
         user.licensed_to = srv
             .rw

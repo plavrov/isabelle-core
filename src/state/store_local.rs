@@ -2,11 +2,11 @@ extern crate serde_json;
 use std::path::Path;
 
 use crate::state::store::Store;
+use async_trait::async_trait;
 use isabelle_dm::data_model::item::*;
 use log::{error, info};
 use std::collections::HashMap;
 use std::fs;
-use async_trait::async_trait;
 
 #[derive(Debug, Clone)]
 pub struct StoreLocal {
@@ -100,7 +100,9 @@ impl Store for StoreLocal {
     }
 
     async fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
-        return self.get_items(collection, u64::MAX, u64::MAX, u64::MAX).await;
+        return self
+            .get_items(collection, u64::MAX, u64::MAX, u64::MAX)
+            .await;
     }
 
     async fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {

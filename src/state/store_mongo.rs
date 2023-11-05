@@ -2,13 +2,13 @@ extern crate serde_json;
 use std::path::Path;
 
 use crate::state::store::Store;
+use async_trait::async_trait;
 use isabelle_dm::data_model::item::*;
 use log::{error, info};
+use mongodb::bson::Document;
+use mongodb::{bson::doc, Client, Collection};
 use std::collections::HashMap;
 use std::fs;
-use mongodb::{ bson::doc, Client, Collection };
-use mongodb::bson::Document;
-use async_trait::async_trait;
 
 #[derive(Debug, Clone)]
 pub struct StoreMongo {
@@ -66,14 +66,15 @@ impl Store for StoreMongo {
     async fn disconnect(&mut self) {}
 
     async fn get_collections(&mut self) -> Vec<String> {
-        let my_coll: Collection<Item> =
-            self.client.as_ref().unwrap()
+        let my_coll: Collection<Item> = self
+            .client
+            .as_ref()
+            .unwrap()
             .database("user")
             .collection("restaurants");
-        let _result = my_coll.find_one(
-            doc! { "name": "Tompkins Square Bagels" },
-            None
-        ).await;
+        let _result = my_coll
+            .find_one(doc! { "name": "Tompkins Square Bagels" }, None)
+            .await;
         let mut lst: Vec<String> = Vec::new();
 
         for coll in &self.collections {
@@ -93,7 +94,9 @@ impl Store for StoreMongo {
     }
 
     async fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
-        return self.get_items(collection, u64::MAX, u64::MAX, u64::MAX).await;
+        return self
+            .get_items(collection, u64::MAX, u64::MAX, u64::MAX)
+            .await;
     }
 
     async fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {

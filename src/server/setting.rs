@@ -111,11 +111,14 @@ pub async fn setting_gcal_auth_end(
 
     let public_url = srv.public_url.clone();
     HttpResponse::Ok()
-        .body(auth_google_end(
-            &mut srv,
-            public_url + "/?" + _req.query_string(),
-            data.state,
-            data.code,
-        ).await)
+        .body(
+            auth_google_end(
+                &mut srv,
+                public_url + "/?" + _req.query_string(),
+                data.state,
+                data.code,
+            )
+            .await,
+        )
         .into()
 }

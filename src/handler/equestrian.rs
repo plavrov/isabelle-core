@@ -113,7 +113,8 @@ pub async fn equestrian_job_sync(
                             &target_email,
                             "Schedule changed",
                             "The schedule entry has been removed. Please review your new schedule",
-                        ).await;
+                        )
+                        .await;
                     } else {
                         let public_url = srv.public_url.clone();
                         send_email(
@@ -125,7 +126,8 @@ pub async fn equestrian_job_sync(
                                 public_url + "/job/edit?id=",
                                 &id.to_string()
                             ),
-                        ).await;
+                        )
+                        .await;
                     }
                 } else {
                     info!("Target email not found");
@@ -358,13 +360,13 @@ pub async fn equestrian_itm_auth_hook(
 
         return accept;
     } else if collection == "job"
-        && (check_role(&mut srv, &user, "teacher").await ||
-            check_role(&mut srv, &user, "staff").await)
+        && (check_role(&mut srv, &user, "teacher").await
+            || check_role(&mut srv, &user, "staff").await)
     {
         return true;
     } else if collection == "mentee"
-        && (check_role(&mut srv, &user, "teacher").await ||
-            check_role(&mut srv, &user, "staff").await)
+        && (check_role(&mut srv, &user, "teacher").await
+            || check_role(&mut srv, &user, "staff").await)
     {
         return true;
     } else if collection == "user" {
@@ -387,8 +389,7 @@ pub async fn equestrian_itm_filter_hook(
 ) {
     let mut list = true;
 
-    if check_role(&mut srv, &user, "admin").await &&
-       collection != "user" {
+    if check_role(&mut srv, &user, "admin").await && collection != "user" {
         return;
     }
 

@@ -160,5 +160,6 @@ pub async fn security_otp_send_email(srv: &mut crate::state::data::Data, itm: It
         &email,
         "Your login code",
         &format!("Enter this as password: {}", otp),
-    ).await;
+    )
+    .await;
 }

@@ -91,7 +91,10 @@ async fn main() -> std::io::Result<()> {
         {
             //*srv.deref_mut() = read_data(&data_path);
             (*srv.deref_mut()).rw.connect(&data_path).await;
-            (*srv.deref_mut()).rwm.connect("mongodb://127.0.0.1:27017").await;
+            (*srv.deref_mut())
+                .rwm
+                .connect("mongodb://127.0.0.1:27017")
+                .await;
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();

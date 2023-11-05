@@ -55,7 +55,9 @@ pub async fn itm_edit(
                 itm.id,
                 Some(itm.clone()),
                 false,
-            ).await {
+            )
+            .await
+            {
                 return HttpResponse::Forbidden().into();
             }
         }
@@ -85,7 +87,8 @@ pub async fn itm_edit(
                         old_itm.clone(),
                         &mut itm_clone,
                         false,
-                    ).await;
+                    )
+                    .await;
                     if !res.succeeded {
                         info!("Item pre edit hook failed: {}", parts[1]);
                         let s = serde_json::to_string(&res);
@@ -105,12 +108,16 @@ pub async fn itm_edit(
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true).await;
+                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true)
+                        .await;
                 }
             }
         }
 
-        srv_mut.rw.set_item(&mc.collection, &itm_clone, mc.merge).await;
+        srv_mut
+            .rw
+            .set_item(&mc.collection, &itm_clone, mc.merge)
+            .await;
         info!("Collection {} element {} set", mc.collection, itm.id);
 
         /* call hooks */
@@ -129,7 +136,8 @@ pub async fn itm_edit(
                         &mc.collection,
                         itm.id,
                         false,
-                    ).await;
+                    )
+                    .await;
                 }
             }
         }
@@ -164,7 +172,9 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
             .await
             .safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
-            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true).await {
+            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true)
+                .await
+            {
                 return HttpResponse::Forbidden().into();
             }
         }
@@ -182,7 +192,8 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true).await;
+                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true)
+                        .await;
                 }
             }
         }
@@ -233,7 +244,8 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
         map = srv
             .rw
-            .get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit).await;
+            .get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit)
+            .await;
         info!(
             "Collection {} requested range {} - {} limit {}",
             lq.collection, lq.id_min, lq.id_max, lq.limit
@@ -265,7 +277,8 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 &lq.collection,
                 &lq.context,
                 &mut map,
-            ).await;
+            )
+            .await;
         }
     }
 
