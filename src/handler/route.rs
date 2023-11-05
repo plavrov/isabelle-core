@@ -1,6 +1,5 @@
 use crate::handler::equestrian::*;
 use crate::handler::security::*;
-use crate::state::collection::Collection;
 use crate::state::store::Store;
 use crate::State;
 use actix_identity::Identity;
@@ -127,12 +126,14 @@ pub async fn url_route(
     HttpResponse::NotFound().into()
 }
 
-pub fn call_collection_read_hook(hndl: &str, collection: &str, new_col: &mut Collection) {
+pub fn call_collection_read_hook(hndl: &str, collection: &str, itm: &mut Item) -> bool {
     match hndl {
         "security_collection_read_hook" => {
-            return security_collection_read_hook(collection, new_col);
+            return security_collection_read_hook(collection, itm);
         }
-        _ => {}
+        _ => {
+            return false;
+        }
     }
 }
 

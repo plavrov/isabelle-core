@@ -3,8 +3,6 @@ use actix_multipart::Multipart;
 use futures_util::TryStreamExt;
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
-use std::ops::Deref;
-
 use crate::notif::gcal::*;
 use crate::server::user_control::*;
 use crate::state::state::*;

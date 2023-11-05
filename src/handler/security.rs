@@ -1,6 +1,5 @@
 use crate::state::store::Store;
 use crate::notif::email::send_email;
-use crate::state::collection::Collection;
 use crate::util::crypto::get_new_salt;
 use crate::util::crypto::get_password_hash;
 use crate::util::crypto::verify_password;
@@ -131,28 +130,22 @@ pub fn security_password_challenge_pre_edit_hook(
     };
 }
 
-pub fn security_collection_read_hook(collection: &str, new_col: &mut Collection) {
+pub fn security_collection_read_hook(collection: &str, itm: &mut Item) -> bool {
     if collection == "user" {
-        let mut replace: Vec<Item> = Vec::new();
-        for pair in &new_col.items {
-            let mut new_itm = pair.1.clone();
-            if !pair.1.strs.contains_key("salt") {
-                let salt = get_new_salt();
-                new_itm.set_str("salt", &salt);
-                info!("There is no salt for user {}, created new", pair.0);
-                if pair.1.strs.contains_key("password") {
-                    let pw_old = pair.1.safe_str("password", "");
-                    let hash = get_password_hash(&pw_old, &salt);
-                    new_itm.set_str("password", &hash);
-                    info!("Rehashed password for user {}", pair.0);
-                }
-                replace.push(new_itm);
+        if !itm.strs.contains_key("salt") {
+            let salt = get_new_salt();
+            itm.set_str("salt", &salt);
+            info!("There is no salt for user {}, created new", itm.id);
+            if itm.strs.contains_key("password") {
+                let pw_old = itm.safe_str("password", "");
+                let hash = get_password_hash(&pw_old, &salt);
+                itm.set_str("password", &hash);
+                info!("Rehashed password for user {}", itm.id);
             }
-        }
-        for itm in replace {
-            new_col.set(itm.id, itm, false);
+            return true;
         }
     }
+    return false;
 }
 
 pub fn security_otp_send_email(srv: &mut crate::state::data::Data, itm: Item) {

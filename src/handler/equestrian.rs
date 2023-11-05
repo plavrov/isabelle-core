@@ -4,8 +4,6 @@ use chrono::NaiveDateTime;
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use std::collections::HashMap;
-use std::ops::Deref;
-
 use actix_identity::Identity;
 use actix_web::{web, HttpResponse};
 use chrono::Utc;

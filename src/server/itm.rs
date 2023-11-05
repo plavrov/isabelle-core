@@ -1,6 +1,5 @@
 use crate::handler::route::*;
 use crate::server::user_control::*;
-use crate::state::collection::Collection;
 use crate::state::state::*;
 use crate::state::store::Store;
 use actix_identity::Identity;
@@ -14,7 +13,6 @@ use isabelle_dm::data_model::process_result::ProcessResult;
 use log::{error, info};
 use serde_qs;
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::ops::DerefMut;
 
 pub async fn itm_edit(
