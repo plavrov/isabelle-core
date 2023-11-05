@@ -6,6 +6,7 @@ use isabelle_dm::data_model::item::*;
 use log::{error, info};
 use std::collections::HashMap;
 use std::fs;
+use async_trait::async_trait;
 
 #[derive(Debug, Clone)]
 pub struct StoreLocal {
@@ -28,8 +29,9 @@ impl StoreLocal {
     }
 }
 
+#[async_trait]
 impl Store for StoreLocal {
-    fn connect(&mut self, url: &str) {
+    async fn connect(&mut self, url: &str) {
         self.path = url.to_string();
         let collections = fs::read_dir(self.path.to_string() + "/collection").unwrap();
         for coll in collections {
@@ -76,9 +78,9 @@ impl Store for StoreLocal {
         }
     }
 
-    fn disconnect(&mut self) {}
+    async fn disconnect(&mut self) {}
 
-    fn get_collections(&mut self) -> Vec<String> {
+    async fn get_collections(&mut self) -> Vec<String> {
         let mut lst: Vec<String> = Vec::new();
 
         for coll in &self.collections {
@@ -88,7 +90,7 @@ impl Store for StoreLocal {
         return lst;
     }
 
-    fn get_item_ids(&mut self, collection: &str) -> HashMap<u64, bool> {
+    async fn get_item_ids(&mut self, collection: &str) -> HashMap<u64, bool> {
         if !self.collections.contains_key(collection) {
             return HashMap::new();
         }
@@ -97,11 +99,11 @@ impl Store for StoreLocal {
         return self.items[&coll_id].clone();
     }
 
-    fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
-        return self.get_items(collection, u64::MAX, u64::MAX, u64::MAX);
+    async fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
+        return self.get_items(collection, u64::MAX, u64::MAX, u64::MAX).await;
     }
 
-    fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
+    async fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
         let tmp_path = self.path.to_string()
             + "/collection/"
             + collection
@@ -116,7 +118,7 @@ impl Store for StoreLocal {
         return None;
     }
 
-    fn get_items(
+    async fn get_items(
         &mut self,
         collection: &str,
         id_min: u64,
@@ -143,7 +145,7 @@ impl Store for StoreLocal {
         );
         for itm in itms {
             if itm.0 >= eff_id_min && itm.0 <= eff_id_max {
-                let new_item = self.get_item(collection, itm.0);
+                let new_item = self.get_item(collection, itm.0).await;
                 if !new_item.is_none() {
                     map.insert(itm.0, new_item.unwrap());
                     count = count + 1;
@@ -158,8 +160,8 @@ impl Store for StoreLocal {
         return map;
     }
 
-    fn set_item(&mut self, collection: &str, itm: &Item, merge: bool) {
-        let old_itm = self.get_item(collection, itm.id);
+    async fn set_item(&mut self, collection: &str, itm: &Item, merge: bool) {
+        let old_itm = self.get_item(collection, itm.id).await;
         let mut new_itm = itm.clone();
         if !old_itm.is_none() && merge {
             new_itm = old_itm.unwrap().clone();
@@ -201,7 +203,7 @@ impl Store for StoreLocal {
         }
     }
 
-    fn del_item(&mut self, collection: &str, id: u64) -> bool {
+    async fn del_item(&mut self, collection: &str, id: u64) -> bool {
         let tmp_path = self.path.to_string() + "/" + collection + "/" + &id.to_string();
         let path = Path::new(&tmp_path);
         if path.exists() {
@@ -218,15 +220,15 @@ impl Store for StoreLocal {
         return false;
     }
 
-    fn get_credentials(&mut self) -> String {
+    async fn get_credentials(&mut self) -> String {
         return self.path.clone() + "/credentials.json";
     }
 
-    fn get_pickle(&mut self) -> String {
+    async fn get_pickle(&mut self) -> String {
         return self.path.clone() + "/token.pickle";
     }
 
-    fn get_internals(&mut self) -> Item {
+    async fn get_internals(&mut self) -> Item {
         let tmp_data_path = self.path.clone() + "/internals.js";
 
         let read_data = std::fs::read_to_string(tmp_data_path);
@@ -238,7 +240,7 @@ impl Store for StoreLocal {
         return itm;
     }
 
-    fn get_settings(&mut self) -> Item {
+    async fn get_settings(&mut self) -> Item {
         let tmp_data_path = self.path.clone() + "/settings.js";
 
         let read_data = std::fs::read_to_string(tmp_data_path);
@@ -250,7 +252,7 @@ impl Store for StoreLocal {
         return itm;
     }
 
-    fn set_settings(&mut self, itm: Item) {
+    async fn set_settings(&mut self, itm: Item) {
         let tmp_data_path = self.path.clone() + "/settings.js";
         let s = serde_json::to_string(&itm);
         std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write item");

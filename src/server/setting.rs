@@ -20,9 +20,9 @@ pub async fn setting_edit(
     mut payload: Multipart,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
-    if !check_role(&mut srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
@@ -42,7 +42,7 @@ pub async fn setting_edit(
     }
 
     info!("Settings edited");
-    srv.rw.set_settings(itm.clone());
+    srv.rw.set_settings(itm.clone()).await;
     //write_data(srv.deref_mut());
     return HttpResponse::Ok().body(
         serde_json::to_string(&ProcessResult {
@@ -59,13 +59,13 @@ pub async fn setting_list(
     _req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
-    if !check_role(&mut srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
-    let st = srv.rw.get_settings().clone();
+    let st = srv.rw.get_settings().await.clone();
     HttpResponse::Ok()
         .body(serde_json::to_string(&st).unwrap())
         .into()
@@ -77,13 +77,13 @@ pub async fn setting_gcal_auth(
     _req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
-    if !check_role(&mut srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
-    HttpResponse::Ok().body(auth_google(&mut srv)).into()
+    HttpResponse::Ok().body(auth_google(&mut srv).await).into()
 }
 
 pub async fn setting_gcal_auth_end(
@@ -92,9 +92,9 @@ pub async fn setting_gcal_auth_end(
     _req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
-    if !check_role(&mut srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
@@ -116,6 +116,6 @@ pub async fn setting_gcal_auth_end(
             public_url + "/?" + _req.query_string(),
             data.state,
             data.code,
-        ))
+        ).await)
         .into()
 }

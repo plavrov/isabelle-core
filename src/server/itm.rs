@@ -22,7 +22,7 @@ pub async fn itm_edit(
     mut payload: Multipart,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let mut itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
@@ -44,6 +44,7 @@ pub async fn itm_edit(
         let routes = srv
             .rw
             .get_internals()
+            .await
             .safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
             if !call_itm_auth_hook(
@@ -54,7 +55,7 @@ pub async fn itm_edit(
                 itm.id,
                 Some(itm.clone()),
                 false,
-            ) {
+            ).await {
                 return HttpResponse::Forbidden().into();
             }
         }
@@ -66,12 +67,13 @@ pub async fn itm_edit(
         let srv_mut = srv.deref_mut();
         let mut itm_clone = itm.clone();
 
-        let old_itm = srv_mut.rw.get_item(&mc.collection, itm.id);
+        let old_itm = srv_mut.rw.get_item(&mc.collection, itm.id).await;
         /* call pre edit ooks */
         {
             let routes = srv_mut
                 .rw
                 .get_internals()
+                .await
                 .safe_strstr("item_pre_edit_hook", &HashMap::new());
             for route in &routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -83,7 +85,7 @@ pub async fn itm_edit(
                         old_itm.clone(),
                         &mut itm_clone,
                         false,
-                    );
+                    ).await;
                     if !res.succeeded {
                         info!("Item pre edit hook failed: {}", parts[1]);
                         let s = serde_json::to_string(&res);
@@ -98,16 +100,17 @@ pub async fn itm_edit(
             let routes = srv_mut
                 .rw
                 .get_internals()
+                .await
                 .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true);
+                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true).await;
                 }
             }
         }
 
-        srv_mut.rw.set_item(&mc.collection, &itm_clone, mc.merge);
+        srv_mut.rw.set_item(&mc.collection, &itm_clone, mc.merge).await;
         info!("Collection {} element {} set", mc.collection, itm.id);
 
         /* call hooks */
@@ -115,6 +118,7 @@ pub async fn itm_edit(
             let routes = srv
                 .rw
                 .get_internals()
+                .await
                 .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -125,7 +129,7 @@ pub async fn itm_edit(
                         &mc.collection,
                         itm.id,
                         false,
-                    );
+                    ).await;
                 }
             }
         }
@@ -147,7 +151,7 @@ pub async fn itm_edit(
 
 pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
     let itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
@@ -157,9 +161,10 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
         let routes = srv
             .rw
             .get_internals()
+            .await
             .safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
-            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true) {
+            if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true).await {
                 return HttpResponse::Forbidden().into();
             }
         }
@@ -172,17 +177,18 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
             let routes = srv_mut
                 .rw
                 .get_internals()
+                .await
                 .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true);
+                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true).await;
                 }
             }
         }
 
         //let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
-        if srv_mut.rw.del_item(&mc.collection, itm.id) {
+        if srv_mut.rw.del_item(&mc.collection, itm.id).await {
             info!("Collection {} element {} removed", mc.collection, itm.id);
             //write_data(srv.deref_mut());
             return HttpResponse::Ok();
@@ -196,7 +202,7 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 
 pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let usr = get_user(&mut srv, user.id().unwrap());
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
 
@@ -208,7 +214,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     let mut map: HashMap<u64, Item> = HashMap::new();
 
     if lq.id != u64::MAX {
-        let res = srv.rw.get_item(&lq.collection, lq.id);
+        let res = srv.rw.get_item(&lq.collection, lq.id).await;
         if res == None {
             error!(
                 "Collection {} requested element {} doesn't exist",
@@ -227,14 +233,14 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
         map = srv
             .rw
-            .get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit);
+            .get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit).await;
         info!(
             "Collection {} requested range {} - {} limit {}",
             lq.collection, lq.id_min, lq.id_max, lq.limit
         );
     } else if lq.id_list.len() > 0 {
         for id in lq.id_list {
-            let res = srv.rw.get_item(&lq.collection, id);
+            let res = srv.rw.get_item(&lq.collection, id).await;
             if res != None {
                 map.insert(id, res.unwrap());
             }
@@ -249,6 +255,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         let routes = srv
             .rw
             .get_internals()
+            .await
             .safe_strstr("itm_list_filter_hook", &HashMap::new());
         for route in routes {
             call_itm_list_filter_hook(
@@ -258,7 +265,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 &lq.collection,
                 &lq.context,
                 &mut map,
-            );
+            ).await;
         }
     }
 

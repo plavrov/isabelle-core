@@ -4,10 +4,10 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use log::info;
 
-pub fn send_email(srv: &mut crate::state::data::Data, to: &str, subject: &str, body: &str) {
+pub async fn send_email(srv: &mut crate::state::data::Data, to: &str, subject: &str, body: &str) {
     info!("Checking options...");
 
-    let settings = srv.rw.get_settings().clone();
+    let settings = srv.rw.get_settings().await.clone();
 
     let smtp_server = settings.safe_str("smtp_server", "");
     let smtp_login = settings.safe_str("smtp_login", "");

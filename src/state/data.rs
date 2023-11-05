@@ -1,10 +1,12 @@
 use crate::handler::route::call_collection_read_hook;
 use crate::state::store::Store;
 use crate::state::store_local::*;
+use crate::state::store_mongo::*;
 use std::collections::HashMap;
 
 pub struct Data {
     pub rw: StoreLocal,
+    pub rwm: StoreMongo,
     pub gc_path: String,
     pub py_path: String,
     pub data_path: String,
@@ -16,6 +18,7 @@ impl Data {
     pub fn new() -> Self {
         Self {
             rw: StoreLocal::new(),
+            rwm: StoreMongo::new(),
 
             gc_path: "".to_string(),
             py_path: "".to_string(),
@@ -29,26 +32,26 @@ impl Data {
         return self.rw.collections.contains_key(collection);
     }
 
-    pub fn init_checks(&mut self) {
-        let internals = self.rw.get_internals();
+    pub async fn init_checks(&mut self) {
+        let internals = self.rw.get_internals().await;
         let routes = internals.safe_strstr("collection_read_hook", &HashMap::new());
-        let collections = self.rw.get_collections();
+        let collections = self.rw.get_collections().await;
         for collection in &collections {
-            let items = self.rw.get_item_ids(collection);
+            let items = self.rw.get_item_ids(collection).await;
             for itm in items {
-                let loaded_item_opt = self.rw.get_item(collection, itm.0);
+                let loaded_item_opt = self.rw.get_item(collection, itm.0).await;
                 if loaded_item_opt.is_none() {
                     continue;
                 }
                 let mut loaded_item = loaded_item_opt.unwrap();
                 let mut should_be_saved = false;
                 for route in &routes {
-                    if call_collection_read_hook(&route.1, collection, &mut loaded_item) {
+                    if call_collection_read_hook(&route.1, collection, &mut loaded_item).await {
                         should_be_saved = true;
                     }
                 }
                 if should_be_saved {
-                    self.rw.set_item(collection, &loaded_item, false);
+                    self.rw.set_item(collection, &loaded_item, false).await;
                 }
             }
         }

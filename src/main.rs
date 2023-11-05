@@ -90,22 +90,24 @@ async fn main() -> std::io::Result<()> {
         let mut srv = state.server.lock().unwrap();
         {
             //*srv.deref_mut() = read_data(&data_path);
-            (*srv.deref_mut()).rw.connect(&data_path);
+            (*srv.deref_mut()).rw.connect(&data_path).await;
+            (*srv.deref_mut()).rwm.connect("mongodb://127.0.0.1:27017").await;
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
 
-            (*srv.deref_mut()).init_checks();
+            (*srv.deref_mut()).init_checks().await;
 
             info!("Initializing google!");
-            let res = init_google(srv.deref_mut());
+            let res = init_google(srv.deref_mut()).await;
             info!("Result: {}", res);
 
             let routes = (*srv.deref_mut())
                 .rw
                 .get_internals()
+                .await
                 .safe_strstr("extra_route", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();

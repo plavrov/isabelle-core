@@ -37,7 +37,7 @@ pub async fn gen_otp(
 
     let mut srv = data.server.lock().unwrap();
     info!("User name: {}", lu.username.clone());
-    let usr = get_user(&mut srv, lu.username.clone());
+    let usr = get_user(&mut srv, lu.username.clone()).await;
 
     if usr == None {
         info!("No user {} found, couldn't log in", lu.username.clone());
@@ -46,16 +46,17 @@ pub async fn gen_otp(
             error: "Invalid login".to_string(),
         });
     } else {
-        let mut new_usr_itm = srv.rw.get_item("user", usr.clone().unwrap().id).unwrap();
+        let mut new_usr_itm = srv.rw.get_item("user", usr.clone().unwrap().id).await.unwrap();
         new_usr_itm.set_str("otp", &get_otp_code());
-        srv.rw.set_item("user", &new_usr_itm, false);
+        srv.rw.set_item("user", &new_usr_itm, false).await;
 
         let routes = srv
             .rw
             .get_internals()
+            .await
             .safe_strstr("otp_hook", &HashMap::new());
         for route in routes {
-            call_otp_hook(&mut srv, &route.1, new_usr_itm.clone());
+            call_otp_hook(&mut srv, &route.1, new_usr_itm.clone()).await;
         }
     }
 
@@ -90,7 +91,7 @@ pub async fn login(
 
     let mut srv = data.server.lock().unwrap();
     info!("User name: {}", lu.username.clone());
-    let usr = get_user(&mut srv, lu.username.clone());
+    let usr = get_user(&mut srv, lu.username.clone()).await;
 
     if usr == None {
         info!("No user {} found, couldn't log in", lu.username.clone());
@@ -101,7 +102,7 @@ pub async fn login(
     } else {
         let itm_real = usr.unwrap();
 
-        clear_otp(&mut srv, lu.username.clone());
+        clear_otp(&mut srv, lu.username.clone()).await;
 
         let pw = itm_real.safe_str("password", "");
         let otp = itm_real.safe_str("otp", "");
@@ -146,28 +147,31 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         licensed_to: "".to_string(),
     };
 
-    user.site_name = srv.rw.get_settings().clone().safe_str("site_name", "");
+    user.site_name = srv.rw.get_settings().await.clone().safe_str("site_name", "");
     if user.site_name == "" {
         user.site_name = srv
             .rw
             .get_internals()
+            .await
             .safe_str("default_site_name", "Isabelle");
     }
 
-    user.site_logo = srv.rw.get_settings().clone().safe_str("site_logo", "");
+    user.site_logo = srv.rw.get_settings().await.clone().safe_str("site_logo", "");
     if user.site_logo == "" {
         user.site_logo = srv
             .rw
             .get_internals()
+            .await
             .safe_str("default_site_logo", "/logo.png");
     }
     info!("Site logo: {}", user.site_logo);
 
-    user.licensed_to = srv.rw.get_settings().clone().safe_str("licensed_to", "");
+    user.licensed_to = srv.rw.get_settings().await.clone().safe_str("licensed_to", "");
     if user.licensed_to == "" {
         user.licensed_to = srv
             .rw
             .get_internals()
+            .await
             .safe_str("default_licensed_to", "end user");
     }
 
@@ -179,8 +183,9 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
     let role_is = srv
         .rw
         .get_internals()
+        .await
         .safe_str("user_role_prefix", "role_is_");
-    let all_users = srv.rw.get_all_items("user");
+    let all_users = srv.rw.get_all_items("user").await;
     for item in &all_users {
         if item.1.strs.contains_key("email")
             && item.1.strs["email"] == _user.as_ref().unwrap().id().unwrap()

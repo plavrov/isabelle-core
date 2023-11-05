@@ -2,8 +2,8 @@ use crate::state::store::Store;
 use isabelle_dm::data_model::item::Item;
 use log::info;
 
-pub fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
-    let users = srv.rw.get_all_items("user");
+pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
+    let users = srv.rw.get_all_items("user").await;
     info!("Users: {}", users.len());
     for item in &users {
         if item.1.strs.contains_key("login") && item.1.strs["login"] == login {
@@ -17,10 +17,11 @@ pub fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Ite
     return None;
 }
 
-pub fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
+pub async fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
     let role_is = srv
         .rw
         .get_internals()
+        .await
         .safe_str("user_role_prefix", "role_is_");
     if user.is_none() {
         return false;
@@ -31,8 +32,8 @@ pub fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role:
         .safe_bool(&(role_is.to_owned() + role), false);
 }
 
-pub fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
-    let users = srv.rw.get_all_items("user");
+pub async fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
+    let users = srv.rw.get_all_items("user").await;
     for item in &users {
         if item.1.strs.contains_key("login")
             && item.1.strs["login"] == login
@@ -41,7 +42,7 @@ pub fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
         {
             let mut itm = item.1.clone();
             itm.set_str("otp", "");
-            srv.rw.set_item("user", &itm, false);
+            srv.rw.set_item("user", &itm, false).await;
             return;
         }
     }

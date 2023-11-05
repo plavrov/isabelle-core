@@ -9,13 +9,13 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-pub fn sync_with_google(
+pub async fn sync_with_google(
     srv: &mut crate::state::data::Data,
     add: bool,
     name: String,
     date_time: String,
 ) {
-    let settings = srv.rw.get_settings();
+    let settings = srv.rw.get_settings().await;
     if !settings.safe_bool("sync_google_cal", false)
         || settings.safe_str("sync_google_creds", "") == ""
         || settings.safe_str("sync_google_email", "") == ""
@@ -28,8 +28,8 @@ pub fn sync_with_google(
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = srv.rw.get_credentials();
-    let pickle = srv.rw.get_pickle();
+    let creds = srv.rw.get_credentials().await;
+    let pickle = srv.rw.get_pickle().await;
     let mut file = File::create(creds.clone()).unwrap();
 
     write!(file, "{}", settings.strs["sync_google_creds"].clone()).ok();
@@ -58,8 +58,8 @@ pub fn sync_with_google(
     info!("Synchronization is done");
 }
 
-pub fn init_google(srv: &mut crate::state::data::Data) -> String {
-    let settings = srv.rw.get_settings();
+pub async fn init_google(srv: &mut crate::state::data::Data) -> String {
+    let settings = srv.rw.get_settings().await;
     if !settings.safe_bool("sync_google_cal", false)
         || settings.safe_str("sync_google_creds", "") == ""
         || settings.safe_str("sync_google_email", "") == ""
@@ -72,8 +72,8 @@ pub fn init_google(srv: &mut crate::state::data::Data) -> String {
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = srv.rw.get_credentials();
-    let pickle = srv.rw.get_pickle();
+    let creds = srv.rw.get_credentials().await;
+    let pickle = srv.rw.get_pickle().await;
 
     if !Path::new(&pickle).exists() {
         return "no_token".to_string();
@@ -103,8 +103,8 @@ pub fn init_google(srv: &mut crate::state::data::Data) -> String {
     return String::from_utf8(res.stdout).unwrap();
 }
 
-pub fn auth_google(srv: &mut crate::state::data::Data) -> String {
-    let settings = srv.rw.get_settings();
+pub async fn auth_google(srv: &mut crate::state::data::Data) -> String {
+    let settings = srv.rw.get_settings().await;
     if !settings.safe_bool("sync_google_cal", false)
         || settings.safe_str("sync_google_creds", "") == ""
     {
@@ -115,8 +115,8 @@ pub fn auth_google(srv: &mut crate::state::data::Data) -> String {
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = srv.rw.get_credentials();
-    let pickle = srv.rw.get_pickle();
+    let creds = srv.rw.get_credentials().await;
+    let pickle = srv.rw.get_pickle().await;
 
     if Path::new(&pickle).exists() {
         return "token_exists".to_string();
@@ -157,13 +157,13 @@ pub fn auth_google(srv: &mut crate::state::data::Data) -> String {
     return "running".to_string();
 }
 
-pub fn auth_google_end(
+pub async fn auth_google_end(
     srv: &mut crate::state::data::Data,
     full_query: String,
     state: String,
     code: String,
 ) -> String {
-    let settings = srv.rw.get_settings();
+    let settings = srv.rw.get_settings().await;
     info!("Ending Google authentication...");
     if !settings.safe_bool("sync_google_cal", false)
         || settings.safe_str("sync_google_creds", "") == ""
@@ -176,8 +176,8 @@ pub fn auth_google_end(
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = srv.rw.get_credentials();
-    let pickle = srv.rw.get_pickle();
+    let creds = srv.rw.get_credentials().await;
+    let pickle = srv.rw.get_pickle().await;
 
     if Path::new(&pickle).exists() {
         info!("Token exists?");

@@ -7,7 +7,7 @@ use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use log::{error, info};
 
-pub fn security_check_unique_login_email(
+pub async fn security_check_unique_login_email(
     srv: &mut crate::state::data::Data,
     _collection: &str,
     _old_itm: Option<Item>,
@@ -30,7 +30,7 @@ pub fn security_check_unique_login_email(
         };
     }
 
-    let users = srv.rw.get_all_items("user");
+    let users = srv.rw.get_all_items("user").await;
     for usr in &users {
         if *usr.0 != itm.id {
             if login != "" && login == usr.1.safe_str("login", "") {
@@ -54,7 +54,7 @@ pub fn security_check_unique_login_email(
     };
 }
 
-pub fn security_password_challenge_pre_edit_hook(
+pub async fn security_password_challenge_pre_edit_hook(
     _srv: &mut crate::state::data::Data,
     collection: &str,
     old_itm: Option<Item>,
@@ -130,7 +130,7 @@ pub fn security_password_challenge_pre_edit_hook(
     };
 }
 
-pub fn security_collection_read_hook(collection: &str, itm: &mut Item) -> bool {
+pub async fn security_collection_read_hook(collection: &str, itm: &mut Item) -> bool {
     if collection == "user" {
         if !itm.strs.contains_key("salt") {
             let salt = get_new_salt();
@@ -148,7 +148,7 @@ pub fn security_collection_read_hook(collection: &str, itm: &mut Item) -> bool {
     return false;
 }
 
-pub fn security_otp_send_email(srv: &mut crate::state::data::Data, itm: Item) {
+pub async fn security_otp_send_email(srv: &mut crate::state::data::Data, itm: Item) {
     let email = itm.safe_str("email", "");
     let otp = itm.safe_str("otp", "");
     if email == "" || otp == "" {
@@ -160,5 +160,5 @@ pub fn security_otp_send_email(srv: &mut crate::state::data::Data, itm: Item) {
         &email,
         "Your login code",
         &format!("Enter this as password: {}", otp),
-    );
+    ).await;
 }

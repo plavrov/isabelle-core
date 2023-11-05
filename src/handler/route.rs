@@ -10,7 +10,7 @@ use isabelle_dm::data_model::process_result::ProcessResult;
 use log::info;
 use std::collections::HashMap;
 
-pub fn call_item_pre_edit_hook(
+pub async fn call_item_pre_edit_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
     collection: &str,
@@ -20,10 +20,10 @@ pub fn call_item_pre_edit_hook(
 ) -> ProcessResult {
     match hndl {
         "security_password_challenge_pre_edit_hook" => {
-            return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del);
+            return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del).await;
         }
         "security_check_unique_login_email" => {
-            return security_check_unique_login_email(srv, collection, old_itm, itm, del);
+            return security_check_unique_login_email(srv, collection, old_itm, itm, del).await;
         }
         &_ => {
             return ProcessResult {
@@ -34,7 +34,7 @@ pub fn call_item_pre_edit_hook(
     }
 }
 
-pub fn call_item_post_edit_hook(
+pub async fn call_item_post_edit_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
     collection: &str,
@@ -42,12 +42,12 @@ pub fn call_item_post_edit_hook(
     del: bool,
 ) {
     match hndl {
-        "equestrian_job_sync" => equestrian_job_sync(srv, collection, id, del),
+        "equestrian_job_sync" => equestrian_job_sync(srv, collection, id, del).await,
         &_ => {}
     }
 }
 
-pub fn call_itm_auth_hook(
+pub async fn call_itm_auth_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
     user: &Option<Item>,
@@ -58,13 +58,13 @@ pub fn call_itm_auth_hook(
 ) -> bool {
     match hndl {
         "equestrian_itm_auth_hook" => {
-            return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del)
+            return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del).await;
         }
         &_ => return false,
     }
 }
 
-pub fn call_itm_list_filter_hook(
+pub async fn call_itm_list_filter_hook(
     mut srv: &mut crate::state::data::Data,
     hndl: &str,
     user: &Option<Item>,
@@ -74,13 +74,13 @@ pub fn call_itm_list_filter_hook(
 ) {
     match hndl {
         "equestrian_itm_filter_hook" => {
-            return equestrian_itm_filter_hook(&mut srv, user, collection, context, map)
+            return equestrian_itm_filter_hook(&mut srv, user, collection, context, map).await;
         }
         &_ => {}
     }
 }
 
-pub fn call_url_route(
+pub async fn call_url_route(
     mut srv: &mut crate::state::data::Data,
     user: Identity,
     hndl: &str,
@@ -88,13 +88,13 @@ pub fn call_url_route(
 ) -> HttpResponse {
     match hndl {
         "equestrian_schedule_materialize" => {
-            return equestrian_schedule_materialize(&mut srv, user, query);
+            return equestrian_schedule_materialize(&mut srv, user, query).await;
         }
         "equestrian_pay_find_broken_payments" => {
-            return equestrian_pay_find_broken_payments(&mut srv, user, query);
+            return equestrian_pay_find_broken_payments(&mut srv, user, query).await;
         }
         "equestrian_pay_deactivate_expired_payments" => {
-            return equestrian_pay_deactivate_expired_payments(&mut srv, user, query);
+            return equestrian_pay_deactivate_expired_payments(&mut srv, user, query).await;
         }
         &_ => {
             return HttpResponse::NotFound().into();
@@ -110,7 +110,7 @@ pub async fn url_route(
     let mut srv = data.server.lock().unwrap();
     let routes = srv
         .rw
-        .get_internals()
+        .get_internals().await
         .safe_strstr("extra_route", &HashMap::new());
 
     info!("Custom URL: {}", req.path());
@@ -119,17 +119,17 @@ pub async fn url_route(
         let parts: Vec<&str> = route.1.split(":").collect();
         if parts[0] == req.path() {
             info!("Call custom route {}", parts[2]);
-            return call_url_route(&mut srv, user, parts[2], req.query_string());
+            return call_url_route(&mut srv, user, parts[2], req.query_string()).await;
         }
     }
 
     HttpResponse::NotFound().into()
 }
 
-pub fn call_collection_read_hook(hndl: &str, collection: &str, itm: &mut Item) -> bool {
+pub async fn call_collection_read_hook(hndl: &str, collection: &str, itm: &mut Item) -> bool {
     match hndl {
         "security_collection_read_hook" => {
-            return security_collection_read_hook(collection, itm);
+            return security_collection_read_hook(collection, itm).await;
         }
         _ => {
             return false;
@@ -137,10 +137,10 @@ pub fn call_collection_read_hook(hndl: &str, collection: &str, itm: &mut Item) -
     }
 }
 
-pub fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
+pub async fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
     match hndl {
         "security_otp_send_email" => {
-            security_otp_send_email(srv, itm);
+            security_otp_send_email(srv, itm).await;
         }
         _ => {}
     }
