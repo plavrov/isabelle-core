@@ -1,8 +1,8 @@
+use crate::state::store::Store;
 use crate::handler::route::*;
 use crate::server::user_control::*;
 use crate::state::collection::Collection;
 use crate::state::state::*;
-use crate::write_data;
 use actix_identity::Identity;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
@@ -105,7 +105,7 @@ pub async fn itm_edit(
         }
 
         let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
-        coll.set(itm.id, itm_clone, mc.merge);
+        coll.set(itm.id, itm_clone.clone(), mc.merge);
         info!("Collection {} element {} set", mc.collection, itm.id);
 
         /* call hooks */
@@ -127,7 +127,8 @@ pub async fn itm_edit(
             }
         }
 
-        write_data(&srv);
+        srv.rw.set_item(&mc.collection, &itm_clone.clone());
+        //write_data(&srv);
         return HttpResponse::Ok().body(
             serde_json::to_string(&ProcessResult {
                 succeeded: true,
@@ -177,7 +178,8 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
         let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
         if coll.del(itm.id) {
             info!("Collection {} element {} removed", mc.collection, itm.id);
-            write_data(srv.deref_mut());
+            srv.rw.del_item(&mc.collection, itm.id);
+            //write_data(srv.deref_mut());
             return HttpResponse::Ok();
         }
     } else {

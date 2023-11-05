@@ -1,3 +1,4 @@
+use crate::state::store::Store;
 use actix_multipart::Multipart;
 use futures_util::TryStreamExt;
 use isabelle_dm::data_model::item::Item;
@@ -6,18 +7,13 @@ use std::ops::Deref;
 
 use actix_identity::Identity;
 use actix_web::{web, HttpRequest, HttpResponse};
+use serde::{Deserialize, Serialize};
 use serde_qs;
 use serde_qs::Config;
-
 use crate::state::state::*;
-
-use log::info;
-
 use crate::notif::gcal::*;
 use crate::server::user_control::*;
-use crate::state::store_local::*;
-use serde::{Deserialize, Serialize};
-use std::ops::DerefMut;
+use log::info;
 
 pub async fn setting_edit(
     user: Identity,
@@ -49,7 +45,8 @@ pub async fn setting_edit(
 
     srv.settings = itm.clone();
     info!("Settings edited");
-    write_data(srv.deref_mut());
+    srv.rw.set_settings(itm.clone());
+    //write_data(srv.deref_mut());
     return HttpResponse::Ok().body(
         serde_json::to_string(&ProcessResult {
             succeeded: true,
@@ -82,14 +79,14 @@ pub async fn setting_gcal_auth(
     data: web::Data<State>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    let srv = data.server.lock().unwrap();
+    let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
     if !check_role(&srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
     }
 
-    HttpResponse::Ok().body(auth_google(&srv)).into()
+    HttpResponse::Ok().body(auth_google(&mut srv)).into()
 }
 
 pub async fn setting_gcal_auth_end(
@@ -97,7 +94,7 @@ pub async fn setting_gcal_auth_end(
     data: web::Data<State>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    let srv = data.server.lock().unwrap();
+    let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
     if !check_role(&srv, &usr, "admin") {
@@ -115,10 +112,11 @@ pub async fn setting_gcal_auth_end(
     let config = Config::new(10, false);
     let data: AuthEndData = config.deserialize_str(&_req.query_string()).unwrap();
 
+    let public_url = srv.public_url.clone();
     HttpResponse::Ok()
         .body(auth_google_end(
-            &srv,
-            srv.public_url.clone() + "/?" + _req.query_string(),
+            &mut srv,
+            public_url + "/?" + _req.query_string(),
             data.state,
             data.code,
         ))

@@ -1,4 +1,4 @@
-use crate::state::store_local::*;
+use crate::state::store::*;
 use log::info;
 use std::env;
 use std::fs;
@@ -10,7 +10,7 @@ use std::thread;
 use std::time::Duration;
 
 pub fn sync_with_google(
-    srv: &crate::state::data::Data,
+    srv: &mut crate::state::data::Data,
     add: bool,
     name: String,
     date_time: String,
@@ -27,8 +27,8 @@ pub fn sync_with_google(
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = get_credentials_json(srv);
-    let pickle = get_pickle(srv);
+    let creds = srv.rw.get_credentials();
+    let pickle = srv.rw.get_pickle();
     let mut file = File::create(creds.clone()).unwrap();
 
     write!(file, "{}", srv.settings.strs["sync_google_creds"].clone()).ok();
@@ -57,7 +57,7 @@ pub fn sync_with_google(
     info!("Synchronization is done");
 }
 
-pub fn init_google(srv: &crate::state::data::Data) -> String {
+pub fn init_google(srv: &mut crate::state::data::Data) -> String {
     if !srv.settings.clone().safe_bool("sync_google_cal", false)
         || srv.settings.clone().safe_str("sync_google_creds", "") == ""
         || srv.settings.clone().safe_str("sync_google_email", "") == ""
@@ -70,8 +70,8 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = get_credentials_json(srv);
-    let pickle = get_pickle(srv);
+    let creds = srv.rw.get_credentials();
+    let pickle = srv.rw.get_pickle();
 
     if !Path::new(&pickle).exists() {
         return "no_token".to_string();
@@ -101,7 +101,7 @@ pub fn init_google(srv: &crate::state::data::Data) -> String {
     return String::from_utf8(res.stdout).unwrap();
 }
 
-pub fn auth_google(srv: &crate::state::data::Data) -> String {
+pub fn auth_google(srv: &mut crate::state::data::Data) -> String {
     if !srv.settings.clone().safe_bool("sync_google_cal", false)
         || srv.settings.clone().safe_str("sync_google_creds", "") == ""
     {
@@ -112,8 +112,8 @@ pub fn auth_google(srv: &crate::state::data::Data) -> String {
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = get_credentials_json(srv);
-    let pickle = get_pickle(srv);
+    let creds = srv.rw.get_credentials();
+    let pickle = srv.rw.get_pickle();
 
     if Path::new(&pickle).exists() {
         return "token_exists".to_string();
@@ -155,7 +155,7 @@ pub fn auth_google(srv: &crate::state::data::Data) -> String {
 }
 
 pub fn auth_google_end(
-    srv: &crate::state::data::Data,
+    srv: &mut crate::state::data::Data,
     full_query: String,
     state: String,
     code: String,
@@ -172,8 +172,8 @@ pub fn auth_google_end(
     /* Put credentials to json file */
     let mut dir = env::current_exe().unwrap();
     dir.pop();
-    let creds = get_credentials_json(srv);
-    let pickle = get_pickle(srv);
+    let creds = srv.rw.get_credentials();
+    let pickle = srv.rw.get_pickle();
 
     if Path::new(&pickle).exists() {
         info!("Token exists?");

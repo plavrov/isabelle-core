@@ -1,4 +1,4 @@
-use crate::state::store_local::*;
+use crate::state::store::Store;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use isabelle_dm::data_model::item::Item;
@@ -139,8 +139,8 @@ pub fn equestrian_job_sync(
         }
     }
 
-    init_google(&srv);
-    sync_with_google(&srv, !del, eventname(&srv, &job), entry2datetimestr(&job));
+    init_google(srv);
+    sync_with_google(srv, !del, eventname(&srv, &job), entry2datetimestr(&job));
 }
 
 fn unset_week() -> u64 {
@@ -148,7 +148,7 @@ fn unset_week() -> u64 {
 }
 
 pub fn equestrian_schedule_materialize(
-    mut srv: &mut crate::state::data::Data,
+    srv: &mut crate::state::data::Data,
     user: Identity,
     query: &str,
 ) -> HttpResponse {
@@ -206,10 +206,11 @@ pub fn equestrian_schedule_materialize(
 
     for ent in vec {
         info!("Materialized entry with ID {}", ent.id);
-        srv.itm.get_mut("job").unwrap().set(ent.id, ent, false);
+        srv.itm.get_mut("job").unwrap().set(ent.id, ent.clone(), false);
+        srv.rw.set_item("job", &ent.clone());
     }
 
-    write_data(srv.deref_mut());
+    //write_data(srv.deref_mut());
     HttpResponse::Ok().body(
         serde_json::to_string(&ProcessResult {
             succeeded: true,

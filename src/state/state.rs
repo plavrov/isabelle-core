@@ -13,3 +13,7 @@ impl State {
         }
     }
 }
+
+
+unsafe impl Send for State {
+}

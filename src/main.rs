@@ -1,3 +1,4 @@
+use crate::state::store::Store;
 mod handler;
 mod notif;
 mod server;
@@ -83,11 +84,12 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let mut new_routes: HashMap<String, String> = HashMap::new();
-    let state = State::new();
+    let state = Box::new(State::new());
     {
         let mut srv = state.server.lock().unwrap();
         {
-            *srv.deref_mut() = read_data(&data_path);
+            //*srv.deref_mut() = read_data(&data_path);
+            (*srv.deref_mut()).rw.connect(&data_path);
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
@@ -110,6 +112,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     let data = Data::new(state);
+
     info!("Starting server");
     HttpServer::new(move || {
         let mut app = App::new()
@@ -127,10 +130,9 @@ async fn main() -> std::io::Result<()> {
             .route("/setting/edit", web::post().to(setting_edit))
             .route("/setting/list", web::get().to(setting_list))
             .route("/setting/gcal_auth", web::post().to(setting_gcal_auth))
-            .route(
-                "/setting/gcal_auth_end",
-                web::post().to(setting_gcal_auth_end),
-            );
+            .route("/setting/gcal_auth_end",
+                web::post().to(setting_gcal_auth_end)
+        );
         for route in &new_routes {
             if route.1 == "post" {
                 app = app.route(route.0, web::post().to(url_route))
@@ -138,8 +140,8 @@ async fn main() -> std::io::Result<()> {
                 app = app.route(route.0, web::get().to(url_route))
             }
         }
-        app
-    })
+        app }
+    )
     .bind(("127.0.0.1", port))?
     .run()
     .await

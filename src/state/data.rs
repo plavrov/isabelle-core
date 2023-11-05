@@ -1,9 +1,9 @@
+use crate::state::store_local::*;
 use crate::state::collection::*;
 use isabelle_dm::data_model::item::*;
 use std::collections::HashMap;
-use crate::state::store_local::StoreLocal;
 
-#[derive(Debug, Clone)]
+
 pub struct Data {
     pub itm_cnt: HashMap<String, u64>,
     pub itm: HashMap<String, Collection>,
