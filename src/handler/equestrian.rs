@@ -1,13 +1,13 @@
 use crate::state::store::Store;
-use chrono::DateTime;
-use chrono::NaiveDateTime;
-use isabelle_dm::data_model::item::Item;
-use isabelle_dm::data_model::process_result::ProcessResult;
-use std::collections::HashMap;
 use actix_identity::Identity;
 use actix_web::{web, HttpResponse};
+use chrono::DateTime;
+use chrono::NaiveDateTime;
 use chrono::Utc;
+use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::process_result::ProcessResult;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::server::user_control::*;
 
@@ -36,8 +36,7 @@ pub fn eventname(srv: &mut crate::state::data::Data, sch: &Item) -> String {
     if teacher_id == u64::MAX || itm.is_none() {
         "Training".to_string()
     } else {
-        "Training with ".to_owned()
-            + &itm.unwrap().safe_str("name", "<unknown>")
+        "Training with ".to_owned() + &itm.unwrap().safe_str("name", "<unknown>")
     }
 }
 

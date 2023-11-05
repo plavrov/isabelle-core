@@ -1,7 +1,7 @@
 use crate::handler::route::call_collection_read_hook;
-use std::collections::HashMap;
 use crate::state::store::Store;
 use crate::state::store_local::*;
+use std::collections::HashMap;
 
 pub struct Data {
     pub rw: StoreLocal,
@@ -31,8 +31,7 @@ impl Data {
 
     pub fn init_checks(&mut self) {
         let internals = self.rw.get_internals();
-        let routes = internals
-            .safe_strstr("collection_read_hook", &HashMap::new());
+        let routes = internals.safe_strstr("collection_read_hook", &HashMap::new());
         let collections = self.rw.get_collections();
         for collection in &collections {
             let items = self.rw.get_item_ids(collection);

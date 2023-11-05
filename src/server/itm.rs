@@ -225,7 +225,9 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             );
         }
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
-        map = srv.rw.get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit);
+        map = srv
+            .rw
+            .get_items(&lq.collection, lq.id_min, lq.id_max, lq.limit);
         info!(
             "Collection {} requested range {} - {} limit {}",
             lq.collection, lq.id_min, lq.id_max, lq.limit

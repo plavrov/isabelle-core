@@ -1,5 +1,5 @@
-use crate::state::store::Store;
 use crate::notif::email::send_email;
+use crate::state::store::Store;
 use crate::util::crypto::get_new_salt;
 use crate::util::crypto::get_password_hash;
 use crate::util::crypto::verify_password;

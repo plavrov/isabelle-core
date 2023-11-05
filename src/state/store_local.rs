@@ -60,7 +60,12 @@ impl Store for StoreLocal {
 
             let data_files = fs::read_dir(self.path.to_string() + "/collection/" + &idx).unwrap();
             for data_file in data_files {
-                let data_file_idx = data_file.as_ref().unwrap().file_name().into_string().unwrap();
+                let data_file_idx = data_file
+                    .as_ref()
+                    .unwrap()
+                    .file_name()
+                    .into_string()
+                    .unwrap();
                 let tmp_path = self.path.to_string() + "/collection/" + &idx + "/" + &data_file_idx;
                 if Path::new(&tmp_path).is_dir() {
                     let m = self.items.get_mut(&coll_index).unwrap();
@@ -97,9 +102,12 @@ impl Store for StoreLocal {
     }
 
     fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
-        let tmp_path = self.path.to_string() +
-            "/collection/" + collection +
-            "/" + &id.to_string() + "/data.js";
+        let tmp_path = self.path.to_string()
+            + "/collection/"
+            + collection
+            + "/"
+            + &id.to_string()
+            + "/data.js";
         if Path::new(&tmp_path).is_file() {
             let text = std::fs::read_to_string(tmp_path).unwrap();
             let itm: Item = serde_json::from_str(&text).unwrap();
@@ -129,7 +137,10 @@ impl Store for StoreLocal {
             eff_id_min = 0;
         }
 
-        info!("Getting {} in range {} - {} limit {}", &collection, eff_id_min, eff_id_max, limit);
+        info!(
+            "Getting {} in range {} - {} limit {}",
+            &collection, eff_id_min, eff_id_max, limit
+        );
         for itm in itms {
             if itm.0 >= eff_id_min && itm.0 <= eff_id_max {
                 let new_item = self.get_item(collection, itm.0);
