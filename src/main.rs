@@ -97,6 +97,8 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
 
+            (*srv.deref_mut()).init_checks();
+
             info!("Initializing google!");
             let res = init_google(srv.deref_mut());
             info!("Result: {}", res);

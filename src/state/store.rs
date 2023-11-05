@@ -5,6 +5,9 @@ pub trait Store {
     fn connect(&mut self, addr: &str);
     fn disconnect(&mut self);
 
+    fn get_collections(&mut self) -> Vec<String>;
+    fn get_item_ids(&mut self, collection: &str) -> HashMap<u64, bool>;
+
     fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item>;
     fn get_item(&mut self, collection: &str, id: u64) -> Option<Item>;
     fn get_items(

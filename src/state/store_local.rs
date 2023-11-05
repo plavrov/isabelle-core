@@ -73,6 +73,25 @@ impl Store for StoreLocal {
 
     fn disconnect(&mut self) {}
 
+    fn get_collections(&mut self) -> Vec<String> {
+        let mut lst: Vec<String> = Vec::new();
+
+        for coll in &self.collections {
+            lst.push(coll.0.clone());
+        }
+
+        return lst;
+    }
+
+    fn get_item_ids(&mut self, collection: &str) -> HashMap<u64, bool> {
+        if !self.collections.contains_key(collection) {
+            return HashMap::new();
+        }
+
+        let coll_id = self.collections[collection];
+        return self.items[&coll_id].clone();
+    }
+
     fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
         return self.get_items(collection, u64::MAX, u64::MAX, u64::MAX);
     }
