@@ -43,7 +43,7 @@ pub async fn itm_edit(
     }
     /* call auth hooks */
     {
-        let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
+        let routes = srv.rw.get_internals().safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
             if !call_itm_auth_hook(
                 &mut srv,
@@ -69,7 +69,8 @@ pub async fn itm_edit(
         /* call pre edit ooks */
         {
             let routes = srv_mut
-                .internals
+                .rw
+                .get_internals()
                 .safe_strstr("item_pre_edit_hook", &HashMap::new());
             for route in &routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -94,7 +95,8 @@ pub async fn itm_edit(
         /* call hooks */
         if old_itm != None {
             let routes = srv_mut
-                .internals
+                .rw
+                .get_internals()
                 .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -111,7 +113,8 @@ pub async fn itm_edit(
         /* call hooks */
         {
             let routes = srv
-                .internals
+                .rw
+                .get_internals()
                 .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -152,7 +155,7 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 
     /* call auth hooks */
     {
-        let routes = srv.internals.safe_strstr("itm_auth_hook", &HashMap::new());
+        let routes = srv.rw.get_internals().safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
             if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true) {
                 return HttpResponse::Forbidden().into();
@@ -165,7 +168,8 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
         /* call hooks */
         {
             let routes = srv_mut
-                .internals
+                .rw
+                .get_internals()
                 .safe_strstr("item_post_edit_hook", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -190,7 +194,7 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 }
 
 pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) -> HttpResponse {
-    let srv = data.server.lock().unwrap();
+    let mut srv = data.server.lock().unwrap();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
@@ -241,10 +245,11 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     /* itm filter hooks */
     {
         let routes = srv
-            .internals
+            .rw
+            .get_internals()
             .safe_strstr("itm_list_filter_hook", &HashMap::new());
         for route in routes {
-            call_itm_list_filter_hook(&srv, &route.1, &usr, &lq.collection, &lq.context, &mut map);
+            call_itm_list_filter_hook(&mut srv, &route.1, &usr, &lq.collection, &lq.context, &mut map);
         }
     }
 

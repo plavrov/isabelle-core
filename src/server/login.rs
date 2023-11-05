@@ -1,3 +1,4 @@
+use crate::state::store::Store;
 use crate::handler::route::call_otp_hook;
 use crate::server::user_control::*;
 use crate::state::state::*;
@@ -57,7 +58,7 @@ pub async fn gen_otp(
             .unwrap()
             .set(usr.unwrap().id, new_usr_itm.clone(), false);
 
-        let routes = srv.internals.safe_strstr("otp_hook", &HashMap::new());
+        let routes = srv.rw.get_internals().safe_strstr("otp_hook", &HashMap::new());
         for route in routes {
             call_otp_hook(&mut srv, &route.1, new_usr_itm.clone());
         }
@@ -139,7 +140,7 @@ pub async fn logout(
 }
 
 pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    let srv = data.server.lock().unwrap();
+    let mut srv = data.server.lock().unwrap();
 
     let mut user: DetailedLoginUser = DetailedLoginUser {
         username: "".to_string(),
@@ -152,18 +153,18 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
 
     user.site_name = srv.settings.clone().safe_str("site_name", "");
     if user.site_name == "" {
-        user.site_name = srv.internals.safe_str("default_site_name", "Isabelle");
+        user.site_name = srv.rw.get_internals().safe_str("default_site_name", "Isabelle");
     }
 
     user.site_logo = srv.settings.clone().safe_str("site_logo", "");
     if user.site_logo == "" {
-        user.site_logo = srv.internals.safe_str("default_site_logo", "/logo.png");
+        user.site_logo = srv.rw.get_internals().safe_str("default_site_logo", "/logo.png");
     }
     info!("Site logo: {}", user.site_logo);
 
     user.licensed_to = srv.settings.clone().safe_str("licensed_to", "");
     if user.licensed_to == "" {
-        user.licensed_to = srv.internals.safe_str("default_licensed_to", "end user");
+        user.licensed_to = srv.rw.get_internals().safe_str("default_licensed_to", "end user");
     }
 
     if _user.is_none() || !srv.itm.contains_key("user") {
@@ -171,7 +172,7 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         return web::Json(user);
     }
 
-    let role_is = srv.internals.safe_str("user_role_prefix", "role_is_");
+    let role_is = srv.rw.get_internals().safe_str("user_role_prefix", "role_is_");
     for item in srv.itm["user"].get_all() {
         if item.1.strs.contains_key("email")
             && item.1.strs["email"] == _user.as_ref().unwrap().id().unwrap()

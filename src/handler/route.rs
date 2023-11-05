@@ -1,3 +1,4 @@
+use crate::state::store::Store;
 use crate::handler::equestrian::*;
 use crate::handler::security::*;
 use crate::state::collection::Collection;
@@ -65,7 +66,7 @@ pub fn call_itm_auth_hook(
 }
 
 pub fn call_itm_list_filter_hook(
-    srv: &crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     hndl: &str,
     user: &Option<Item>,
     collection: &str,
@@ -74,27 +75,27 @@ pub fn call_itm_list_filter_hook(
 ) {
     match hndl {
         "equestrian_itm_filter_hook" => {
-            return equestrian_itm_filter_hook(srv, user, collection, context, map)
+            return equestrian_itm_filter_hook(&mut srv, user, collection, context, map)
         }
         &_ => {}
     }
 }
 
 pub fn call_url_route(
-    srv: &mut crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     user: Identity,
     hndl: &str,
     query: &str,
 ) -> HttpResponse {
     match hndl {
         "equestrian_schedule_materialize" => {
-            return equestrian_schedule_materialize(srv, user, query);
+            return equestrian_schedule_materialize(& mut srv, user, query);
         }
         "equestrian_pay_find_broken_payments" => {
-            return equestrian_pay_find_broken_payments(srv, user, query);
+            return equestrian_pay_find_broken_payments(& mut srv, user, query);
         }
         "equestrian_pay_deactivate_expired_payments" => {
-            return equestrian_pay_deactivate_expired_payments(srv, user, query);
+            return equestrian_pay_deactivate_expired_payments(& mut srv, user, query);
         }
         &_ => {
             return HttpResponse::NotFound().into();
@@ -108,7 +109,7 @@ pub async fn url_route(
     req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let routes = srv.internals.safe_strstr("extra_route", &HashMap::new());
+    let routes = srv.rw.get_internals().safe_strstr("extra_route", &HashMap::new());
 
     info!("Custom URL: {}", req.path());
 

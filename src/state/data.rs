@@ -9,7 +9,6 @@ pub struct Data {
     pub itm: HashMap<String, Collection>,
 
     pub settings: Item,
-    pub internals: Item,
 
     pub rw: StoreLocal,
     pub gc_path: String,
@@ -26,7 +25,6 @@ impl Data {
             itm: HashMap::new(),
 
             settings: Item::new(),
-            internals: Item::new(),
 
             rw: StoreLocal::new(),
 

@@ -148,7 +148,7 @@ fn unset_week() -> u64 {
 }
 
 pub fn equestrian_schedule_materialize(
-    srv: &mut crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     user: Identity,
     query: &str,
 ) -> HttpResponse {
@@ -164,7 +164,7 @@ pub fn equestrian_schedule_materialize(
     let mut vec: Vec<Item> = Vec::new();
     let usr = get_user(srv.deref(), user.id().unwrap());
 
-    if !check_role(&srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Forbidden().into();
     }
 
@@ -221,13 +221,13 @@ pub fn equestrian_schedule_materialize(
 }
 
 pub fn equestrian_pay_find_broken_payments(
-    srv: &mut crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     user: Identity,
     query: &str,
 ) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
 
-    if !check_role(&srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Unauthorized().into();
     }
 
@@ -237,14 +237,14 @@ pub fn equestrian_pay_find_broken_payments(
 }
 
 pub fn equestrian_pay_deactivate_expired_payments(
-    srv: &mut crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     user: Identity,
     _query: &str,
 ) -> HttpResponse {
     let usr = get_user(&srv, user.id().unwrap());
     let now_time = chrono::Local::now().timestamp() as u64;
 
-    if !check_role(&srv, &usr, "admin") {
+    if !check_role(&mut srv, &usr, "admin") {
         return HttpResponse::Unauthorized().into();
     }
 
@@ -322,14 +322,14 @@ pub fn equestrian_pay_deactivate_expired_payments(
 }
 
 pub fn equestrian_itm_auth_hook(
-    srv: &mut crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     user: &Option<Item>,
     collection: &str,
     id: u64,
     new_item: Option<Item>,
     _del: bool,
 ) -> bool {
-    if check_role(&srv, &user, "admin") {
+    if check_role(&mut srv, &user, "admin") {
         return true;
     }
 
@@ -340,9 +340,9 @@ pub fn equestrian_itm_auth_hook(
     );
 
     if collection == "query"
-        && (check_role(&srv, &user, "student")
-            || check_role(&srv, &user, "teacher")
-            || check_role(&srv, &user, "staff"))
+        && (check_role(&mut srv, &user, "student")
+            || check_role(&mut srv, &user, "teacher")
+            || check_role(&mut srv, &user, "staff"))
     {
         let mut accept = true;
         let itm = srv.itm["query"].get(id);
@@ -361,11 +361,11 @@ pub fn equestrian_itm_auth_hook(
 
         return accept;
     } else if collection == "job"
-        && (check_role(&srv, &user, "teacher") || check_role(&srv, &user, "staff"))
+        && (check_role(&mut srv, &user, "teacher") || check_role(&mut srv, &user, "staff"))
     {
         return true;
     } else if collection == "mentee"
-        && (check_role(&srv, &user, "teacher") || check_role(&srv, &user, "staff"))
+        && (check_role(&mut srv, &user, "teacher") || check_role(&mut srv, &user, "staff"))
     {
         return true;
     } else if collection == "user" {
@@ -380,7 +380,7 @@ pub fn equestrian_itm_auth_hook(
 }
 
 pub fn equestrian_itm_filter_hook(
-    srv: &crate::state::data::Data,
+    mut srv: &mut crate::state::data::Data,
     user: &Option<Item>,
     collection: &str,
     context: &str,
@@ -388,7 +388,7 @@ pub fn equestrian_itm_filter_hook(
 ) {
     let mut list = true;
 
-    if check_role(&srv, &user, "admin") && collection != "user" {
+    if check_role(&mut srv, &user, "admin") && collection != "user" {
         return;
     }
 

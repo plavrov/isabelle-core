@@ -101,7 +101,7 @@ async fn main() -> std::io::Result<()> {
             info!("Result: {}", res);
 
             let routes = (*srv.deref_mut())
-                .internals
+                .rw.get_internals()
                 .safe_strstr("extra_route", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();

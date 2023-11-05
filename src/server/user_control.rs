@@ -1,3 +1,4 @@
+use crate::state::store::Store;
 use isabelle_dm::data_model::item::Item;
 
 pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
@@ -13,8 +14,8 @@ pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
     return None;
 }
 
-pub fn check_role(srv: &crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
-    let role_is = srv.internals.safe_str("user_role_prefix", "role_is_");
+pub fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
+    let role_is = srv.rw.get_internals().safe_str("user_role_prefix", "role_is_");
     if user.is_none() {
         return false;
     }
