@@ -1,8 +1,8 @@
-use crate::state::store::Store;
 use crate::handler::route::*;
 use crate::server::user_control::*;
 use crate::state::collection::Collection;
 use crate::state::state::*;
+use crate::state::store::Store;
 use actix_identity::Identity;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
@@ -43,7 +43,10 @@ pub async fn itm_edit(
     }
     /* call auth hooks */
     {
-        let routes = srv.rw.get_internals().safe_strstr("itm_auth_hook", &HashMap::new());
+        let routes = srv
+            .rw
+            .get_internals()
+            .safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
             if !call_itm_auth_hook(
                 &mut srv,
@@ -155,7 +158,10 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 
     /* call auth hooks */
     {
-        let routes = srv.rw.get_internals().safe_strstr("itm_auth_hook", &HashMap::new());
+        let routes = srv
+            .rw
+            .get_internals()
+            .safe_strstr("itm_auth_hook", &HashMap::new());
         for route in routes {
             if !call_itm_auth_hook(&mut srv, &route.1, &usr, &mc.collection, itm.id, None, true) {
                 return HttpResponse::Forbidden().into();
@@ -249,7 +255,14 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             .get_internals()
             .safe_strstr("itm_list_filter_hook", &HashMap::new());
         for route in routes {
-            call_itm_list_filter_hook(&mut srv, &route.1, &usr, &lq.collection, &lq.context, &mut map);
+            call_itm_list_filter_hook(
+                &mut srv,
+                &route.1,
+                &usr,
+                &lq.collection,
+                &lq.context,
+                &mut map,
+            );
         }
     }
 

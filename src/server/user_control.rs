@@ -15,7 +15,10 @@ pub fn get_user(srv: &crate::state::data::Data, login: String) -> Option<Item> {
 }
 
 pub fn check_role(srv: &mut crate::state::data::Data, user: &Option<Item>, role: &str) -> bool {
-    let role_is = srv.rw.get_internals().safe_str("user_role_prefix", "role_is_");
+    let role_is = srv
+        .rw
+        .get_internals()
+        .safe_str("user_role_prefix", "role_is_");
     if user.is_none() {
         return false;
     }

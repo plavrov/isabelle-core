@@ -1,13 +1,11 @@
 extern crate serde_json;
 use std::path::Path;
 
-
-
+use crate::state::store::Store;
 use isabelle_dm::data_model::item::*;
-use log::{info, error};
+use log::{error, info};
 use std::collections::HashMap;
 use std::fs;
-use crate::state::store::Store;
 
 #[derive(Debug, Clone)]
 pub struct StoreLocal {
@@ -17,9 +15,7 @@ pub struct StoreLocal {
     pub items_count: HashMap<u64, u64>,
 }
 
-unsafe impl Send for StoreLocal {
-
-}
+unsafe impl Send for StoreLocal {}
 
 impl StoreLocal {
     pub fn new() -> Self {
@@ -35,18 +31,18 @@ impl StoreLocal {
 impl Store for StoreLocal {
     fn connect(&mut self, url: &str) {
         self.path = url.to_string();
-        let collections = fs::read_dir(self.path.to_string() +
-            "/collection").unwrap();
+        let collections = fs::read_dir(self.path.to_string() + "/collection").unwrap();
         for coll in collections {
             let idx = coll.as_ref().unwrap().file_name().into_string().unwrap();
             let new_col: HashMap<u64, bool> = HashMap::new();
-            self.items.insert(self.items.len().try_into().unwrap(), new_col);
-            self.collections.insert(idx.clone(),
-                (self.items.len() - 1).try_into().unwrap());
+            self.items
+                .insert(self.items.len().try_into().unwrap(), new_col);
+            self.collections
+                .insert(idx.clone(), (self.items.len() - 1).try_into().unwrap());
             info!("New collection {}", idx.clone());
 
-            let cnt_str = std::fs::read_to_string(self.path.clone() +
-                "/collection/" + &idx + "/cnt");
+            let cnt_str =
+                std::fs::read_to_string(self.path.clone() + "/collection/" + &idx + "/cnt");
             if let Err(_e) = cnt_str {
                 error!("Failed to read counter");
                 continue;
@@ -58,19 +54,17 @@ impl Store for StoreLocal {
                 continue;
             }
 
-            self.items_count.insert(self.collections[&idx], *parsed.as_ref().unwrap());
+            self.items_count
+                .insert(self.collections[&idx], *parsed.as_ref().unwrap());
             info!(" - index: {}", self.collections[&idx]);
             info!(" - counter: {}", parsed.as_ref().unwrap());
         }
     }
 
-    fn disconnect(&mut self) {
-
-    }
+    fn disconnect(&mut self) {}
 
     fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
-        let tmp_path = self.path.to_string() + "/collection/" + collection + "/" +
-            &id.to_string();
+        let tmp_path = self.path.to_string() + "/collection/" + collection + "/" + &id.to_string();
         if Path::new(&tmp_path).is_file() {
             let text = std::fs::read_to_string(tmp_path).unwrap();
             let itm: Item = serde_json::from_str(&text).unwrap();
@@ -79,9 +73,19 @@ impl Store for StoreLocal {
         return None;
     }
 
-    fn get_items(&mut self, collection: &str, id_min: u64, id_max: u64, limit: u64) -> HashMap<u64, Item> {
+    fn get_items(
+        &mut self,
+        collection: &str,
+        id_min: u64,
+        id_max: u64,
+        limit: u64,
+    ) -> HashMap<u64, Item> {
         let mut map: HashMap<u64, Item> = HashMap::new();
-        let itms = self.items.get_mut(&self.collections[collection]).unwrap().clone();
+        let itms = self
+            .items
+            .get_mut(&self.collections[collection])
+            .unwrap()
+            .clone();
         let mut eff_id_min = id_min;
         let eff_id_max = id_max;
         let mut count = 0;
@@ -107,8 +111,8 @@ impl Store for StoreLocal {
     }
 
     fn set_item(&mut self, collection: &str, itm: &Item) {
-        let tmp_path = self.path.to_string() + "/collection/" + collection + "/" +
-            &itm.id.to_string();
+        let tmp_path =
+            self.path.to_string() + "/collection/" + collection + "/" + &itm.id.to_string();
 
         std::fs::create_dir(&tmp_path).expect("Couldn't create directory");
 
@@ -128,22 +132,23 @@ impl Store for StoreLocal {
                 let cnt = self.items_count.get_mut(&coll_id).unwrap();
                 if itm.id >= *cnt {
                     *cnt = itm.id + 1;
-                    let _res = std::fs::write(self.path.to_string() +
-                        "/collection/" + collection + "/cnt",
-                        (itm.id + 1).to_string());
+                    let _res = std::fs::write(
+                        self.path.to_string() + "/collection/" + collection + "/cnt",
+                        (itm.id + 1).to_string(),
+                    );
                 }
             } else {
                 self.items_count.insert(coll_id, itm.id + 1);
-                let _res = std::fs::write(self.path.to_string() +
-                    "/collection/" + collection + "/cnt",
-                    (itm.id + 1).to_string());
+                let _res = std::fs::write(
+                    self.path.to_string() + "/collection/" + collection + "/cnt",
+                    (itm.id + 1).to_string(),
+                );
             }
         }
     }
 
     fn del_item(&mut self, collection: &str, id: u64) {
-        let tmp_path = self.path.to_string() + "/" + collection + "/" +
-            &id.to_string();
+        let tmp_path = self.path.to_string() + "/" + collection + "/" + &id.to_string();
         let path = Path::new(&tmp_path);
         if path.exists() {
             let _res = std::fs::remove_dir_all(tmp_path);

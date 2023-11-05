@@ -13,8 +13,8 @@ pub fn sync_with_google(
     srv: &mut crate::state::data::Data,
     add: bool,
     name: String,
-    date_time: String) {
-
+    date_time: String,
+) {
     let settings = srv.rw.get_settings();
     if !settings.safe_bool("sync_google_cal", false)
         || settings.safe_str("sync_google_creds", "") == ""

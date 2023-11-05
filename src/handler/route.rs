@@ -1,7 +1,7 @@
-use crate::state::store::Store;
 use crate::handler::equestrian::*;
 use crate::handler::security::*;
 use crate::state::collection::Collection;
+use crate::state::store::Store;
 use crate::State;
 use actix_identity::Identity;
 use actix_web::HttpRequest;
@@ -89,13 +89,13 @@ pub fn call_url_route(
 ) -> HttpResponse {
     match hndl {
         "equestrian_schedule_materialize" => {
-            return equestrian_schedule_materialize(& mut srv, user, query);
+            return equestrian_schedule_materialize(&mut srv, user, query);
         }
         "equestrian_pay_find_broken_payments" => {
-            return equestrian_pay_find_broken_payments(& mut srv, user, query);
+            return equestrian_pay_find_broken_payments(&mut srv, user, query);
         }
         "equestrian_pay_deactivate_expired_payments" => {
-            return equestrian_pay_deactivate_expired_payments(& mut srv, user, query);
+            return equestrian_pay_deactivate_expired_payments(&mut srv, user, query);
         }
         &_ => {
             return HttpResponse::NotFound().into();
@@ -109,7 +109,10 @@ pub async fn url_route(
     req: HttpRequest,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
-    let routes = srv.rw.get_internals().safe_strstr("extra_route", &HashMap::new());
+    let routes = srv
+        .rw
+        .get_internals()
+        .safe_strstr("extra_route", &HashMap::new());
 
     info!("Custom URL: {}", req.path());
 

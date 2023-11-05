@@ -101,7 +101,8 @@ async fn main() -> std::io::Result<()> {
             info!("Result: {}", res);
 
             let routes = (*srv.deref_mut())
-                .rw.get_internals()
+                .rw
+                .get_internals()
                 .safe_strstr("extra_route", &HashMap::new());
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
@@ -130,9 +131,10 @@ async fn main() -> std::io::Result<()> {
             .route("/setting/edit", web::post().to(setting_edit))
             .route("/setting/list", web::get().to(setting_list))
             .route("/setting/gcal_auth", web::post().to(setting_gcal_auth))
-            .route("/setting/gcal_auth_end",
-                web::post().to(setting_gcal_auth_end)
-        );
+            .route(
+                "/setting/gcal_auth_end",
+                web::post().to(setting_gcal_auth_end),
+            );
         for route in &new_routes {
             if route.1 == "post" {
                 app = app.route(route.0, web::post().to(url_route))
@@ -140,8 +142,8 @@ async fn main() -> std::io::Result<()> {
                 app = app.route(route.0, web::get().to(url_route))
             }
         }
-        app }
-    )
+        app
+    })
     .bind(("127.0.0.1", port))?
     .run()
     .await

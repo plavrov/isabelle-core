@@ -14,6 +14,4 @@ impl State {
     }
 }
 
-
-unsafe impl Send for State {
-}
+unsafe impl Send for State {}

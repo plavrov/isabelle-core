@@ -11,8 +11,6 @@ use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-
-
 use crate::server::user_control::*;
 
 use crate::init_google;
@@ -207,7 +205,10 @@ pub fn equestrian_schedule_materialize(
 
     for ent in vec {
         info!("Materialized entry with ID {}", ent.id);
-        srv.itm.get_mut("job").unwrap().set(ent.id, ent.clone(), false);
+        srv.itm
+            .get_mut("job")
+            .unwrap()
+            .set(ent.id, ent.clone(), false);
         srv.rw.set_item("job", &ent.clone());
     }
 

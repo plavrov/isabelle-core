@@ -5,15 +5,15 @@ use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use std::ops::Deref;
 
+use crate::notif::gcal::*;
+use crate::server::user_control::*;
+use crate::state::state::*;
 use actix_identity::Identity;
 use actix_web::{web, HttpRequest, HttpResponse};
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_qs;
 use serde_qs::Config;
-use crate::state::state::*;
-use crate::notif::gcal::*;
-use crate::server::user_control::*;
-use log::info;
 
 pub async fn setting_edit(
     user: Identity,
