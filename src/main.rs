@@ -44,6 +44,7 @@ async fn main() -> std::io::Result<()> {
     let mut gc_path: String = "".to_string();
     let mut py_path: String = "".to_string();
     let mut data_path: String = "sample-data".to_string();
+    let mut db_url: String = "mongodb://127.0.0.1:27017".to_string();
     let mut pub_path: String = "http://localhost:8081".to_string();
     let mut port: u16 = 8090;
     let mut gc_next = false;
@@ -51,6 +52,7 @@ async fn main() -> std::io::Result<()> {
     let mut data_next = false;
     let mut pub_next = false;
     let mut port_next = false;
+    let mut db_url_next = false;
 
     for arg in args {
         if gc_next {
@@ -68,6 +70,9 @@ async fn main() -> std::io::Result<()> {
         } else if port_next {
             port = arg.parse().unwrap();
             port_next = false;
+        } else if db_url_next {
+            db_url = arg.parse().unwrap();
+            db_url_next = false;
         }
 
         if arg == "--gc-path" {
@@ -78,6 +83,8 @@ async fn main() -> std::io::Result<()> {
             data_next = true;
         } else if arg == "--pub-url" {
             pub_next = true;
+        } else if arg == "--db-url" {
+            db_url_next = true;
         }
     }
 
@@ -89,11 +96,10 @@ async fn main() -> std::io::Result<()> {
     {
         let mut srv = state.server.lock().unwrap();
         {
-            //*srv.deref_mut() = read_data(&data_path);
-            (*srv.deref_mut()).rw.connect(&data_path).await;
+            //(*srv.deref_mut()).rw.connect(&data_path, "").await;
             (*srv.deref_mut())
-                .rwm
-                .connect("mongodb://127.0.0.1:27017")
+                .rw
+                .connect(&db_url, &data_path)
                 .await;
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
