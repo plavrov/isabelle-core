@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 #[async_trait]
 pub trait Store {
-    async fn connect(&mut self, addr: &str);
+    async fn connect(&mut self, addr: &str, altaddr: &str);
     async fn disconnect(&mut self);
 
     async fn get_collections(&mut self) -> Vec<String>;
