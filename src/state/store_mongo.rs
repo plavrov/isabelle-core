@@ -1,16 +1,16 @@
 use futures_util::TryStreamExt;
 extern crate serde_json;
-use std::path::Path;
+
 
 use crate::state::store::Store;
 use async_trait::async_trait;
 use isabelle_dm::data_model::item::*;
-use log::{error, info};
-use mongodb::bson::Document;
-use mongodb::{bson::doc, Client, Collection, options::CreateCollectionOptions, IndexModel, options::FindOptions, options::UpdateOptions};
+use log::{info};
+
+use mongodb::{bson::doc, Client, Collection, options::CreateCollectionOptions, IndexModel, options::FindOptions};
 use std::collections::HashMap;
-use std::fs;
-use std::cmp;
+
+
 
 #[derive(Debug, Clone)]
 pub struct StoreMongo {
@@ -82,7 +82,7 @@ impl Store for StoreMongo {
                 let index: IndexModel = IndexModel::builder()
                     .keys(doc! { "id": 1 })
                     .build();
-                let result = coll.create_index(index, None).await;
+                let _result = coll.create_index(index, None).await;
 
                 let coll_idx = self.collections.len().try_into().unwrap();
                 self.collections.insert(coll_name.1.to_string(),

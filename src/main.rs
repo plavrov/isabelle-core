@@ -1,4 +1,4 @@
-use crate::state::merger::merge_database;
+
 use crate::state::store::Store;
 mod handler;
 mod notif;
