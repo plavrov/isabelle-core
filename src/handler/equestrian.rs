@@ -388,8 +388,9 @@ pub async fn equestrian_itm_filter_hook(
     map: &mut HashMap<u64, Item>,
 ) {
     let mut list = true;
+    let is_admin = check_role(&mut srv, &user, "admin").await;
 
-    if check_role(&mut srv, &user, "admin").await && collection != "user" {
+    if is_admin && collection != "user" {
         return;
     }
 
@@ -413,8 +414,18 @@ pub async fn equestrian_itm_filter_hook(
             if collection == "user" {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.strs
-                    .insert("name".to_string(), el.1.safe_str("name", ""));
+                itm.strs.insert(
+                    "name".to_string(),
+                    el.1.safe_str("name", ""));
+                if *el.0 == user.as_ref().unwrap().id || is_admin {
+                    itm.strs.insert(
+                        "phone".to_string(),
+                        el.1.safe_str("phone", ""));
+                    itm.bools.insert(
+                        "has_insurance".to_string(),
+                        el.1.safe_bool("has_insurance", false),
+                    );
+                }
                 itm.bools.insert(
                     "role_is_active".to_string(),
                     el.1.safe_bool("role_is_active", false),
@@ -465,11 +476,21 @@ pub async fn equestrian_itm_filter_hook(
     } else {
         if collection == "user" {
             for el in &mut *map {
-                if *el.0 != user.as_ref().unwrap().id {
+                if *el.0 != user.as_ref().unwrap().id && !is_admin {
                     let mut itm = Item::new();
                     itm.id = *el.0;
-                    itm.strs
-                        .insert("name".to_string(), el.1.safe_str("name", ""));
+                    itm.strs.insert(
+                        "name".to_string(),
+                        el.1.safe_str("name", ""));
+                    if *el.0 == user.as_ref().unwrap().id || is_admin {
+                        itm.strs.insert(
+                            "phone".to_string(),
+                            el.1.safe_str("phone", ""));
+                        itm.bools.insert(
+                            "has_insurance".to_string(),
+                            el.1.safe_bool("has_insurance", false),
+                        );
+                    }
                     itm.bools.insert(
                         "role_is_active".to_string(),
                         el.1.safe_bool("role_is_active", false),
