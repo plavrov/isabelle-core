@@ -101,7 +101,7 @@ impl Store for StoreLocal {
 
     async fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
         return self
-            .get_items(collection, u64::MAX, u64::MAX, u64::MAX)
+            .get_items(collection, u64::MAX, u64::MAX, u64::MAX, u64::MAX)
             .await;
     }
 
@@ -125,6 +125,7 @@ impl Store for StoreLocal {
         collection: &str,
         id_min: u64,
         id_max: u64,
+        skip: u64,
         limit: u64,
     ) -> HashMap<u64, Item> {
         let mut map: HashMap<u64, Item> = HashMap::new();
@@ -136,6 +137,11 @@ impl Store for StoreLocal {
         let mut eff_id_min = id_min;
         let eff_id_max = id_max;
         let mut count = 0;
+        let mut eff_skip = skip;
+
+        if eff_skip == u64::MAX {
+            eff_skip = 0;
+        }
 
         if eff_id_min == u64::MAX {
             eff_id_min = 0;
@@ -149,15 +155,17 @@ impl Store for StoreLocal {
             if itm.0 >= eff_id_min && itm.0 <= eff_id_max {
                 let new_item = self.get_item(collection, itm.0).await;
                 if !new_item.is_none() {
-                    map.insert(itm.0, new_item.unwrap());
+                    if count >= eff_skip {
+                        map.insert(itm.0, new_item.unwrap());
+                    }
                     count = count + 1;
-                    if count >= limit {
+                    if (count - eff_skip) >= limit {
                         break;
                     }
                 }
             }
         }
-        info!(" - result: {} items", count);
+        info!(" - result: {} items", count - eff_skip);
 
         return map;
     }

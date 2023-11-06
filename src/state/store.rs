@@ -17,6 +17,7 @@ pub trait Store {
         collection: &str,
         id_min: u64,
         id_max: u64,
+        skip: u64,
         limit: u64,
     ) -> HashMap<u64, Item>;
 
