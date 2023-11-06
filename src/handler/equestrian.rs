@@ -42,7 +42,7 @@ pub async fn eventname(srv: &mut crate::state::data::Data, sch: &Item) -> String
 
 pub fn entry2datetimestr(entry: &Item) -> String {
     #![allow(warnings)]
-    let mut datetime = entry.u64s["time"];
+    let mut datetime = entry.safe_u64("time", 0);
 
     let all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
     let day = entry.safe_str("day_of_the_week", "");
