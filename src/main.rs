@@ -1,3 +1,4 @@
+use crate::state::merger::merge_database;
 use crate::state::store::Store;
 mod handler;
 mod notif;
@@ -96,7 +97,7 @@ async fn main() -> std::io::Result<()> {
     {
         let mut srv = state.server.lock().unwrap();
         {
-            //(*srv.deref_mut()).rw.connect(&data_path, "").await;
+            (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
             (*srv.deref_mut())
                 .rw
                 .connect(&db_url, &data_path)
@@ -123,6 +124,12 @@ async fn main() -> std::io::Result<()> {
                 new_routes.insert(parts[0].to_string(), parts[1].to_string());
                 info!("Route: {} : {}", parts[0], parts[1]);
             }
+
+            /*
+            let srv_mut = srv.deref_mut();
+            merge_database(&mut srv_mut.file_rw,
+                           &mut srv_mut.rw).await;
+            */
         }
     }
 

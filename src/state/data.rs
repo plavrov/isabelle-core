@@ -5,8 +5,8 @@ use crate::state::store_mongo::*;
 use std::collections::HashMap;
 
 pub struct Data {
-    pub rw: StoreLocal,
-    pub rwm: StoreMongo,
+    pub file_rw: StoreLocal,
+    pub rw: StoreMongo,
     pub gc_path: String,
     pub py_path: String,
     pub data_path: String,
@@ -17,8 +17,8 @@ pub struct Data {
 impl Data {
     pub fn new() -> Self {
         Self {
-            rw: StoreLocal::new(),
-            rwm: StoreMongo::new(),
+            file_rw: StoreLocal::new(),
+            rw: StoreMongo::new(),
 
             gc_path: "".to_string(),
             py_path: "".to_string(),

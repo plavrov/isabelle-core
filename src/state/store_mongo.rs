@@ -158,6 +158,9 @@ impl Store for StoreMongo {
 
         match result {
             Ok(r) => {
+                if r.is_none() {
+                    return None;
+                }
                 return Some(r.unwrap());
             }
             Err(_e) => {
