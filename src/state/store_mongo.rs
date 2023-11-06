@@ -1,3 +1,4 @@
+use futures_util::TryStreamExt;
 extern crate serde_json;
 use std::path::Path;
 
@@ -6,13 +7,15 @@ use async_trait::async_trait;
 use isabelle_dm::data_model::item::*;
 use log::{error, info};
 use mongodb::bson::Document;
-use mongodb::{bson::doc, Client, Collection};
+use mongodb::{bson::doc, Client, Collection, options::CreateCollectionOptions, IndexModel, options::FindOptions, options::UpdateOptions};
 use std::collections::HashMap;
 use std::fs;
+use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct StoreMongo {
     pub path: String,
+    pub local_path: String,
     pub collections: HashMap<String, u64>,
     pub items: HashMap<u64, HashMap<u64, bool>>,
     pub items_count: HashMap<u64, u64>,
@@ -26,6 +29,7 @@ impl StoreMongo {
     pub fn new() -> Self {
         Self {
             path: "".to_string(),
+            local_path: "".to_string(),
             collections: HashMap::new(),
             items: HashMap::new(),
             items_count: HashMap::new(),
@@ -53,11 +57,52 @@ impl StoreMongo {
 
 #[async_trait]
 impl Store for StoreMongo {
-    async fn connect(&mut self, url: &str) {
+    async fn connect(&mut self, url: &str, alturl: &str) {
         self.path = url.to_string();
+        self.local_path = alturl.to_string();
         let res = self.do_conn().await;
         if res {
-            info!("Connected");
+            info!("Connected!");
+            let internals = self.get_internals().await;
+            let collections = internals
+                .safe_strstr("collections", &HashMap::new());
+            info!("Collections: {}", collections.len());
+            let db = self
+                .client
+                .as_ref()
+                .unwrap()
+                .database("isabelle");
+            for coll_name in collections {
+                info!("Create collection {}", &coll_name.1);
+                db.create_collection(&coll_name.1,
+                    CreateCollectionOptions::default())
+                    .await
+                    .unwrap();
+                let coll : Collection<Item> = db.collection(&coll_name.1);
+                let index: IndexModel = IndexModel::builder()
+                    .keys(doc! { "id": 1 })
+                    .build();
+                let result = coll.create_index(index, None).await;
+
+                let coll_idx = self.collections.len().try_into().unwrap();
+                self.collections.insert(coll_name.1.to_string(),
+                    coll_idx);
+
+                let mut map: HashMap<u64, bool> = HashMap::new();
+                let filter = doc!{}; // An empty filter matches all documents
+                let options = FindOptions::default();
+
+                // Find documents in the collection
+                let mut cursor = coll.find(filter, options).await.unwrap();
+                let mut count = 0;
+                while let Some(doc) = cursor.try_next().await.unwrap() {
+                    map.insert(doc.id, true);
+                    count = std::cmp::max(count, doc.id);
+                }
+
+                self.items.insert(coll_idx, map);
+                self.items_count.insert(coll_idx, count);
+            }
         } else {
             info!("Not connected");
         }
@@ -66,19 +111,18 @@ impl Store for StoreMongo {
     async fn disconnect(&mut self) {}
 
     async fn get_collections(&mut self) -> Vec<String> {
-        let my_coll: Collection<Item> = self
+        let colls = self
             .client
             .as_ref()
             .unwrap()
-            .database("user")
-            .collection("restaurants");
-        let _result = my_coll
-            .find_one(doc! { "name": "Tompkins Square Bagels" }, None)
-            .await;
+            .database("isabelle")
+            .list_collection_names(None)
+            .await
+            .unwrap();
         let mut lst: Vec<String> = Vec::new();
 
-        for coll in &self.collections {
-            lst.push(coll.0.clone());
+        for coll in &colls {
+            lst.push(coll.clone());
         }
 
         return lst;
@@ -100,17 +144,25 @@ impl Store for StoreMongo {
     }
 
     async fn get_item(&mut self, collection: &str, id: u64) -> Option<Item> {
-        let tmp_path = self.path.to_string()
-            + "/collection/"
-            + collection
-            + "/"
-            + &id.to_string()
-            + "/data.js";
-        if Path::new(&tmp_path).is_file() {
-            let text = std::fs::read_to_string(tmp_path).unwrap();
-            let itm: Item = serde_json::from_str(&text).unwrap();
-            return Some(itm);
-        }
+        let coll = self
+            .client
+            .as_ref()
+            .unwrap()
+            .database("isabelle")
+            .collection(collection);
+        let filter = doc!{
+            "id": id as i64,
+        };
+
+        let result = coll.find_one(filter, None).await;
+
+        match result {
+            Ok(r) => {
+                return Some(r.unwrap());
+            }
+            Err(_e) => {
+            }
+        };
         return None;
     }
 
@@ -160,17 +212,25 @@ impl Store for StoreMongo {
         let old_itm = self.get_item(collection, itm.id).await;
         let mut new_itm = itm.clone();
         if !old_itm.is_none() && merge {
-            new_itm = old_itm.unwrap().clone();
+            new_itm = old_itm.as_ref().unwrap().clone();
             new_itm.merge(itm);
         }
-        let tmp_path =
-            self.path.to_string() + "/collection/" + collection + "/" + &new_itm.id.to_string();
 
-        let _dir_create_err = std::fs::create_dir(&tmp_path);
+        let coll: Collection<Item> = self
+            .client
+            .as_ref()
+            .unwrap()
+            .database("isabelle")
+            .collection(collection);
+        let filter = doc!{
+            "id": itm.id as i64,
+        };
 
-        let tmp_data_path = tmp_path.clone() + "/data.js";
-        let s = serde_json::to_string(&new_itm);
-        std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write item");
+        if old_itm.as_ref().is_none() {
+            let _res = coll.insert_one(itm.clone(), None).await;
+        } else {
+            let _res = coll.replace_one(filter, itm.clone(), None).await;
+        }
 
         let coll_id = self.collections[collection];
         if self.items.contains_key(&coll_id) {
@@ -184,27 +244,26 @@ impl Store for StoreMongo {
                 let cnt = self.items_count.get_mut(&coll_id).unwrap();
                 if new_itm.id >= *cnt {
                     *cnt = new_itm.id + 1;
-                    let _res = std::fs::write(
-                        self.path.to_string() + "/collection/" + collection + "/cnt",
-                        (new_itm.id + 1).to_string(),
-                    );
                 }
             } else {
                 self.items_count.insert(coll_id, new_itm.id + 1);
-                let _res = std::fs::write(
-                    self.path.to_string() + "/collection/" + collection + "/cnt",
-                    (new_itm.id + 1).to_string(),
-                );
             }
         }
     }
 
     async fn del_item(&mut self, collection: &str, id: u64) -> bool {
-        let tmp_path = self.path.to_string() + "/" + collection + "/" + &id.to_string();
-        let path = Path::new(&tmp_path);
-        if path.exists() {
-            let _res = std::fs::remove_dir_all(tmp_path);
-        }
+        let coll: Collection<Item> = self
+            .client
+            .as_ref()
+            .unwrap()
+            .database("isabelle")
+            .collection(collection);
+        let filter = doc!{
+            "id": id as i64,
+        };
+
+        let _res = coll.delete_one(filter, None).await;
+
         let coll_id = self.collections[collection];
         if self.items.contains_key(&coll_id) {
             let coll = self.items.get_mut(&coll_id).unwrap();
@@ -217,15 +276,15 @@ impl Store for StoreMongo {
     }
 
     async fn get_credentials(&mut self) -> String {
-        return self.path.clone() + "/credentials.json";
+        return self.local_path.clone() + "/credentials.json";
     }
 
     async fn get_pickle(&mut self) -> String {
-        return self.path.clone() + "/token.pickle";
+        return self.local_path.clone() + "/token.pickle";
     }
 
     async fn get_internals(&mut self) -> Item {
-        let tmp_data_path = self.path.clone() + "/internals.js";
+        let tmp_data_path = self.local_path.clone() + "/internals.js";
 
         let read_data = std::fs::read_to_string(tmp_data_path);
         if let Err(_e) = read_data {
@@ -237,7 +296,7 @@ impl Store for StoreMongo {
     }
 
     async fn get_settings(&mut self) -> Item {
-        let tmp_data_path = self.path.clone() + "/settings.js";
+        let tmp_data_path = self.local_path.clone() + "/settings.js";
 
         let read_data = std::fs::read_to_string(tmp_data_path);
         if let Err(_e) = read_data {
@@ -249,7 +308,7 @@ impl Store for StoreMongo {
     }
 
     async fn set_settings(&mut self, itm: Item) {
-        let tmp_data_path = self.path.clone() + "/settings.js";
+        let tmp_data_path = self.local_path.clone() + "/settings.js";
         let s = serde_json::to_string(&itm);
         std::fs::write(tmp_data_path, s.unwrap()).expect("Couldn't write item");
     }
