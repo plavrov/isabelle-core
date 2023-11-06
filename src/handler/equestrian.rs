@@ -416,6 +416,10 @@ pub async fn equestrian_itm_filter_hook(
                 itm.strs
                     .insert("name".to_string(), el.1.safe_str("name", ""));
                 itm.bools.insert(
+                    "role_is_active".to_string(),
+                    el.1.safe_bool("role_is_active", false),
+                );
+                itm.bools.insert(
                     "role_is_admin".to_string(),
                     el.1.safe_bool("role_is_admin", false),
                 );
@@ -466,6 +470,10 @@ pub async fn equestrian_itm_filter_hook(
                     itm.id = *el.0;
                     itm.strs
                         .insert("name".to_string(), el.1.safe_str("name", ""));
+                    itm.bools.insert(
+                        "role_is_active".to_string(),
+                        el.1.safe_bool("role_is_active", false),
+                    );
                     itm.bools.insert(
                         "role_is_admin".to_string(),
                         el.1.safe_bool("role_is_admin", false),
