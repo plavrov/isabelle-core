@@ -1,3 +1,4 @@
+use crate::state::merger::merge_database;
 use crate::state::store::Store;
 mod handler;
 mod notif;
@@ -53,6 +54,7 @@ async fn main() -> std::io::Result<()> {
     let mut pub_next = false;
     let mut port_next = false;
     let mut db_url_next = false;
+    let mut first_run = false;
 
     for arg in args {
         if gc_next {
@@ -85,6 +87,8 @@ async fn main() -> std::io::Result<()> {
             pub_next = true;
         } else if arg == "--db-url" {
             db_url_next = true;
+        } else if arg == "--first-run" {
+            first_run = true;
         }
     }
 
@@ -121,12 +125,16 @@ async fn main() -> std::io::Result<()> {
                 info!("Route: {} : {}", parts[0], parts[1]);
             }
 
-            /*
-            let srv_mut = srv.deref_mut();
-            merge_database(&mut srv_mut.file_rw,
-                           &mut srv_mut.rw).await;
-            */
+            if first_run {
+                let srv_mut = srv.deref_mut();
+                merge_database(&mut srv_mut.file_rw,
+                               &mut srv_mut.rw).await;
+            }
         }
+    }
+
+    if first_run {
+        return Ok(());
     }
 
     let data = Data::new(state);
