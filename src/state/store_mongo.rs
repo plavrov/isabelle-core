@@ -1,16 +1,16 @@
 use futures_util::TryStreamExt;
 extern crate serde_json;
 
-
 use crate::state::store::Store;
 use async_trait::async_trait;
 use isabelle_dm::data_model::item::*;
-use log::{info};
+use log::info;
 
-use mongodb::{bson::doc, Client, Collection, options::CreateCollectionOptions, IndexModel, options::FindOptions};
+use mongodb::{
+    bson::doc, options::CreateCollectionOptions, options::FindOptions, Client, Collection,
+    IndexModel,
+};
 use std::collections::HashMap;
-
-
 
 #[derive(Debug, Clone)]
 pub struct StoreMongo {
@@ -64,32 +64,23 @@ impl Store for StoreMongo {
         if res {
             info!("Connected!");
             let internals = self.get_internals().await;
-            let collections = internals
-                .safe_strstr("collections", &HashMap::new());
+            let collections = internals.safe_strstr("collections", &HashMap::new());
             info!("Collections: {}", collections.len());
-            let db = self
-                .client
-                .as_ref()
-                .unwrap()
-                .database("isabelle");
+            let db = self.client.as_ref().unwrap().database("isabelle");
             for coll_name in collections {
                 info!("Create collection {}", &coll_name.1);
-                db.create_collection(&coll_name.1,
-                    CreateCollectionOptions::default())
+                db.create_collection(&coll_name.1, CreateCollectionOptions::default())
                     .await
                     .unwrap();
-                let coll : Collection<Item> = db.collection(&coll_name.1);
-                let index: IndexModel = IndexModel::builder()
-                    .keys(doc! { "id": 1 })
-                    .build();
+                let coll: Collection<Item> = db.collection(&coll_name.1);
+                let index: IndexModel = IndexModel::builder().keys(doc! { "id": 1 }).build();
                 let _result = coll.create_index(index, None).await;
 
                 let coll_idx = self.collections.len().try_into().unwrap();
-                self.collections.insert(coll_name.1.to_string(),
-                    coll_idx);
+                self.collections.insert(coll_name.1.to_string(), coll_idx);
 
                 let mut map: HashMap<u64, bool> = HashMap::new();
-                let filter = doc!{}; // An empty filter matches all documents
+                let filter = doc! {}; // An empty filter matches all documents
                 let options = FindOptions::default();
 
                 // Find documents in the collection
@@ -150,7 +141,7 @@ impl Store for StoreMongo {
             .unwrap()
             .database("isabelle")
             .collection(collection);
-        let filter = doc!{
+        let filter = doc! {
             "id": id as i64,
         };
 
@@ -163,8 +154,7 @@ impl Store for StoreMongo {
                 }
                 return Some(r.unwrap());
             }
-            Err(_e) => {
-            }
+            Err(_e) => {}
         };
         return None;
     }
@@ -237,7 +227,7 @@ impl Store for StoreMongo {
             .unwrap()
             .database("isabelle")
             .collection(collection);
-        let filter = doc!{
+        let filter = doc! {
             "id": itm.id as i64,
         };
 
@@ -273,7 +263,7 @@ impl Store for StoreMongo {
             .unwrap()
             .database("isabelle")
             .collection(collection);
-        let filter = doc!{
+        let filter = doc! {
             "id": id as i64,
         };
 

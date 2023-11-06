@@ -1,4 +1,3 @@
-
 use crate::state::store::Store;
 mod handler;
 mod notif;
@@ -98,10 +97,7 @@ async fn main() -> std::io::Result<()> {
         let mut srv = state.server.lock().unwrap();
         {
             (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
-            (*srv.deref_mut())
-                .rw
-                .connect(&db_url, &data_path)
-                .await;
+            (*srv.deref_mut()).rw.connect(&db_url, &data_path).await;
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
