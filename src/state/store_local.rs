@@ -31,7 +31,7 @@ impl StoreLocal {
 
 #[async_trait]
 impl Store for StoreLocal {
-    async fn connect(&mut self, url: &str) {
+    async fn connect(&mut self, url: &str, _alturl: &str) {
         self.path = url.to_string();
         let collections = fs::read_dir(self.path.to_string() + "/collection").unwrap();
         for coll in collections {
