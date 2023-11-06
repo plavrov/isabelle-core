@@ -216,7 +216,7 @@ impl Store for StoreMongo {
         if itm.id == u64::MAX {
             let coll_id = self.collections[collection];
             if self.items.contains_key(&coll_id) {
-                itm.id = self.items_count[&coll_id];
+                itm.id = self.items_count[&coll_id] + 1;
             }
         }
 
@@ -257,8 +257,8 @@ impl Store for StoreMongo {
             }
             if self.items_count.contains_key(&coll_id) {
                 let cnt = self.items_count.get_mut(&coll_id).unwrap();
-                if new_itm.id >= *cnt {
-                    *cnt = new_itm.id + 1;
+                if new_itm.id > *cnt {
+                    *cnt = new_itm.id;
                 }
             } else {
                 self.items_count.insert(coll_id, new_itm.id + 1);
