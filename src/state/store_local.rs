@@ -162,12 +162,20 @@ impl Store for StoreLocal {
         return map;
     }
 
-    async fn set_item(&mut self, collection: &str, itm: &Item, merge: bool) {
+    async fn set_item(&mut self, collection: &str, exp_itm: &Item, merge: bool) {
+        let mut itm = exp_itm.clone();
+        if itm.id == u64::MAX {
+            let coll_id = self.collections[collection];
+            if self.items.contains_key(&coll_id) {
+                itm.id = self.items_count[&coll_id] + 1;
+            }
+        }
+
         let old_itm = self.get_item(collection, itm.id).await;
         let mut new_itm = itm.clone();
         if !old_itm.is_none() && merge {
             new_itm = old_itm.unwrap().clone();
-            new_itm.merge(itm);
+            new_itm.merge(&itm);
         }
         let tmp_path =
             self.path.to_string() + "/collection/" + collection + "/" + &new_itm.id.to_string();
@@ -188,8 +196,8 @@ impl Store for StoreLocal {
             }
             if self.items_count.contains_key(&coll_id) {
                 let cnt = self.items_count.get_mut(&coll_id).unwrap();
-                if new_itm.id >= *cnt {
-                    *cnt = new_itm.id + 1;
+                if new_itm.id > *cnt {
+                    *cnt = new_itm.id;
                     let _res = std::fs::write(
                         self.path.to_string() + "/collection/" + collection + "/cnt",
                         (new_itm.id + 1).to_string(),
