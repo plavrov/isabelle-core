@@ -1,6 +1,6 @@
-use isabelle_dm::data_model::list_result::ListResult;
 use async_trait::async_trait;
 use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::list_result::ListResult;
 use std::collections::HashMap;
 
 #[async_trait]

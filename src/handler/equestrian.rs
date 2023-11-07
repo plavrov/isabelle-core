@@ -291,7 +291,8 @@ pub async fn equestrian_pay_deactivate_expired_payments(
             }
         }
 
-        let assoc_jobs: Vec<_> = jobs.map
+        let assoc_jobs: Vec<_> = jobs
+            .map
             .iter()
             .filter(|x| &x.1.safe_id("payment_id", u64::MAX) == id)
             .collect();
@@ -414,13 +415,11 @@ pub async fn equestrian_itm_filter_hook(
             if collection == "user" {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.strs.insert(
-                    "name".to_string(),
-                    el.1.safe_str("name", ""));
+                itm.strs
+                    .insert("name".to_string(), el.1.safe_str("name", ""));
                 if *el.0 == user.as_ref().unwrap().id || is_admin {
-                    itm.strs.insert(
-                        "phone".to_string(),
-                        el.1.safe_str("phone", ""));
+                    itm.strs
+                        .insert("phone".to_string(), el.1.safe_str("phone", ""));
                     itm.bools.insert(
                         "has_insurance".to_string(),
                         el.1.safe_bool("has_insurance", false),
@@ -479,13 +478,11 @@ pub async fn equestrian_itm_filter_hook(
                 if *el.0 != user.as_ref().unwrap().id && !is_admin {
                     let mut itm = Item::new();
                     itm.id = *el.0;
-                    itm.strs.insert(
-                        "name".to_string(),
-                        el.1.safe_str("name", ""));
+                    itm.strs
+                        .insert("name".to_string(), el.1.safe_str("name", ""));
                     if *el.0 == user.as_ref().unwrap().id || is_admin {
-                        itm.strs.insert(
-                            "phone".to_string(),
-                            el.1.safe_str("phone", ""));
+                        itm.strs
+                            .insert("phone".to_string(), el.1.safe_str("phone", ""));
                         itm.bools.insert(
                             "has_insurance".to_string(),
                             el.1.safe_bool("has_insurance", false),

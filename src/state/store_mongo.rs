@@ -1,5 +1,5 @@
-use isabelle_dm::data_model::list_result::ListResult;
 use futures_util::TryStreamExt;
+use isabelle_dm::data_model::list_result::ListResult;
 extern crate serde_json;
 
 use crate::state::store::Store;

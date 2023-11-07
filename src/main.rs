@@ -127,8 +127,7 @@ async fn main() -> std::io::Result<()> {
 
             if first_run {
                 let srv_mut = srv.deref_mut();
-                merge_database(&mut srv_mut.file_rw,
-                               &mut srv_mut.rw).await;
+                merge_database(&mut srv_mut.file_rw, &mut srv_mut.rw).await;
             }
         }
     }

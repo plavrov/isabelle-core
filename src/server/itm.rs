@@ -1,4 +1,3 @@
-use isabelle_dm::data_model::list_result::ListResult;
 use crate::handler::route::*;
 use crate::server::user_control::*;
 use crate::state::state::*;
@@ -9,6 +8,7 @@ use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use futures_util::TryStreamExt;
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::list_query::ListQuery;
+use isabelle_dm::data_model::list_result::ListResult;
 use isabelle_dm::data_model::merge_coll::MergeColl;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use log::{error, info};
