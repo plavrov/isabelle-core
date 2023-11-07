@@ -2,6 +2,7 @@
 TOP_DIR="$(cd "$(dirname "$(which "$0")")" ; pwd -P)"
 cd "$TOP_DIR"
 
+binary="${BINARY:-./target/debug/isabelle-core}"
 first_run="${FIRST_RUN:+--first-run}"
 port="$1"
 pub_url="$2"
@@ -39,4 +40,4 @@ if [ "$gc_path" == "" ] ; then
 	gc_path="$(pwd)/isabelle-gc"
 fi
 
-RUST_LOG=info RUST_BACKTRACE=1 ./target/debug/isabelle-core --port "${port}" --pub-url "${pub_url}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}" ${first_run}
+RUST_LOG=info RUST_BACKTRACE=1 "${binary}" --port "${port}" --pub-url "${pub_url}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}" ${first_run}
