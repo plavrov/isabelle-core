@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::list_result::ListResult;
 use async_trait::async_trait;
 use isabelle_dm::data_model::item::Item;
 use std::collections::HashMap;
@@ -10,7 +11,7 @@ pub trait Store {
     async fn get_collections(&mut self) -> Vec<String>;
     async fn get_item_ids(&mut self, collection: &str) -> HashMap<u64, bool>;
 
-    async fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item>;
+    async fn get_all_items(&mut self, collection: &str) -> ListResult;
     async fn get_item(&mut self, collection: &str, id: u64) -> Option<Item>;
     async fn get_items(
         &mut self,
@@ -19,7 +20,7 @@ pub trait Store {
         id_max: u64,
         skip: u64,
         limit: u64,
-    ) -> HashMap<u64, Item>;
+    ) -> ListResult;
 
     async fn set_item(&mut self, collection: &str, itm: &Item, merge: bool);
     async fn del_item(&mut self, collection: &str, id: u64) -> bool;

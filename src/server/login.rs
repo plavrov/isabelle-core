@@ -205,7 +205,7 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         .await
         .safe_str("user_role_prefix", "role_is_");
     let all_users = srv.rw.get_all_items("user").await;
-    for item in &all_users {
+    for item in &all_users.map {
         if item.1.strs.contains_key("email")
             && item.1.strs["email"] == _user.as_ref().unwrap().id().unwrap()
         {

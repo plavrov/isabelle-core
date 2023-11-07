@@ -1,3 +1,4 @@
+use isabelle_dm::data_model::list_result::ListResult;
 use crate::handler::route::*;
 use crate::server::user_control::*;
 use crate::state::state::*;
@@ -222,7 +223,10 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         return HttpResponse::BadRequest().into();
     }
 
-    let mut map: HashMap<u64, Item> = HashMap::new();
+    let mut lr = ListResult {
+        map: HashMap::new(),
+        total_count: 0,
+    };
 
     if lq.id != u64::MAX {
         let res = srv.rw.get_item(&lq.collection, lq.id).await;
@@ -235,14 +239,15 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         }
 
         if lq.limit == u64::MAX || lq.limit >= 1 {
-            map.insert(lq.id, res.unwrap());
+            lr.map.insert(lq.id, res.unwrap());
+            lr.total_count = 1;
             info!(
                 "Collection {} requested element {} limit {}",
                 lq.collection, lq.id, lq.limit
             );
         }
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
-        map = srv
+        lr = srv
             .rw
             .get_items(&lq.collection, lq.id_min, lq.id_max, lq.skip, lq.limit)
             .await;
@@ -254,7 +259,8 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         for id in lq.id_list {
             let res = srv.rw.get_item(&lq.collection, id).await;
             if res != None {
-                map.insert(id, res.unwrap());
+                lr.map.insert(id, res.unwrap());
+                lr.total_count += 1;
             }
         }
         info!("Collection {} requested list of IDs", lq.collection);
@@ -276,11 +282,11 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 &usr,
                 &lq.collection,
                 &lq.context,
-                &mut map,
+                &mut lr.map,
             )
             .await;
         }
     }
 
-    HttpResponse::Ok().body(serde_json::to_string(&map).unwrap())
+    HttpResponse::Ok().body(serde_json::to_string(&lr).unwrap())
 }

@@ -1,4 +1,4 @@
-extern crate serde_json;
+use isabelle_dm::data_model::list_result::ListResult;
 use std::path::Path;
 
 use crate::state::store::Store;
@@ -99,7 +99,7 @@ impl Store for StoreLocal {
         return self.items[&coll_id].clone();
     }
 
-    async fn get_all_items(&mut self, collection: &str) -> HashMap<u64, Item> {
+    async fn get_all_items(&mut self, collection: &str) -> ListResult {
         return self
             .get_items(collection, u64::MAX, u64::MAX, u64::MAX, u64::MAX)
             .await;
@@ -127,8 +127,11 @@ impl Store for StoreLocal {
         id_max: u64,
         skip: u64,
         limit: u64,
-    ) -> HashMap<u64, Item> {
-        let mut map: HashMap<u64, Item> = HashMap::new();
+    ) -> ListResult {
+        let mut lr = ListResult {
+            map: HashMap::new(),
+            total_count: 0,
+        };
         let itms = self
             .items
             .get_mut(&self.collections[collection])
@@ -151,12 +154,12 @@ impl Store for StoreLocal {
             "Getting {} in range {} - {} limit {}",
             &collection, eff_id_min, eff_id_max, limit
         );
-        for itm in itms {
-            if itm.0 >= eff_id_min && itm.0 <= eff_id_max {
-                let new_item = self.get_item(collection, itm.0).await;
+        for itm in &itms {
+            if itm.0 >= &eff_id_min && itm.0 <= &eff_id_max {
+                let new_item = self.get_item(collection, *itm.0).await;
                 if !new_item.is_none() {
                     if count >= eff_skip {
-                        map.insert(itm.0, new_item.unwrap());
+                        lr.map.insert(*itm.0, new_item.unwrap());
                     }
                     count = count + 1;
                     if count >= eff_skip && (count - eff_skip) >= limit {
@@ -166,8 +169,9 @@ impl Store for StoreLocal {
             }
         }
         info!(" - result: {} items", count - eff_skip);
+        lr.total_count = itms.len() as u64;
 
-        return map;
+        return lr;
     }
 
     async fn set_item(&mut self, collection: &str, exp_itm: &Item, merge: bool) {
