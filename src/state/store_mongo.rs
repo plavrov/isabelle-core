@@ -198,7 +198,7 @@ impl Store for StoreMongo {
                         map.insert(itm.0, new_item.unwrap());
                     }
                     count = count + 1;
-                    if (count - eff_skip) >= limit {
+                    if count >= eff_skip && (count - eff_skip) >= limit {
                         break;
                     }
                 }
