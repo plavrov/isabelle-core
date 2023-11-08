@@ -26,13 +26,13 @@ use log::info;
 use std::env;
 use std::ops::DerefMut;
 
-fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
+fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
         .session_lifecycle(BrowserSession::default())
         .cookie_same_site(SameSite::None)
         .cookie_path("/".into())
         .cookie_name(String::from("isabelle-cookie"))
-        .cookie_domain(Some("localhost".into()))
+        .cookie_domain(Some(pub_fqdn.into()))
         .cookie_content_security(CookieContentSecurity::Private)
         .cookie_http_only(true)
         .cookie_secure(true)
@@ -47,11 +47,13 @@ async fn main() -> std::io::Result<()> {
     let mut data_path: String = "sample-data".to_string();
     let mut db_url: String = "mongodb://127.0.0.1:27017".to_string();
     let mut pub_path: String = "http://localhost:8081".to_string();
+    let mut pub_fqdn: String = "localhost".to_string();
     let mut port: u16 = 8090;
     let mut gc_next = false;
     let mut py_next = false;
     let mut data_next = false;
     let mut pub_next = false;
+    let mut pub_fqdn_next = false;
     let mut port_next = false;
     let mut db_url_next = false;
     let mut first_run = false;
@@ -69,6 +71,9 @@ async fn main() -> std::io::Result<()> {
         } else if pub_next {
             pub_path = arg.clone();
             pub_next = false;
+        } else if pub_fqdn_next {
+            pub_fqdn = arg.clone();
+            pub_fqdn_next = false;
         } else if port_next {
             port = arg.parse().unwrap();
             port_next = false;
@@ -85,6 +90,8 @@ async fn main() -> std::io::Result<()> {
             data_next = true;
         } else if arg == "--pub-url" {
             pub_next = true;
+        } else if arg == "--pub-fqdn" {
+            pub_fqdn_next = true;
         } else if arg == "--db-url" {
             db_url_next = true;
         } else if arg == "--first-run" {
@@ -143,7 +150,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(data.clone())
             .wrap(Cors::permissive())
             .wrap(IdentityMiddleware::default())
-            .wrap(session_middleware())
+            .wrap(session_middleware(pub_fqdn.clone()))
             .route("/itm/edit", web::post().to(itm_edit))
             .route("/itm/del", web::post().to(itm_del))
             .route("/itm/list", web::get().to(itm_list))
