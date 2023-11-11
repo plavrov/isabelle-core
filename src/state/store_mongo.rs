@@ -196,8 +196,8 @@ impl Store for StoreMongo {
         }
 
         info!(
-            "Getting {} in range {} - {} limit {} sort key {} (care {})",
-            &collection, eff_id_min, eff_id_max, limit, sort_key, care_about_sort
+            "Getting {} in range {} - {} ({}-{}) limit {} sort key {} (care {})",
+            &collection, eff_id_min, eff_id_max, id_min, id_max, limit, sort_key, care_about_sort
         );
         if care_about_sort {
             let coll : Collection<Item> = self
@@ -219,13 +219,13 @@ impl Store for StoreMongo {
                             break;
                         }
                         info!("Cursor ok name {}", c.as_ref().unwrap().safe_str("name", ""));
-                        count = count + 1;
-                        if count >= eff_skip && (count - eff_skip) >= limit {
-                            continue;
-                        }
                         if count >= eff_skip {
                             info!("Added");
                             lr.map.insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
+                        }
+                        count = count + 1;
+                        if count >= eff_skip && (count - eff_skip) >= limit {
+                            break;
                         }
                     }
                     Err(_e) => {
