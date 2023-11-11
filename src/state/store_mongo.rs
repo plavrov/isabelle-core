@@ -200,7 +200,7 @@ impl Store for StoreMongo {
             &collection, eff_id_min, eff_id_max, id_min, id_max, limit, sort_key, care_about_sort
         );
         if care_about_sort {
-            let coll : Collection<Item> = self
+            let coll: Collection<Item> = self
                 .client
                 .as_ref()
                 .unwrap()
@@ -219,7 +219,8 @@ impl Store for StoreMongo {
                         }
 
                         if count >= eff_skip {
-                            lr.map.insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
+                            lr.map
+                                .insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
                         }
                         count = count + 1;
                         if count >= eff_skip && (count - eff_skip) >= limit {
