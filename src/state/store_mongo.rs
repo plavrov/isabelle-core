@@ -215,12 +215,10 @@ impl Store for StoreMongo {
                     Ok(r) => {
                         let c = r.clone();
                         if c.is_none() {
-                            info!("Cursor none");
                             break;
                         }
-                        info!("Cursor ok name {}", c.as_ref().unwrap().safe_str("name", ""));
+
                         if count >= eff_skip {
-                            info!("Added");
                             lr.map.insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
                         }
                         count = count + 1;
@@ -229,7 +227,6 @@ impl Store for StoreMongo {
                         }
                     }
                     Err(_e) => {
-                        info!("Error");
                         break;
                     }
                 };
