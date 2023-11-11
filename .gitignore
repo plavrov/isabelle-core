@@ -19,3 +19,6 @@ sample-data/
 sample-data
 *.sublime-workspace
 
+/build
+/*.tar.xz
+/ttg
