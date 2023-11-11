@@ -20,8 +20,8 @@ pub async fn security_check_unique_login_email(
             error: "".to_string(),
         };
     }
-    let email = itm.safe_str("email", "");
-    let login = itm.safe_str("login", "");
+    let email = itm.safe_str("email", "").to_lowercase();
+    let login = itm.safe_str("login", "").to_lowercase();
 
     if email == "" {
         return ProcessResult {
@@ -33,13 +33,13 @@ pub async fn security_check_unique_login_email(
     let users = srv.rw.get_all_items("user", "id").await;
     for usr in &users.map {
         if *usr.0 != itm.id {
-            if login != "" && login == usr.1.safe_str("login", "") {
+            if login != "" && login == usr.1.safe_str("login", "").to_lowercase() {
                 return ProcessResult {
                     succeeded: false,
                     error: "Login mustn't match already existing one".to_string(),
                 };
             }
-            if email == usr.1.safe_str("email", "") {
+            if email == usr.1.safe_str("email", "").to_lowercase() {
                 return ProcessResult {
                     succeeded: false,
                     error: "E-Mail mustn't match already existing one".to_string(),

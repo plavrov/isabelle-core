@@ -4,12 +4,13 @@ use log::info;
 
 pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
     let users = srv.rw.get_all_items("user", "name").await;
+    let tmp_login = login.to_lowercase();
     info!("Users: {}", users.map.len());
     for item in &users.map {
-        if item.1.strs.contains_key("login") && item.1.strs["login"] == login {
+        if item.1.strs.contains_key("login") && item.1.strs["login"].to_lowercase() == tmp_login {
             return Some(item.1.clone());
         }
-        if item.1.strs.contains_key("email") && item.1.strs["email"] == login {
+        if item.1.strs.contains_key("email") && item.1.strs["email"].to_lowercase() == tmp_login {
             return Some(item.1.clone());
         }
     }
@@ -38,11 +39,12 @@ pub async fn check_role(
 
 pub async fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
     let users = srv.rw.get_all_items("user", "name").await;
+    let tmp_login = login.to_lowercase();
     for item in &users.map {
         if item.1.strs.contains_key("login")
-            && item.1.strs["login"] == login
+            && item.1.strs["login"].to_lowercase() == tmp_login
             && item.1.strs.contains_key("email")
-            && item.1.strs["email"] == login
+            && item.1.strs["email"].to_lowercase() == tmp_login
         {
             let mut itm = item.1.clone();
             itm.set_str("otp", "");
