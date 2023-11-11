@@ -249,7 +249,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
     } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX {
         lr = srv
             .rw
-            .get_items(&lq.collection, lq.id_min, lq.id_max, lq.skip, lq.limit)
+            .get_items(&lq.collection, lq.id_min, lq.id_max, &lq.sort_key, lq.skip, lq.limit)
             .await;
         info!(
             "Collection {} requested range {} - {} skip {} limit {}",

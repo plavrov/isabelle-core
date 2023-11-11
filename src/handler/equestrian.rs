@@ -171,7 +171,7 @@ pub async fn equestrian_schedule_materialize(
     let now = Utc::now();
     let week_start =
         (now.beginning_of_week().timestamp() as u64) + (60 * 60 * 24 * 7) * params.week;
-    let all_jobs = srv.rw.get_all_items("job").await;
+    let all_jobs = srv.rw.get_all_items("job", "id").await;
     for entry in &all_jobs.map {
         let day = entry.1.safe_str("day_of_the_week", "");
         let pid = entry.1.safe_id("parent_id", u64::MAX);
@@ -249,8 +249,8 @@ pub async fn equestrian_pay_deactivate_expired_payments(
     info!("Deactivate expired payments");
 
     let mut updated_payments: Vec<Item> = Vec::new();
-    let jobs = srv.rw.get_all_items("job").await;
-    let payments = srv.rw.get_all_items("payment").await;
+    let jobs = srv.rw.get_all_items("job", "id").await;
+    let payments = srv.rw.get_all_items("payment", "id").await;
     for pay in &payments.map {
         let id = pay.0;
         let mut new_pay = pay.1.clone();

@@ -129,9 +129,9 @@ impl Store for StoreMongo {
         return self.items[&coll_id].clone();
     }
 
-    async fn get_all_items(&mut self, collection: &str) -> ListResult {
+    async fn get_all_items(&mut self, collection: &str, sort_key: &str) -> ListResult {
         return self
-            .get_items(collection, u64::MAX, u64::MAX, u64::MAX, u64::MAX)
+            .get_items(collection, u64::MAX, u64::MAX, sort_key, u64::MAX, u64::MAX)
             .await;
     }
 
@@ -165,6 +165,7 @@ impl Store for StoreMongo {
         collection: &str,
         id_min: u64,
         id_max: u64,
+        sort_key: &str,
         skip: u64,
         limit: u64,
     ) -> ListResult {
@@ -181,6 +182,7 @@ impl Store for StoreMongo {
         let eff_id_max = id_max;
         let mut count = 0;
         let mut eff_skip = skip;
+        let mut care_about_sort = false;
 
         if eff_skip == u64::MAX {
             eff_skip = 0;
@@ -188,22 +190,62 @@ impl Store for StoreMongo {
 
         if eff_id_min == u64::MAX {
             eff_id_min = 0;
+            if sort_key != "" {
+                care_about_sort = true;
+            }
         }
 
         info!(
-            "Getting {} in range {} - {} limit {}",
-            &collection, eff_id_min, eff_id_max, limit
+            "Getting {} in range {} - {} limit {} sort key {} (care {})",
+            &collection, eff_id_min, eff_id_max, limit, sort_key, care_about_sort
         );
-        for itm in &itms {
-            if itm.0 >= &eff_id_min && itm.0 <= &eff_id_max {
-                let new_item = self.get_item(collection, *itm.0).await;
-                if !new_item.is_none() {
-                    if count >= eff_skip {
-                        lr.map.insert(*itm.0, new_item.unwrap());
+        if care_about_sort {
+            let coll : Collection<Item> = self
+                .client
+                .as_ref()
+                .unwrap()
+                .database("isabelle")
+                .collection(collection);
+
+            let find_options = FindOptions::builder().sort(doc! { sort_key: -1 }).build();
+            let mut cursor = coll.find(None, find_options).await;
+            loop {
+                let result = cursor.as_mut().unwrap().try_next().await;
+                match result {
+                    Ok(r) => {
+                        let c = r.clone();
+                        if c.is_none() {
+                            info!("Cursor none");
+                            break;
+                        }
+                        info!("Cursor ok name {}", c.as_ref().unwrap().safe_str("name", ""));
+                        count = count + 1;
+                        if count >= eff_skip && (count - eff_skip) >= limit {
+                            continue;
+                        }
+                        if count >= eff_skip {
+                            info!("Added");
+                            lr.map.insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
+                        }
                     }
-                    count = count + 1;
-                    if count >= eff_skip && (count - eff_skip) >= limit {
+                    Err(_e) => {
+                        info!("Error");
                         break;
+                    }
+                };
+            }
+        } else {
+            for itm in &itms {
+                if itm.0 >= &eff_id_min && itm.0 <= &eff_id_max {
+                    let new_item = self.get_item(collection, *itm.0).await;
+                    if !new_item.is_none() {
+                        if count >= eff_skip {
+                            lr.map.insert(*itm.0, new_item.unwrap());
+                        }
+                        count = count + 1;
+                        if count >= eff_skip && (count - eff_skip) >= limit {
+                            break;
+                        }
                     }
                 }
             }
