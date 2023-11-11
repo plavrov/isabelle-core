@@ -272,7 +272,7 @@ impl Store for StoreMongo {
             None
         };
         let mut new_itm = itm.clone();
-        if !old_itm.is_none() && merge {
+        if !old_itm.as_ref().is_none() && merge {
             new_itm = old_itm.as_ref().unwrap().clone();
             new_itm.merge(&itm);
         }
@@ -288,9 +288,9 @@ impl Store for StoreMongo {
         };
 
         if old_itm.as_ref().is_none() {
-            let _res = coll.insert_one(itm.clone(), None).await;
+            let _res = coll.insert_one(new_itm.clone(), None).await;
         } else {
-            let _res = coll.replace_one(filter, itm.clone(), None).await;
+            let _res = coll.replace_one(filter, new_itm.clone(), None).await;
         }
 
         let coll_id = self.collections[collection];
