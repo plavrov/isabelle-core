@@ -51,7 +51,7 @@ pub fn entry2datetimestr(entry: &Item) -> String {
         let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
         datetime = (now.beginning_of_week().timestamp() as u64)
             + 24 * 60 * 60 * tmp_day
-            + (entry.u64s["time"] % (24 * 60 * 60));
+            + (entry.safe_u64("time", 0) % (24 * 60 * 60));
     }
 
     if datetime == 0 {
@@ -180,7 +180,7 @@ pub async fn equestrian_schedule_materialize(
             info!("Found entry that we want to materialize: {}", entry.0);
             let all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
             let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
-            let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.u64s["time"] % (60 * 60 * 24);
+            let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.safe_u64("time", 0) % (60 * 60 * 24);
             cp_entry.set_u64("time", ts);
             cp_entry.ids.insert("parent_id".to_string(), *entry.0);
             cp_entry
@@ -189,9 +189,8 @@ pub async fn equestrian_schedule_materialize(
 
             let mut skip = false;
             for tmp__ in &all_jobs.map {
-                if tmp__.1.u64s["time"] == cp_entry.u64s["time"]
-                    && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0
-                {
+                if tmp__.1.safe_u64("time", 0) == cp_entry.safe_u64("time", 0)
+                    && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0 {
                     skip = true;
                     break;
                 }
