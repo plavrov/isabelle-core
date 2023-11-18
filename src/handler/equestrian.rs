@@ -463,6 +463,30 @@ pub async fn equestrian_itm_filter_hook(
                 itm.u64s
                     .insert("no_lessons".to_string(), el.1.safe_u64("no_lessons", 0));
                 short_map.insert(*el.0, itm);
+            } else if collection == "event" {
+                let mut itm = Item::new();
+                itm.id = *el.0;
+                itm.strs.insert(
+                    "name".to_string(),
+                    el.1.safe_str("name", ""),
+                );
+                itm.strs.insert(
+                    "description".to_string(),
+                    el.1.safe_str("description", ""),
+                );
+                itm.strs.insert(
+                    "manual".to_string(),
+                    el.1.safe_str("manual", ""),
+                );
+                itm.strs.insert(
+                    "min_level".to_string(),
+                    el.1.safe_str("min_level", ""),
+                );
+                itm.strids
+                    .insert("participants".to_string(),
+                            el.1.safe_strid("participants",
+                                            &HashMap::new()));
+                short_map.insert(*el.0, itm);
             } else {
                 let mut itm = Item::new();
                 itm.id = *el.0;
