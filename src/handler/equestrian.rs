@@ -486,6 +486,12 @@ pub async fn equestrian_itm_filter_hook(
                     .insert("participants".to_string(),
                             el.1.safe_strid("participants",
                                             &HashMap::new()));
+                itm.u64s.insert(
+                    "time".to_string(),
+                    el.1.safe_u64("time", 0));
+                itm.bools.insert(
+                    "done".to_string(),
+                    el.1.safe_bool("done", false));
                 short_map.insert(*el.0, itm);
             } else {
                 let mut itm = Item::new();
