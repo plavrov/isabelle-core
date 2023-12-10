@@ -97,6 +97,9 @@ pub async fn call_url_route(
         "equestrian_pay_deactivate_expired_payments" => {
             return equestrian_pay_deactivate_expired_payments(&mut srv, user, query).await;
         }
+        "equestrian_event_subscribe" => {
+            return equestrian_event_subscribe(&mut srv, user, query).await;
+        }
         &_ => {
             return HttpResponse::NotFound().into();
         }
