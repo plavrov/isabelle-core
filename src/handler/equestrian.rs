@@ -184,7 +184,9 @@ pub async fn equestrian_schedule_materialize(
             info!("Found entry that we want to materialize: {}", entry.0);
             let all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
             let tmp_day = all_days.iter().position(|&r| r == day).unwrap() as u64;
-            let ts = week_start + (60 * 60 * 24) * tmp_day + entry.1.safe_u64("time", 0) % (60 * 60 * 24);
+            let ts = week_start
+                + (60 * 60 * 24) * tmp_day
+                + entry.1.safe_u64("time", 0) % (60 * 60 * 24);
             cp_entry.set_u64("time", ts);
             cp_entry.ids.insert("parent_id".to_string(), *entry.0);
             cp_entry
@@ -194,7 +196,8 @@ pub async fn equestrian_schedule_materialize(
             let mut skip = false;
             for tmp__ in &all_jobs.map {
                 if tmp__.1.safe_u64("time", 0) == cp_entry.safe_u64("time", 0)
-                    && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0 {
+                    && tmp__.1.safe_id("parent_id", u64::MAX) == *entry.0
+                {
                     skip = true;
                     break;
                 }
@@ -264,8 +267,7 @@ pub async fn equestrian_event_subscribe(
         usr_id = usr.as_ref().unwrap().id;
     }
 
-    if usr_id != usr.as_ref().unwrap().id &&
-       !check_role(&mut srv, &usr, "admin").await {
+    if usr_id != usr.as_ref().unwrap().id && !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Unauthorized().into();
     }
 
@@ -274,10 +276,15 @@ pub async fn equestrian_event_subscribe(
         return HttpResponse::BadRequest().into();
     }
 
-    info!("Subscribing user {} for event {}...", &usr_id, params.event_id);
+    info!(
+        "Subscribing user {} for event {}...",
+        &usr_id, params.event_id
+    );
     let mut new_itm = itm.as_ref().unwrap().clone();
     if !new_itm.strstrs.contains_key("participants") {
-        new_itm.strstrs.insert("participants".to_string(), HashMap::new());
+        new_itm
+            .strstrs
+            .insert("participants".to_string(), HashMap::new());
     }
 
     let mut ps = new_itm.safe_strstr("participants", &HashMap::new());
@@ -526,32 +533,22 @@ pub async fn equestrian_itm_filter_hook(
             } else if collection == "event" {
                 let mut itm = Item::new();
                 itm.id = *el.0;
-                itm.strs.insert(
-                    "name".to_string(),
-                    el.1.safe_str("name", ""),
+                itm.strs
+                    .insert("name".to_string(), el.1.safe_str("name", ""));
+                itm.strs
+                    .insert("description".to_string(), el.1.safe_str("description", ""));
+                itm.strs
+                    .insert("manual".to_string(), el.1.safe_str("manual", ""));
+                itm.strs
+                    .insert("min_level".to_string(), el.1.safe_str("min_level", ""));
+                itm.strids.insert(
+                    "participants".to_string(),
+                    el.1.safe_strid("participants", &HashMap::new()),
                 );
-                itm.strs.insert(
-                    "description".to_string(),
-                    el.1.safe_str("description", ""),
-                );
-                itm.strs.insert(
-                    "manual".to_string(),
-                    el.1.safe_str("manual", ""),
-                );
-                itm.strs.insert(
-                    "min_level".to_string(),
-                    el.1.safe_str("min_level", ""),
-                );
-                itm.strids
-                    .insert("participants".to_string(),
-                            el.1.safe_strid("participants",
-                                            &HashMap::new()));
-                itm.u64s.insert(
-                    "time".to_string(),
-                    el.1.safe_u64("time", 0));
-                itm.bools.insert(
-                    "done".to_string(),
-                    el.1.safe_bool("done", false));
+                itm.u64s
+                    .insert("time".to_string(), el.1.safe_u64("time", 0));
+                itm.bools
+                    .insert("done".to_string(), el.1.safe_bool("done", false));
                 short_map.insert(*el.0, itm);
             } else {
                 let mut itm = Item::new();
