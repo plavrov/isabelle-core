@@ -145,6 +145,10 @@ fn unset_week() -> u64 {
     return 0;
 }
 
+fn unset_id() -> u64 {
+    return u64::MAX;
+}
+
 pub async fn equestrian_schedule_materialize(
     mut srv: &mut crate::state::data::Data,
     user: Identity,
@@ -229,6 +233,62 @@ pub async fn equestrian_pay_find_broken_payments(
     }
 
     info!("Query: {}", query);
+
+    HttpResponse::Ok().into()
+}
+
+pub async fn equestrian_event_subscribe(
+    mut srv: &mut crate::state::data::Data,
+    user: Identity,
+    query: &str,
+) -> HttpResponse {
+    let usr = get_user(&mut srv, user.id().unwrap()).await;
+
+    #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+    struct EventSubscribe {
+        #[serde(default = "unset_id")]
+        pub id: u64,
+
+        #[serde(default = "unset_id")]
+        pub event_id: u64,
+    }
+
+    let params = web::Query::<EventSubscribe>::from_query(query).unwrap();
+
+    if params.event_id == u64::MAX {
+        return HttpResponse::BadRequest().into();
+    }
+
+    let mut usr_id = params.id;
+    if usr_id == u64::MAX {
+        usr_id = usr.as_ref().unwrap().id;
+    }
+
+    if usr_id != usr.as_ref().unwrap().id &&
+       !check_role(&mut srv, &usr, "admin").await {
+        return HttpResponse::Unauthorized().into();
+    }
+
+    let itm = srv.rw.get_item("event", params.event_id).await;
+    if itm == None {
+        return HttpResponse::BadRequest().into();
+    }
+
+    info!("Subscribing user {} for event {}...", &usr_id, params.event_id);
+    let mut new_itm = itm.as_ref().unwrap().clone();
+    if !new_itm.strstrs.contains_key("participants") {
+        new_itm.strstrs.insert("participants".to_string(), HashMap::new());
+    }
+
+    let mut ps = new_itm.safe_strstr("participants", &HashMap::new());
+    if !ps.contains_key(&usr_id.to_string()) {
+        ps.insert(usr_id.to_string(), "".to_string());
+        info!("Inserted");
+    }
+    new_itm.set_strstr("participants", &ps);
+
+    srv.rw.set_item("event", &new_itm, true).await;
+    info!("Subscribed user {} for event {}", &usr_id, params.event_id);
 
     HttpResponse::Ok().into()
 }
