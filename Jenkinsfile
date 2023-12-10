@@ -8,6 +8,7 @@ pipeline {
 
   environment {
     FULL_VERSION = sh(script: "./tools/get_version.sh full", returnStdout: true).trim()
+    SHORT_VERSION = sh(script: "./tools/get_version.sh", returnStdout: true).trim()
   }
 
   stages {
@@ -17,6 +18,15 @@ pipeline {
           git url: 'https://github.com/maximmenshikov/ttg.git',
               branch: 'main'
         }
+      }
+    }
+    stage('Perform checks') {
+      steps {
+        sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo update -p isabelle-dm'
+        sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo fix && git diff --exit-code'
+        sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo fmt && git diff --exit-code'
+        sh 'git tag | grep ${SHORT_VERSION}'
+        sh 'cat Cargo.toml | grep ${SHORT_VERSION}'
       }
     }
     stage('Build for all platforms') {
