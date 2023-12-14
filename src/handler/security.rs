@@ -100,6 +100,13 @@ pub async fn security_password_challenge_pre_edit_hook(
         let old_pw_hash = old_itm.as_ref().unwrap().safe_str("password", "");
         let old_otp = old_itm.as_ref().unwrap().safe_str("otp", "");
         let old_checked_pw = itm.safe_str("__password", "");
+        if old_checked_pw == "" {
+            error!("Old password is empty");
+            return ProcessResult {
+                succeeded: false,
+                error: "Old password is empty".to_string(),
+            };
+        }
         let res = verify_password(&old_checked_pw, &old_pw_hash)
             || (old_otp != "" && old_otp == old_checked_pw);
         if !res

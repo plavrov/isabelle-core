@@ -91,7 +91,7 @@ pub async fn itm_edit(
                     )
                     .await;
                     if !res.succeeded {
-                        info!("Item pre edit hook failed: {}", parts[1]);
+                        info!("Item pre edit hook failed: {} - {}", parts[1], res.error);
                         let s = serde_json::to_string(&res);
                         return HttpResponse::Ok().body(s.unwrap_or("{}".to_string()));
                     }
