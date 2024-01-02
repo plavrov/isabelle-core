@@ -26,6 +26,16 @@
 			"shell": true,
 			"working_dir": "${project_path:${folder}}",
 			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
+		},
+		{
+			"cmd":
+			[
+				"make && ./run.sh --data-path ./data-visao"
+			],
+			"name": "Visao Core - build & run",
+			"shell": true,
+			"working_dir": "${project_path:${folder}}",
+			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
 		}
 	]
 }
