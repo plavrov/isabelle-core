@@ -10,6 +10,7 @@ pub_fqdn="localhost"
 data_path="$(pwd)/data-equestrian"
 py_path=""
 gc_path="$6"
+database="isabelle"
 
 if [ "$(uname)" == "Darwin" ] ; then
     py_path="/opt/homebrew/bin/python3"
@@ -46,6 +47,10 @@ while test -n "$1" ; do
         --first-run)
             first_run="--first-run"
             ;;
+        --database)
+            database="$2"
+            shift 1
+            ;;
     esac
     shift 1
 done
@@ -60,4 +65,4 @@ if [ "$gc_path" == "" ] ; then
     gc_path="$(pwd)/isabelle-gc"
 fi
 
-RUST_LOG=info RUST_BACKTRACE=1 "${binary}" --port "${port}" --pub-url "${pub_url}" --pub-fqdn "${pub_fqdn}" --data-path "${data_path}" --gc-path "${gc_path}" --py-path "${py_path}" ${first_run}
+RUST_LOG=info RUST_BACKTRACE=1 "${binary}" --port "${port}" --pub-url "${pub_url}" --pub-fqdn "${pub_fqdn}" --data-path "${data_path}" --gc-path "${gc_path}" --database "${database}" --py-path "${py_path}" ${first_run}
