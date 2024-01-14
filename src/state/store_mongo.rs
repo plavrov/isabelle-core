@@ -22,6 +22,8 @@ pub struct StoreMongo {
     pub items_count: HashMap<u64, u64>,
 
     pub client: Option<mongodb::Client>,
+
+    pub database_name: String,
 }
 
 unsafe impl Send for StoreMongo {}
@@ -35,6 +37,7 @@ impl StoreMongo {
             items: HashMap::new(),
             items_count: HashMap::new(),
             client: None,
+            database_name: "isabelle".to_string(),
         }
     }
 
@@ -67,7 +70,7 @@ impl Store for StoreMongo {
             let internals = self.get_internals().await;
             let collections = internals.safe_strstr("collections", &HashMap::new());
             info!("Collections: {}", collections.len());
-            let db = self.client.as_ref().unwrap().database("isabelle");
+            let db = self.client.as_ref().unwrap().database(&self.database_name);
             for coll_name in collections {
                 info!("Create collection {}", &coll_name.1);
                 db.create_collection(&coll_name.1, CreateCollectionOptions::default())
@@ -107,7 +110,7 @@ impl Store for StoreMongo {
             .client
             .as_ref()
             .unwrap()
-            .database("isabelle")
+            .database(&self.database_name)
             .list_collection_names(None)
             .await
             .unwrap();
@@ -140,7 +143,7 @@ impl Store for StoreMongo {
             .client
             .as_ref()
             .unwrap()
-            .database("isabelle")
+            .database(&self.database_name)
             .collection(collection);
         let filter = doc! {
             "id": id as i64,
@@ -204,7 +207,7 @@ impl Store for StoreMongo {
                 .client
                 .as_ref()
                 .unwrap()
-                .database("isabelle")
+                .database(&self.database_name)
                 .collection(collection);
 
             let find_options = FindOptions::builder().sort(doc! { sort_key: -1 }).build();
@@ -279,7 +282,7 @@ impl Store for StoreMongo {
             .client
             .as_ref()
             .unwrap()
-            .database("isabelle")
+            .database(&self.database_name)
             .collection(collection);
         let filter = doc! {
             "id": itm.id as i64,
@@ -315,7 +318,7 @@ impl Store for StoreMongo {
             .client
             .as_ref()
             .unwrap()
-            .database("isabelle")
+            .database(&self.database_name)
             .collection(collection);
         let filter = doc! {
             "id": id as i64,
