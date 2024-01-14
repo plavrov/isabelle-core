@@ -71,7 +71,7 @@ pub async fn itm_edit(
         let mut itm_clone = itm.clone();
 
         let old_itm = srv_mut.rw.get_item(&mc.collection, itm.id).await;
-        /* call pre edit ooks */
+        /* call pre edit hooks */
         {
             let routes = srv_mut
                 .rw
@@ -84,10 +84,12 @@ pub async fn itm_edit(
                     let res = call_item_pre_edit_hook(
                         srv_mut,
                         parts[1],
+                        &usr,
                         &mc.collection,
                         old_itm.clone(),
                         &mut itm_clone,
                         false,
+                        mc.merge
                     )
                     .await;
                     if !res.succeeded {
