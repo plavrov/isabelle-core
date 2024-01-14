@@ -13,18 +13,20 @@ use std::collections::HashMap;
 pub async fn call_item_pre_edit_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
+    user: &Option<Item>,
     collection: &str,
     old_itm: Option<Item>,
     itm: &mut Item,
     del: bool,
+    merge: bool,
 ) -> ProcessResult {
     match hndl {
         "security_password_challenge_pre_edit_hook" => {
-            return security_password_challenge_pre_edit_hook(srv, collection, old_itm, itm, del)
+            return security_password_challenge_pre_edit_hook(srv, user, collection, old_itm, itm, del, merge)
                 .await;
         }
         "security_check_unique_login_email" => {
-            return security_check_unique_login_email(srv, collection, old_itm, itm, del).await;
+            return security_check_unique_login_email(srv, user, collection, old_itm, itm, del, merge).await;
         }
         &_ => {
             return ProcessResult {

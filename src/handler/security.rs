@@ -1,3 +1,4 @@
+use crate::server::user_control::check_role;
 use crate::notif::email::send_email;
 use crate::state::store::Store;
 use crate::util::crypto::get_new_salt;
@@ -9,18 +10,27 @@ use log::{error, info};
 
 pub async fn security_check_unique_login_email(
     srv: &mut crate::state::data::Data,
+    user: &Option<Item>,
     _collection: &str,
     _old_itm: Option<Item>,
     itm: &mut Item,
     del: bool,
+    merge: bool,
 ) -> ProcessResult {
+
+    let mut itm_upd = if _old_itm != None { _old_itm.unwrap() } else { Item::new() };
+    if merge {
+        itm_upd.merge(itm);
+    } else {
+        itm_upd = itm.clone();
+    }
     if del {
         return ProcessResult {
             succeeded: true,
             error: "".to_string(),
         };
     }
-    let email = itm.safe_str("email", "").to_lowercase();
+    let email = itm_upd.safe_str("email", "").to_lowercase();
     let login = itm.safe_str("login", "").to_lowercase();
 
     if email == "" {
@@ -55,13 +65,16 @@ pub async fn security_check_unique_login_email(
 }
 
 pub async fn security_password_challenge_pre_edit_hook(
-    _srv: &mut crate::state::data::Data,
+    srv: &mut crate::state::data::Data,
+    user: &Option<Item>,
     collection: &str,
     old_itm: Option<Item>,
     itm: &mut Item,
     del: bool,
+    _merge: bool,
 ) -> ProcessResult {
     let mut salt: String = "<empty salt>".to_string();
+    let is_admin = check_role(srv, &user, "admin").await;
 
     if del {
         return ProcessResult {
@@ -100,14 +113,14 @@ pub async fn security_password_challenge_pre_edit_hook(
         let old_pw_hash = old_itm.as_ref().unwrap().safe_str("password", "");
         let old_otp = old_itm.as_ref().unwrap().safe_str("otp", "");
         let old_checked_pw = itm.safe_str("__password", "");
-        if old_checked_pw == "" {
+        if !is_admin && old_checked_pw == "" {
             error!("Old password is empty");
             return ProcessResult {
                 succeeded: false,
                 error: "Old password is empty".to_string(),
             };
         }
-        let res = verify_password(&old_checked_pw, &old_pw_hash)
+        let res = is_admin || verify_password(&old_checked_pw, &old_pw_hash)
             || (old_otp != "" && old_otp == old_checked_pw);
         if !res
             || itm.safe_str("__new_password1", "<bad1>")

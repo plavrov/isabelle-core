@@ -479,89 +479,7 @@ pub async fn equestrian_itm_filter_hook(
     if list {
         for el in &mut *map {
             if collection == "user" {
-                let mut itm = Item::new();
-                itm.id = *el.0;
-                itm.strs
-                    .insert("name".to_string(), el.1.safe_str("name", ""));
                 if *el.0 == user.as_ref().unwrap().id || is_admin {
-                    itm.strs
-                        .insert("phone".to_string(), el.1.safe_str("phone", ""));
-                    itm.bools.insert(
-                        "has_insurance".to_string(),
-                        el.1.safe_bool("has_insurance", false),
-                    );
-                }
-                itm.bools.insert(
-                    "role_is_active".to_string(),
-                    el.1.safe_bool("role_is_active", false),
-                );
-                itm.bools.insert(
-                    "role_is_admin".to_string(),
-                    el.1.safe_bool("role_is_admin", false),
-                );
-                itm.bools.insert(
-                    "role_is_teacher".to_string(),
-                    el.1.safe_bool("role_is_teacher", false),
-                );
-                itm.bools.insert(
-                    "role_is_student".to_string(),
-                    el.1.safe_bool("role_is_student", false),
-                );
-                itm.bools.insert(
-                    "role_is_staff".to_string(),
-                    el.1.safe_bool("role_is_staff", false),
-                );
-                short_map.insert(*el.0, itm);
-            } else if collection == "payment" {
-                let mut itm = Item::new();
-                itm.id = *el.0;
-                itm.ids
-                    .insert("requester".to_string(), el.1.safe_id("requester", u64::MAX));
-                itm.strs.insert(
-                    "payment_type".to_string(),
-                    el.1.safe_str("payment_type", ""),
-                );
-                itm.strs.insert(
-                    "target_month".to_string(),
-                    el.1.safe_str("target_month", ""),
-                );
-                itm.strs
-                    .insert("target_year".to_string(), el.1.safe_str("target_year", ""));
-                itm.u64s
-                    .insert("no_lessons".to_string(), el.1.safe_u64("no_lessons", 0));
-                short_map.insert(*el.0, itm);
-            } else if collection == "event" {
-                let mut itm = Item::new();
-                itm.id = *el.0;
-                itm.strs
-                    .insert("name".to_string(), el.1.safe_str("name", ""));
-                itm.strs
-                    .insert("description".to_string(), el.1.safe_str("description", ""));
-                itm.strs
-                    .insert("manual".to_string(), el.1.safe_str("manual", ""));
-                itm.strs
-                    .insert("min_level".to_string(), el.1.safe_str("min_level", ""));
-                itm.strids.insert(
-                    "participants".to_string(),
-                    el.1.safe_strid("participants", &HashMap::new()),
-                );
-                itm.u64s
-                    .insert("time".to_string(), el.1.safe_u64("time", 0));
-                itm.bools
-                    .insert("done".to_string(), el.1.safe_bool("done", false));
-                short_map.insert(*el.0, itm);
-            } else {
-                let mut itm = Item::new();
-                itm.id = *el.0;
-                itm.strs
-                    .insert("name".to_string(), el.1.safe_str("name", ""));
-                short_map.insert(*el.0, itm);
-            }
-        }
-    } else {
-        if collection == "user" {
-            for el in &mut *map {
-                if *el.0 != user.as_ref().unwrap().id && !is_admin {
                     let mut itm = Item::new();
                     itm.id = *el.0;
                     itm.strs
@@ -595,6 +513,116 @@ pub async fn equestrian_itm_filter_hook(
                         el.1.safe_bool("role_is_staff", false),
                     );
                     short_map.insert(*el.0, itm);
+                }
+            } else if collection == "payment" {
+                if el.1.safe_id("requester", u64::MAX) == user.as_ref().unwrap().id || is_admin {
+                    let mut itm = Item::new();
+                    itm.id = *el.0;
+                    itm.ids
+                        .insert("requester".to_string(), el.1.safe_id("requester", u64::MAX));
+                    itm.strs.insert(
+                        "payment_type".to_string(),
+                        el.1.safe_str("payment_type", ""),
+                    );
+                    itm.strs.insert(
+                        "target_month".to_string(),
+                        el.1.safe_str("target_month", ""),
+                    );
+                    itm.strs
+                        .insert("target_year".to_string(), el.1.safe_str("target_year", ""));
+                    itm.u64s
+                        .insert("no_lessons".to_string(), el.1.safe_u64("no_lessons", 0));
+                    short_map.insert(*el.0, itm);
+                }
+            } else if collection == "event" {
+                let mut itm = Item::new();
+                itm.id = *el.0;
+                itm.strs
+                    .insert("name".to_string(), el.1.safe_str("name", ""));
+                itm.strs
+                    .insert("description".to_string(), el.1.safe_str("description", ""));
+                itm.strs
+                    .insert("manual".to_string(), el.1.safe_str("manual", ""));
+                itm.strs
+                    .insert("min_level".to_string(), el.1.safe_str("min_level", ""));
+
+                if is_admin {
+                    itm.strids.insert(
+                        "participants".to_string(),
+                        el.1.safe_strid("participants", &HashMap::new()),
+                    );
+                } else {
+                    let m = el.1.safe_strid("participants", &HashMap::new());
+
+                    if m.contains_key(&user.as_ref().unwrap().id) {
+                        let mut nm = HashMap::new();
+                        nm.insert(user.as_ref().unwrap().id, true);
+                        itm.strids.insert("participants".to_string(),
+                                          nm.clone());
+                    }
+                }
+                itm.u64s
+                    .insert("time".to_string(), el.1.safe_u64("time", 0));
+                itm.bools
+                    .insert("done".to_string(), el.1.safe_bool("done", false));
+                short_map.insert(*el.0, itm);
+            } else if collection == "query" {
+                if el.1.safe_id("requester", u64::MAX) == user.as_ref().unwrap().id {
+                    let mut itm = Item::new();
+                    itm.id = *el.0;
+                    itm.strs.insert(
+                        "name".to_string(),
+                        el.1.safe_str("name", ""),
+                    );
+                    short_map.insert(*el.0, itm);
+                }
+            } else {
+                let mut itm = Item::new();
+                itm.id = *el.0;
+                itm.strs
+                    .insert("name".to_string(), el.1.safe_str("name", ""));
+                short_map.insert(*el.0, itm);
+            }
+        }
+    } else {
+        if collection == "user" {
+            for el in &mut *map {
+                if *el.0 != user.as_ref().unwrap().id && !is_admin {
+                    /*
+                    let mut itm = Item::new();
+                    itm.id = *el.0;
+                    itm.strs
+                        .insert("name".to_string(), el.1.safe_str("name", ""));
+                    if *el.0 == user.as_ref().unwrap().id || is_admin {
+                        itm.strs
+                            .insert("phone".to_string(), el.1.safe_str("phone", ""));
+                        itm.bools.insert(
+                            "has_insurance".to_string(),
+                            el.1.safe_bool("has_insurance", false),
+                        );
+                    }
+                    itm.bools.insert(
+                        "role_is_active".to_string(),
+                        el.1.safe_bool("role_is_active", false),
+                    );
+                    itm.bools.insert(
+                        "role_is_admin".to_string(),
+                        el.1.safe_bool("role_is_admin", false),
+                    );
+                    itm.bools.insert(
+                        "role_is_teacher".to_string(),
+                        el.1.safe_bool("role_is_teacher", false),
+                    );
+                    itm.bools.insert(
+                        "role_is_student".to_string(),
+                        el.1.safe_bool("role_is_student", false),
+                    );
+                    itm.bools.insert(
+                        "role_is_staff".to_string(),
+                        el.1.safe_bool("role_is_staff", false),
+                    );
+                    short_map.insert(*el.0, itm);
+                    */
                 } else {
                     let mut itm = el.1.clone();
                     if itm.strs.contains_key("salt") {
