@@ -36,6 +36,16 @@
 			"shell": true,
 			"working_dir": "${project_path:${folder}}",
 			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
+		},
+		{
+			"cmd":
+			[
+				"make && ./run.sh --data-path ./data-intranet --database intranet"
+			],
+			"name": "IntraNet Core - build & run",
+			"shell": true,
+			"working_dir": "${project_path:${folder}}",
+			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
 		}
 	]
 }
