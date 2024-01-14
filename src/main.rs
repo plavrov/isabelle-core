@@ -48,6 +48,7 @@ async fn main() -> std::io::Result<()> {
     let mut db_url: String = "mongodb://127.0.0.1:27017".to_string();
     let mut pub_path: String = "http://localhost:8081".to_string();
     let mut pub_fqdn: String = "localhost".to_string();
+    let mut database_name: String = "isabelle".to_string();
     let mut port: u16 = 8090;
     let mut gc_next = false;
     let mut py_next = false;
@@ -56,6 +57,7 @@ async fn main() -> std::io::Result<()> {
     let mut pub_fqdn_next = false;
     let mut port_next = false;
     let mut db_url_next = false;
+    let mut database_name_next = false;
     let mut first_run = false;
 
     for arg in args {
@@ -80,6 +82,9 @@ async fn main() -> std::io::Result<()> {
         } else if db_url_next {
             db_url = arg.parse().unwrap();
             db_url_next = false;
+        } else if database_name_next {
+            database_name = arg.parse().unwrap();
+            database_name_next = false;
         }
 
         if arg == "--gc-path" {
@@ -94,6 +99,8 @@ async fn main() -> std::io::Result<()> {
             pub_fqdn_next = true;
         } else if arg == "--db-url" {
             db_url_next = true;
+        } else if arg == "--database" {
+            database_name_next = true;
         } else if arg == "--first-run" {
             first_run = true;
         }
@@ -107,6 +114,7 @@ async fn main() -> std::io::Result<()> {
     {
         let mut srv = state.server.lock().unwrap();
         {
+            (*srv.deref_mut()).rw.database_name = database_name.clone();
             (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
             (*srv.deref_mut()).rw.connect(&db_url, &data_path).await;
             (*srv.deref_mut()).gc_path = gc_path.to_string();
