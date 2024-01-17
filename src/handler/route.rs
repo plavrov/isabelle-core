@@ -84,6 +84,9 @@ pub async fn call_itm_list_filter_hook(
         "equestrian_itm_filter_hook" => {
             return equestrian_itm_filter_hook(&mut srv, user, collection, context, map).await;
         }
+        "security_itm_filter_hook" => {
+            return security_itm_filter_hook(&mut srv, user, collection, context, map).await;
+        }
         &_ => {}
     }
 }
