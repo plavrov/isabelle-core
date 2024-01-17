@@ -10,7 +10,7 @@ use log::{error, info};
 
 pub async fn security_check_unique_login_email(
     srv: &mut crate::state::data::Data,
-    user: &Option<Item>,
+    _user: &Option<Item>,
     _collection: &str,
     _old_itm: Option<Item>,
     itm: &mut Item,
