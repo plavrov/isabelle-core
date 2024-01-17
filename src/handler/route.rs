@@ -22,11 +22,16 @@ pub async fn call_item_pre_edit_hook(
 ) -> ProcessResult {
     match hndl {
         "security_password_challenge_pre_edit_hook" => {
-            return security_password_challenge_pre_edit_hook(srv, user, collection, old_itm, itm, del, merge)
-                .await;
+            return security_password_challenge_pre_edit_hook(
+                srv, user, collection, old_itm, itm, del, merge,
+            )
+            .await;
         }
         "security_check_unique_login_email" => {
-            return security_check_unique_login_email(srv, user, collection, old_itm, itm, del, merge).await;
+            return security_check_unique_login_email(
+                srv, user, collection, old_itm, itm, del, merge,
+            )
+            .await;
         }
         &_ => {
             return ProcessResult {

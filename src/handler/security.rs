@@ -1,5 +1,5 @@
-use crate::server::user_control::check_role;
 use crate::notif::email::send_email;
+use crate::server::user_control::check_role;
 use crate::state::store::Store;
 use crate::util::crypto::get_new_salt;
 use crate::util::crypto::get_password_hash;
@@ -17,8 +17,11 @@ pub async fn security_check_unique_login_email(
     del: bool,
     merge: bool,
 ) -> ProcessResult {
-
-    let mut itm_upd = if _old_itm != None { _old_itm.unwrap() } else { Item::new() };
+    let mut itm_upd = if _old_itm != None {
+        _old_itm.unwrap()
+    } else {
+        Item::new()
+    };
     if merge {
         itm_upd.merge(itm);
     } else {
@@ -120,7 +123,8 @@ pub async fn security_password_challenge_pre_edit_hook(
                 error: "Old password is empty".to_string(),
             };
         }
-        let res = is_admin || verify_password(&old_checked_pw, &old_pw_hash)
+        let res = is_admin
+            || verify_password(&old_checked_pw, &old_pw_hash)
             || (old_otp != "" && old_otp == old_checked_pw);
         if !res
             || itm.safe_str("__new_password1", "<bad1>")

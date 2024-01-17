@@ -557,8 +557,7 @@ pub async fn equestrian_itm_filter_hook(
                     if m.contains_key(&user.as_ref().unwrap().id) {
                         let mut nm = HashMap::new();
                         nm.insert(user.as_ref().unwrap().id, true);
-                        itm.strids.insert("participants".to_string(),
-                                          nm.clone());
+                        itm.strids.insert("participants".to_string(), nm.clone());
                     }
                 }
                 itm.u64s
@@ -570,10 +569,8 @@ pub async fn equestrian_itm_filter_hook(
                 if el.1.safe_id("requester", u64::MAX) == user.as_ref().unwrap().id {
                     let mut itm = Item::new();
                     itm.id = *el.0;
-                    itm.strs.insert(
-                        "name".to_string(),
-                        el.1.safe_str("name", ""),
-                    );
+                    itm.strs
+                        .insert("name".to_string(), el.1.safe_str("name", ""));
                     short_map.insert(*el.0, itm);
                 }
             } else {

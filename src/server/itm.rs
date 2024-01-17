@@ -89,7 +89,7 @@ pub async fn itm_edit(
                         old_itm.clone(),
                         &mut itm_clone,
                         false,
-                        mc.merge
+                        mc.merge,
                     )
                     .await;
                     if !res.succeeded {
