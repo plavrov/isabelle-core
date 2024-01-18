@@ -1,6 +1,6 @@
+use crate::server::user_control::*;
 use crate::state::store::Store;
 use isabelle_dm::data_model::item::Item;
-use crate::server::user_control::*;
 use log::info;
 
 pub async fn intranet_itm_auth_hook(
@@ -25,9 +25,7 @@ pub async fn intranet_itm_auth_hook(
         let mut accept = true;
         let itm = srv.rw.get_item("diary_record", id).await;
 
-        if !itm.is_none()
-            && itm.unwrap().safe_id("user", u64::MAX) != user.as_ref().unwrap().id
-        {
+        if !itm.is_none() && itm.unwrap().safe_id("user", u64::MAX) != user.as_ref().unwrap().id {
             accept = false;
         }
 
