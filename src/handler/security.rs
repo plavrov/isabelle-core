@@ -243,6 +243,12 @@ pub async fn security_itm_filter_hook(
                         el.1.safe_bool("role_is_admin", false),
                     );
                     short_map.insert(*el.0, itm);
+                } else {
+                    let mut itm = Item::new();
+                    itm.id = *el.0;
+                    itm.strs
+                        .insert("name".to_string(), el.1.safe_str("name", ""));
+                    short_map.insert(*el.0, itm);
                 }
             } else {
                 let mut itm = Item::new();
