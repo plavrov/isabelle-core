@@ -2,7 +2,7 @@ use crate::state::store::Store;
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
-use log::info;
+use log::{info, error};
 
 pub async fn send_email(srv: &mut crate::state::data::Data, to: &str, subject: &str, body: &str) {
     info!("Checking options...");
@@ -41,6 +41,6 @@ pub async fn send_email(srv: &mut crate::state::data::Data, to: &str, subject: &
     // Send the email
     match mailer.send(&email) {
         Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {:?}", e),
+        Err(e) => error!("Could not send email: {:?}", e),
     }
 }
