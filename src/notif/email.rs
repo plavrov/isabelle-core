@@ -2,7 +2,7 @@ use crate::state::store::Store;
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
-use log::{info, error};
+use log::{error, info};
 
 pub async fn send_email(srv: &mut crate::state::data::Data, to: &str, subject: &str, body: &str) {
     info!("Checking options...");
