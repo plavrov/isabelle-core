@@ -255,6 +255,14 @@ pub async fn security_itm_filter_hook(
                 itm.id = *el.0;
                 itm.strs
                     .insert("name".to_string(), el.1.safe_str("name", ""));
+                if el.1.strs.contains_key("customer") {
+                    itm.strs
+                        .insert("customer".to_string(), el.1.safe_str("customer", ""));
+                }
+                if el.1.strs.contains_key("ticket_ref") {
+                    itm.strs
+                        .insert("ticket_ref".to_string(), el.1.safe_str("ticket_ref", ""));
+                }
                 short_map.insert(*el.0, itm);
             }
         }
