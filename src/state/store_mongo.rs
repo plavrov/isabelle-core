@@ -210,7 +210,11 @@ impl Store for StoreMongo {
                 .database(&self.database_name)
                 .collection(collection);
 
-            let find_options = FindOptions::builder().sort(doc! { sort_key: -1 }).build();
+            let find_options = FindOptions::builder()
+                .sort(doc! { sort_key: -1 })
+                .skip(eff_skip)
+                .limit(Some(limit as i64))
+                .build();
             let mut cursor = coll.find(None, find_options).await;
             loop {
                 let result = cursor.as_mut().unwrap().try_next().await;
