@@ -25,4 +25,4 @@ argon2 = "0.5.2"
 rand = "0.8.5"
 mongodb = { version = "2.7.1", features = [ "tokio-sync" ] }
 async-trait = "0.1.74"
-
+bson = { version = "2.9.0", features = ["serde_with"] }
