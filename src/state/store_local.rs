@@ -99,9 +99,9 @@ impl Store for StoreLocal {
         return self.items[&coll_id].clone();
     }
 
-    async fn get_all_items(&mut self, collection: &str, sort_key: &str) -> ListResult {
+    async fn get_all_items(&mut self, collection: &str, sort_key: &str, filter: &str) -> ListResult {
         return self
-            .get_items(collection, u64::MAX, u64::MAX, sort_key, u64::MAX, u64::MAX)
+            .get_items(collection, u64::MAX, u64::MAX, sort_key, filter, u64::MAX, u64::MAX)
             .await;
     }
 
@@ -126,6 +126,7 @@ impl Store for StoreLocal {
         id_min: u64,
         id_max: u64,
         _sort_key: &str,
+        _filter: &str,
         skip: u64,
         limit: u64,
     ) -> ListResult {

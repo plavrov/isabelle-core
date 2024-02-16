@@ -11,7 +11,7 @@ pub trait Store {
     async fn get_collections(&mut self) -> Vec<String>;
     async fn get_item_ids(&mut self, collection: &str) -> HashMap<u64, bool>;
 
-    async fn get_all_items(&mut self, collection: &str, sort_key: &str) -> ListResult;
+    async fn get_all_items(&mut self, collection: &str, sort_key: &str, filter: &str) -> ListResult;
     async fn get_item(&mut self, collection: &str, id: u64) -> Option<Item>;
     async fn get_items(
         &mut self,
@@ -19,6 +19,7 @@ pub trait Store {
         id_min: u64,
         id_max: u64,
         sort_key: &str,
+        filter: &str,
         skip: u64,
         limit: u64,
     ) -> ListResult;

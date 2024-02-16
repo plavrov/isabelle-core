@@ -248,7 +248,11 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 lq.collection, lq.id, lq.limit
             );
         }
-    } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX || lq.sort_key != "" {
+    } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX || lq.sort_key != "" || lq.filter != "" {
+        info!(
+            "Collection {} requested range {} - {} sort {} skip {} limit {} filter {}",
+            lq.collection, lq.id_min, lq.id_max, lq.sort_key, lq.skip, lq.limit, lq.filter
+        );
         lr = srv
             .rw
             .get_items(
@@ -256,14 +260,11 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 lq.id_min,
                 lq.id_max,
                 &lq.sort_key,
+                &lq.filter,
                 lq.skip,
                 lq.limit,
             )
             .await;
-        info!(
-            "Collection {} requested range {} - {} sort {} skip {} limit {}",
-            lq.collection, lq.id_min, lq.id_max, lq.sort_key, lq.skip, lq.limit
-        );
     } else if lq.id_list.len() > 0 {
         for id in lq.id_list {
             let res = srv.rw.get_item(&lq.collection, id).await;

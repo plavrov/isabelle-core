@@ -44,7 +44,7 @@ pub async fn security_check_unique_login_email(
         };
     }
 
-    let users = srv.rw.get_all_items("user", "id").await;
+    let users = srv.rw.get_all_items("user", "id", "").await;
     for usr in &users.map {
         if *usr.0 != itm.id {
             if login != "" && login == usr.1.safe_str("login", "").to_lowercase() {

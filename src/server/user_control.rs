@@ -3,7 +3,7 @@ use isabelle_dm::data_model::item::Item;
 use log::info;
 
 pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
-    let users = srv.rw.get_all_items("user", "name").await;
+    let users = srv.rw.get_all_items("user", "name", "").await;
     let tmp_login = login.to_lowercase();
     info!("Users: {}", users.map.len());
     for item in &users.map {
@@ -38,7 +38,7 @@ pub async fn check_role(
 }
 
 pub async fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
-    let users = srv.rw.get_all_items("user", "name").await;
+    let users = srv.rw.get_all_items("user", "name", "").await;
     let tmp_login = login.to_lowercase();
     for item in &users.map {
         if item.1.strs.contains_key("login")

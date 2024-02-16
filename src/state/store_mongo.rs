@@ -1,3 +1,4 @@
+use bson::Document;
 use futures_util::TryStreamExt;
 use isabelle_dm::data_model::list_result::ListResult;
 extern crate serde_json;
@@ -6,6 +7,7 @@ use crate::state::store::Store;
 use async_trait::async_trait;
 use isabelle_dm::data_model::item::*;
 use log::info;
+use serde_json::Value;
 
 use mongodb::{
     bson::doc, options::CreateCollectionOptions, options::FindOptions, Client, Collection,
@@ -57,6 +59,33 @@ impl StoreMongo {
 
         return true;
     }
+
+    pub async fn json_to_bson(&mut self, json_string: &str) -> Result<Document, bool> {
+        // Parse JSON string into serde_json::Value
+        let js_res = serde_json::from_str(json_string);
+        let js : Value;
+        match js_res {
+            Ok(tmp) => {
+                js = tmp;
+            }
+            Err(_error) => {
+                return Err(false);
+            }
+        }
+
+        // Convert serde_json::Value into BSON Document
+        let bs_res = bson::ser::to_document(&js);
+
+        match bs_res {
+            Ok(tmp) => {
+                return Ok(tmp);
+            }
+            Err(_error) => {
+                return Err(false);
+            }
+        }
+    }
+
 }
 
 #[async_trait]
@@ -132,9 +161,9 @@ impl Store for StoreMongo {
         return self.items[&coll_id].clone();
     }
 
-    async fn get_all_items(&mut self, collection: &str, sort_key: &str) -> ListResult {
+    async fn get_all_items(&mut self, collection: &str, sort_key: &str, filter: &str) -> ListResult {
         return self
-            .get_items(collection, u64::MAX, u64::MAX, sort_key, u64::MAX, u64::MAX)
+            .get_items(collection, u64::MAX, u64::MAX, sort_key, filter, u64::MAX, u64::MAX)
             .await;
     }
 
@@ -169,6 +198,7 @@ impl Store for StoreMongo {
         id_min: u64,
         id_max: u64,
         sort_key: &str,
+        filter: &str,
         skip: u64,
         limit: u64,
     ) -> ListResult {
@@ -199,8 +229,8 @@ impl Store for StoreMongo {
         }
 
         info!(
-            "Getting {} in range {} - {} ({}-{}) limit {} sort key {} (care {})",
-            &collection, eff_id_min, eff_id_max, id_min, id_max, limit, sort_key, care_about_sort
+            "Getting {} in range {} - {} ({}-{}) limit {} sort key {} (care {}) filter {}",
+            &collection, eff_id_min, eff_id_max, id_min, id_max, limit, sort_key, care_about_sort, filter
         );
         if care_about_sort {
             let coll: Collection<Item> = self
@@ -215,7 +245,26 @@ impl Store for StoreMongo {
                 .skip(eff_skip)
                 .limit(Some(limit as i64))
                 .build();
-            let mut cursor = coll.find(None, find_options).await;
+            //let tmp_filter = if filter != "" { filter }  else { " {} "};
+            let json_bson: Document =
+                if filter != "" {
+                    info!("Using real filter: {}", filter);
+                    let bson_document = self.json_to_bson(filter).await;
+                    match bson_document {
+                        Ok(d) => {
+                            d
+                        }
+                        Err(_err) => {
+                            info!("Using empty filter due to error");
+                            Document::new()
+                        }
+                    }
+                } else {
+                    info!("Using empty filter");
+                    Document::new()
+                };
+
+            let mut cursor = coll.find(json_bson, find_options).await;
             loop {
                 let result = cursor.as_mut().unwrap().try_next().await;
                 match result {
