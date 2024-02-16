@@ -241,12 +241,13 @@ impl Store for StoreMongo {
         }
 
         info!(
-            "Getting {} in range {} - {} ({}-{}) limit {} sort key {} (care {}) filter {}",
+            "Getting {} in range {} - {} ({}-{}) skip {} limit {} sort key {} (care {}) filter {}",
             &collection,
             eff_id_min,
             eff_id_max,
             id_min,
             id_max,
+            eff_skip,
             limit,
             sort_key,
             care_about_sort,
@@ -265,7 +266,7 @@ impl Store for StoreMongo {
                 .skip(eff_skip)
                 .limit(Some(limit as i64))
                 .build();
-            //let tmp_filter = if filter != "" { filter }  else { " {} "};
+
             let json_bson: Document = if filter != "" {
                 info!("Using real filter: {}", filter);
                 let bson_document = self.json_to_bson(filter).await;
@@ -291,14 +292,8 @@ impl Store for StoreMongo {
                             break;
                         }
 
-                        if count >= eff_skip {
-                            lr.map
-                                .insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
-                        }
-                        count = count + 1;
-                        if count >= eff_skip && (count - eff_skip) >= limit {
-                            break;
-                        }
+                        lr.map
+                            .insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
                     }
                     Err(_e) => {
                         break;
