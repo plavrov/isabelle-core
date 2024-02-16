@@ -248,7 +248,8 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 lq.collection, lq.id, lq.limit
             );
         }
-    } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX || lq.sort_key != "" || lq.filter != "" {
+    } else if lq.id_min != u64::MAX || lq.id_max != u64::MAX || lq.sort_key != "" || lq.filter != ""
+    {
         info!(
             "Collection {} requested range {} - {} sort {} skip {} limit {} filter {}",
             lq.collection, lq.id_min, lq.id_max, lq.sort_key, lq.skip, lq.limit, lq.filter

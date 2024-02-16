@@ -63,7 +63,7 @@ impl StoreMongo {
     pub async fn json_to_bson(&mut self, json_string: &str) -> Result<Document, bool> {
         // Parse JSON string into serde_json::Value
         let js_res = serde_json::from_str(json_string);
-        let js : Value;
+        let js: Value;
         match js_res {
             Ok(tmp) => {
                 js = tmp;
@@ -85,7 +85,6 @@ impl StoreMongo {
             }
         }
     }
-
 }
 
 #[async_trait]
@@ -161,9 +160,22 @@ impl Store for StoreMongo {
         return self.items[&coll_id].clone();
     }
 
-    async fn get_all_items(&mut self, collection: &str, sort_key: &str, filter: &str) -> ListResult {
+    async fn get_all_items(
+        &mut self,
+        collection: &str,
+        sort_key: &str,
+        filter: &str,
+    ) -> ListResult {
         return self
-            .get_items(collection, u64::MAX, u64::MAX, sort_key, filter, u64::MAX, u64::MAX)
+            .get_items(
+                collection,
+                u64::MAX,
+                u64::MAX,
+                sort_key,
+                filter,
+                u64::MAX,
+                u64::MAX,
+            )
             .await;
     }
 
@@ -230,7 +242,15 @@ impl Store for StoreMongo {
 
         info!(
             "Getting {} in range {} - {} ({}-{}) limit {} sort key {} (care {}) filter {}",
-            &collection, eff_id_min, eff_id_max, id_min, id_max, limit, sort_key, care_about_sort, filter
+            &collection,
+            eff_id_min,
+            eff_id_max,
+            id_min,
+            id_max,
+            limit,
+            sort_key,
+            care_about_sort,
+            filter
         );
         if care_about_sort {
             let coll: Collection<Item> = self
@@ -246,23 +266,20 @@ impl Store for StoreMongo {
                 .limit(Some(limit as i64))
                 .build();
             //let tmp_filter = if filter != "" { filter }  else { " {} "};
-            let json_bson: Document =
-                if filter != "" {
-                    info!("Using real filter: {}", filter);
-                    let bson_document = self.json_to_bson(filter).await;
-                    match bson_document {
-                        Ok(d) => {
-                            d
-                        }
-                        Err(_err) => {
-                            info!("Using empty filter due to error");
-                            Document::new()
-                        }
+            let json_bson: Document = if filter != "" {
+                info!("Using real filter: {}", filter);
+                let bson_document = self.json_to_bson(filter).await;
+                match bson_document {
+                    Ok(d) => d,
+                    Err(_err) => {
+                        info!("Using empty filter due to error");
+                        Document::new()
                     }
-                } else {
-                    info!("Using empty filter");
-                    Document::new()
-                };
+                }
+            } else {
+                info!("Using empty filter");
+                Document::new()
+            };
 
             let mut cursor = coll.find(json_bson, find_options).await;
             loop {
