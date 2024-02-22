@@ -94,7 +94,7 @@ impl Store for StoreMongo {
         self.local_path = alturl.to_string();
         let res = self.do_conn().await;
         if res {
-            info!("Connected!");
+            info!("Connected {} / {}!", url, self.database_name);
             let internals = self.get_internals().await;
             let collections = internals.safe_strstr("collections", &HashMap::new());
             info!("Collections: {}", collections.len());
@@ -228,6 +228,7 @@ impl Store for StoreMongo {
         let mut count = 0;
         let mut eff_skip = skip;
         let mut care_about_sort = false;
+        let mut eff_limit = 0;
 
         if eff_skip == u64::MAX {
             eff_skip = 0;
@@ -240,6 +241,12 @@ impl Store for StoreMongo {
             }
         }
 
+        if limit > (i64::MAX as u64) {
+            eff_limit = i64::MAX;
+        } else {
+            eff_limit = limit as i64;
+        }
+
         info!(
             "Getting {} in range {} - {} ({}-{}) skip {} limit {} sort key {} (care {}) filter {}",
             &collection,
@@ -248,7 +255,7 @@ impl Store for StoreMongo {
             id_min,
             id_max,
             eff_skip,
-            limit,
+            eff_limit,
             sort_key,
             care_about_sort,
             filter
@@ -264,7 +271,7 @@ impl Store for StoreMongo {
             let find_options = FindOptions::builder()
                 .sort(doc! { sort_key: -1 })
                 .skip(eff_skip)
-                .limit(Some(limit as i64))
+                .limit(Some(eff_limit))
                 .build();
 
             let json_bson: Document = if filter != "" {
@@ -296,6 +303,7 @@ impl Store for StoreMongo {
                             .insert(c.as_ref().unwrap().id, c.as_ref().unwrap().clone());
                     }
                     Err(_e) => {
+                        info!("Error: {}", _e);
                         break;
                     }
                 };
@@ -309,7 +317,7 @@ impl Store for StoreMongo {
                             lr.map.insert(*itm.0, new_item.unwrap());
                         }
                         count = count + 1;
-                        if count >= eff_skip && (count - eff_skip) >= limit {
+                        if count >= eff_skip && (count - eff_skip) >= eff_limit as u64 {
                             break;
                         }
                     }
