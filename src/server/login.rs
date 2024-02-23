@@ -108,6 +108,13 @@ pub async fn login(
 
         clear_otp(&mut srv, lu.username.clone()).await;
 
+        if itm_real.safe_bool("role_is_active", false) == false {
+            info!("User {} is inactive, couldn't log in", lu.username.clone());
+            return web::Json(ProcessResult {
+                succeeded: false,
+                error: "User is inactive".to_string(),
+            });
+        }
         let pw = itm_real.safe_str("password", "");
         let otp = itm_real.safe_str("otp", "");
         if (pw != "" && verify_password(&lu.password, &pw)) || (otp != "" && lu.password == otp) {
