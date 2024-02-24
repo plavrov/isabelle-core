@@ -11,6 +11,8 @@ data_path="$(pwd)/data-equestrian"
 py_path=""
 gc_path="$6"
 database="isabelle"
+gh_login=""
+gh_password=""
 
 if [ "$(uname)" == "Darwin" ] ; then
     py_path="/opt/homebrew/bin/python3"
@@ -51,13 +53,25 @@ while test -n "$1" ; do
             database="$2"
             shift 1
             ;;
+        --gh-login)
+            gh_login="$2"
+            shift 1
+            ;;
+        --gh-password)
+            gh_password="$2"
+            shift 1
+            ;;
     esac
     shift 1
 done
 
 if [ "$gc_path" == "" ] ; then
     if [ ! -d isabelle-gc ] ; then
-        git clone https://github.com/isabelle-platform/isabelle-gc.git
+        creds=""
+        if [ "$gh_login" != "" ] && [ "$gh_password" != "" ] ; then
+            creds="${gh_login}:${gh_password}@"
+        fi
+        git clone https://${creds}github.com/isabelle-platform/isabelle-gc.git
         pushd isabelle-gc
         ./install.sh
         popd
