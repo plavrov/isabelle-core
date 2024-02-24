@@ -1,5 +1,5 @@
 #!/bin/bash
-# Release generation script for ASP project
+# Release generation script for Isabelle Core project
 # Usage: ./tools/release.sh
 # Script is supposed to be run from main folder, e.g. ./tools/release.sh
 output=""
@@ -28,11 +28,13 @@ if [ "$output" == "" ] ; then
     exit 1
 fi
 
+
 build_folder="$(cd ${build_folder} && pwd)"
 target_folder="$TOP_DIR/target/release"
 output="$(lib_core_normalize_filepath ${output})"
 
 cd "${target_folder}"
 echo $(get_hash) > hash
-tar cJvf out.tar.xz isabelle-core hash
+cp ${TOP_DIR}/run.sh ./
+tar cJvf out.tar.xz isabelle-core hash run.sh
 cp out.tar.xz "${output}"
