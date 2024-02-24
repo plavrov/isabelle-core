@@ -3,6 +3,10 @@ TOP_DIR="$(cd "$(dirname "$(which "$0")")" ; pwd -P)"
 cd "$TOP_DIR"
 
 binary="${BINARY:-./target/debug/isabelle-core}"
+if [ ! -f "${binary}" ] ; then
+    binary="./isabelle-core"
+fi
+
 first_run="${FIRST_RUN:+--first-run}"
 port="8090"
 pub_url="http://localhost:8081"
