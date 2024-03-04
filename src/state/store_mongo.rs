@@ -228,7 +228,7 @@ impl Store for StoreMongo {
         let mut count = 0;
         let mut eff_skip = skip;
         let mut care_about_sort = false;
-        let mut eff_limit = 0;
+        let eff_limit: i64;
 
         if eff_skip == u64::MAX {
             eff_skip = 0;
