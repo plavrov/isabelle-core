@@ -7,6 +7,8 @@ mod state;
 mod util;
 
 use crate::handler::route::url_route;
+use crate::handler::route::url_unprotected_route;
+use crate::handler::route::url_unprotected_post_route;
 use crate::notif::gcal::init_google;
 use crate::server::itm::*;
 use crate::server::login::*;
@@ -110,6 +112,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let mut new_routes: HashMap<String, String> = HashMap::new();
+    let mut new_unprotected_routes: HashMap<String, String> = HashMap::new();
     let state = State::new();
     {
         let mut srv = state.server.lock().unwrap();
@@ -129,17 +132,30 @@ async fn main() -> std::io::Result<()> {
             let res = init_google(srv.deref_mut()).await;
             info!("Result: {}", res);
 
-            let routes = (*srv.deref_mut())
-                .rw
-                .get_internals()
-                .await
-                .safe_strstr("extra_route", &HashMap::new());
-            for route in routes {
-                let parts: Vec<&str> = route.1.split(":").collect();
-                new_routes.insert(parts[0].to_string(), parts[1].to_string());
-                info!("Route: {} : {}", parts[0], parts[1]);
+            {
+                let routes = (*srv.deref_mut())
+                    .rw
+                    .get_internals()
+                    .await
+                    .safe_strstr("extra_route", &HashMap::new());
+                for route in routes {
+                    let parts: Vec<&str> = route.1.split(":").collect();
+                    new_routes.insert(parts[0].to_string(), parts[1].to_string());
+                    info!("Route: {} : {}", parts[0], parts[1]);
+                }
             }
-
+            {
+                let routes = (*srv.deref_mut())
+                    .rw
+                    .get_internals()
+                    .await
+                    .safe_strstr("extra_unprotected_route", &HashMap::new());
+                for route in routes {
+                    let parts: Vec<&str> = route.1.split(":").collect();
+                    new_unprotected_routes.insert(parts[0].to_string(), parts[1].to_string());
+                    info!("Unprotected route: {} : {}", parts[0], parts[1]);
+                }
+            }
             if first_run {
                 let srv_mut = srv.deref_mut();
                 merge_database(&mut srv_mut.file_rw, &mut srv_mut.rw).await;
@@ -178,6 +194,13 @@ async fn main() -> std::io::Result<()> {
                 app = app.route(route.0, web::post().to(url_route))
             } else if route.1 == "get" {
                 app = app.route(route.0, web::get().to(url_route))
+            }
+        }
+        for route in &new_unprotected_routes {
+            if route.1 == "post" {
+                app = app.route(route.0, web::post().to(url_unprotected_post_route))
+            } else if route.1 == "get" {
+                app = app.route(route.0, web::get().to(url_unprotected_route))
             }
         }
         app

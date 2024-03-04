@@ -1,3 +1,5 @@
+use actix_multipart::Multipart;
+use crate::handler::web::web_contact;
 use crate::handler::equestrian::*;
 use crate::handler::intranet::*;
 use crate::handler::security::*;
@@ -139,6 +141,87 @@ pub async fn url_route(
         if parts[0] == req.path() {
             info!("Call custom route {}", parts[2]);
             return call_url_route(&mut srv, user, parts[2], req.query_string()).await;
+        }
+    }
+
+    HttpResponse::NotFound().into()
+}
+
+pub async fn call_url_unprotected_route(
+    mut srv: &mut crate::state::data::Data,
+    user: Option<Identity>,
+    hndl: &str,
+    query: &str,
+) -> HttpResponse {
+    match hndl {
+        &_ => {
+            return HttpResponse::NotFound().into();
+        }
+    }
+}
+
+pub async fn call_url_unprotected_post_route(
+    mut srv: &mut crate::state::data::Data,
+    user: Option<Identity>,
+    hndl: &str,
+    query: &str,
+    mut payload: Multipart,
+) -> HttpResponse {
+    match hndl {
+        "web_contact" => {
+            return web_contact(&mut srv, user, query, payload).await;
+        }
+        &_ => {
+            return HttpResponse::NotFound().into();
+        }
+    }
+}
+
+pub async fn url_unprotected_route(
+    user: Option<Identity>,
+    data: actix_web::web::Data<State>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let mut srv = data.server.lock().unwrap();
+    let routes = srv
+        .rw
+        .get_internals()
+        .await
+        .safe_strstr("extra_unprotected_route", &HashMap::new());
+
+    info!("Custom unprotected URL: {}", req.path());
+
+    for route in routes {
+        let parts: Vec<&str> = route.1.split(":").collect();
+        if parts[0] == req.path() {
+            info!("Call custom route {}", parts[2]);
+            return call_url_unprotected_route(&mut srv, user, parts[2], req.query_string()).await;
+        }
+    }
+
+    HttpResponse::NotFound().into()
+}
+
+pub async fn url_unprotected_post_route(
+    user: Option<Identity>,
+    data: actix_web::web::Data<State>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> HttpResponse {
+    let mut srv = data.server.lock().unwrap();
+    let routes = srv
+        .rw
+        .get_internals()
+        .await
+        .safe_strstr("extra_unprotected_route", &HashMap::new());
+
+    info!("Custom unprotected post URL: {}", req.path());
+
+    for route in routes {
+        let parts: Vec<&str> = route.1.split(":").collect();
+        if parts[0] == req.path() {
+            info!("Call custom route {}", parts[2]);
+            return call_url_unprotected_post_route(&mut srv, user, parts[2], req.query_string(), payload).await;
         }
     }
 
