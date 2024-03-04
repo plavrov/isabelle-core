@@ -148,10 +148,10 @@ pub async fn url_route(
 }
 
 pub async fn call_url_unprotected_route(
-    mut srv: &mut crate::state::data::Data,
-    user: Option<Identity>,
+    _srv: &mut crate::state::data::Data,
+    _user: Option<Identity>,
     hndl: &str,
-    query: &str,
+    _query: &str,
 ) -> HttpResponse {
     match hndl {
         &_ => {
@@ -165,7 +165,7 @@ pub async fn call_url_unprotected_post_route(
     user: Option<Identity>,
     hndl: &str,
     query: &str,
-    mut payload: Multipart,
+    payload: Multipart,
 ) -> HttpResponse {
     match hndl {
         "web_contact" => {
@@ -206,7 +206,7 @@ pub async fn url_unprotected_post_route(
     user: Option<Identity>,
     data: actix_web::web::Data<State>,
     req: HttpRequest,
-    mut payload: Multipart,
+    payload: Multipart,
 ) -> HttpResponse {
     let mut srv = data.server.lock().unwrap();
     let routes = srv
