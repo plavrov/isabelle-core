@@ -7,8 +7,8 @@ mod state;
 mod util;
 
 use crate::handler::route::url_route;
-use crate::handler::route::url_unprotected_route;
 use crate::handler::route::url_unprotected_post_route;
+use crate::handler::route::url_unprotected_route;
 use crate::notif::gcal::init_google;
 use crate::server::itm::*;
 use crate::server::login::*;

@@ -1,9 +1,9 @@
+use crate::notif::email::send_email;
+use crate::state::store::Store;
+use actix_multipart::Multipart;
+use actix_web::HttpResponse;
 use futures_util::TryStreamExt;
 use isabelle_dm::data_model::item::Item;
-use actix_multipart::Multipart;
-use crate::state::store::Store;
-use crate::notif::email::send_email;
-use actix_web::HttpResponse;
 
 use actix_identity::Identity;
 
@@ -46,7 +46,10 @@ pub async fn web_contact(
         &mut srv,
         &to_email,
         &format!("Website: {} ({})", topic, from_name),
-        &format!("From: {}\nName: {}\nTopic: {}\n\n{}", from_email, from_name, topic, message),
+        &format!(
+            "From: {}\nName: {}\nTopic: {}\n\n{}",
+            from_email, from_name, topic, message
+        ),
     )
     .await;
     HttpResponse::Ok().into()

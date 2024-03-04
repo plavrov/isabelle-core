@@ -1,11 +1,11 @@
-use actix_multipart::Multipart;
-use crate::handler::web::web_contact;
 use crate::handler::equestrian::*;
 use crate::handler::intranet::*;
 use crate::handler::security::*;
+use crate::handler::web::web_contact;
 use crate::state::store::Store;
 use crate::State;
 use actix_identity::Identity;
+use actix_multipart::Multipart;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use isabelle_dm::data_model::item::Item;
@@ -221,7 +221,14 @@ pub async fn url_unprotected_post_route(
         let parts: Vec<&str> = route.1.split(":").collect();
         if parts[0] == req.path() {
             info!("Call custom route {}", parts[2]);
-            return call_url_unprotected_post_route(&mut srv, user, parts[2], req.query_string(), payload).await;
+            return call_url_unprotected_post_route(
+                &mut srv,
+                user,
+                parts[2],
+                req.query_string(),
+                payload,
+            )
+            .await;
         }
     }
 
