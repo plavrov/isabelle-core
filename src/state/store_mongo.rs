@@ -289,6 +289,9 @@ impl Store for StoreMongo {
                 Document::new()
             };
 
+            let count = coll.count_documents(json_bson.clone(), None).await;
+            lr.total_count = count.unwrap_or(0);
+
             let mut cursor = coll.find(json_bson, find_options).await;
             loop {
                 let result = cursor.as_mut().unwrap().try_next().await;
@@ -323,9 +326,9 @@ impl Store for StoreMongo {
                     }
                 }
             }
-        }
 
-        lr.total_count = itms.len() as u64;
+            lr.total_count = itms.len() as u64;
+        }
 
         info!(" - result: {} items", count);
         return lr;
