@@ -1,3 +1,9 @@
+#[macro_use]
+extern crate lazy_static;
+
+use crate::notif::email::send_email;
+
+use isabelle_plugin_api::api::PluginApi;
 use crate::state::merger::merge_database;
 use crate::state::store::Store;
 mod handler;
@@ -39,6 +45,10 @@ fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore>
         .cookie_http_only(true)
         .cookie_secure(true)
         .build()
+}
+
+lazy_static! {
+    static ref G_STATE : State = State::new();
 }
 
 #[actix_web::main]
@@ -113,9 +123,9 @@ async fn main() -> std::io::Result<()> {
 
     let mut new_routes: HashMap<String, String> = HashMap::new();
     let mut new_unprotected_routes: HashMap<String, String> = HashMap::new();
-    let state = State::new();
+
     {
-        let mut srv = state.server.lock().unwrap();
+        let mut srv = G_STATE.server.lock().unwrap();
         {
             (*srv.deref_mut()).rw.database_name = database_name.clone();
             (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
@@ -126,10 +136,128 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
 
+            (*srv.deref_mut()).plugin_api = PluginApi {
+                /* database */
+                db_get_all_items: Box::new(|collection, sort_key, filter| {
+                    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+                    runtime.block_on(
+                        async {
+                            G_STATE.server.clone().lock().unwrap().rw.get_all_items(collection, sort_key, filter).await
+                        }
+                    )
+                }),
+                db_get_items: Box::new(|collection, id_min, id_max, sort_key, filter, skip, limit| {
+                    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+                    runtime.block_on(
+                        async {
+                            G_STATE.server.clone().lock().unwrap().rw.get_items(collection, id_min, id_max, sort_key, filter, skip, limit).await
+                        }
+                    )
+                }),
+                db_get_item: Box::new(|collection, id| {
+                    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+                    runtime.block_on(
+                        async {
+                            G_STATE.server.clone().lock().unwrap().rw.get_item(collection, id).await
+                        }
+                    )
+                }),
+                db_set_item: Box::new(|collection, itm, merge| {
+                    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+                    runtime.block_on(
+                        async {
+                            G_STATE.server.clone().lock().unwrap().rw.set_item(collection, itm, *merge).await
+                        }
+                    )
+                }),
+                db_del_item: Box::new(|collection, id| {
+                    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+                    runtime.block_on(
+                        async {
+                            G_STATE.server.clone().lock().unwrap().rw.del_item(collection, id).await
+                        }
+                    )
+                }),
+
+                /* globals */
+                globals_get_public_url: Box::new(|| {
+                    G_STATE.server.lock().unwrap().public_url.clone()
+                }),
+
+                /* exposed functions */
+
+                fn_send_email: Box::new(|to, subject, body| {
+                    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+                    runtime.block_on(
+                        async {
+                            send_email(&mut G_STATE.server.clone().lock().unwrap(), to, subject, body).await
+                        }
+                    )
+                }),
+
+                /* routes */
+                route_register_item_pre_edit_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().item_pre_edit_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_item_post_edit_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().item_post_edit_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_item_auth_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().item_auth_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_item_list_filter_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().item_list_filter_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_url_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().url_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_unprotected_url_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().unprotected_url_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_unprotected_url_post_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().unprotected_url_post_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_collection_read_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().collection_read_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+
+                route_register_call_otp_hook: Box::new(|name, hook| {
+                    G_STATE.server.clone().lock().unwrap().call_otp_hook.insert(name.to_string(), hook);
+                    return true;
+                }),
+            };
+            info!("Loading plugins");
+            info!("URL: {}", (*srv.deref_mut()).public_url);
+            {
+                let s = &(*srv.deref_mut());
+                s.plugin_pool.load_plugins(&s.plugin_api, ".");
+            }
+            info!("Init checks");
             (*srv.deref_mut()).init_checks().await;
 
             info!("Initializing google!");
-            let res = init_google(srv.deref_mut()).await;
+            let res = init_google(&mut (*srv.deref_mut())).await;
             info!("Result: {}", res);
 
             {
@@ -157,8 +285,8 @@ async fn main() -> std::io::Result<()> {
                 }
             }
             if first_run {
-                let srv_mut = srv.deref_mut();
-                merge_database(&mut srv_mut.file_rw, &mut srv_mut.rw).await;
+                let m = &mut (*srv.deref_mut());
+                merge_database(&mut m.file_rw, &mut m.rw).await;
             }
         }
     }
@@ -167,7 +295,7 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    let data = Data::new(state);
+    let data = Data::new(G_STATE.clone());
     info!("Starting server");
     HttpServer::new(move || {
         let mut app = App::new()

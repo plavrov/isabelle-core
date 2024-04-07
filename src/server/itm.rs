@@ -225,6 +225,10 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         return HttpResponse::BadRequest().into();
     }
 
+    info!("Test");
+    info!("Test URL1: {}", ((*srv.deref_mut()).plugin_api.globals_get_public_url)());
+    info!("Test URL2: {}", (*srv.deref_mut()).public_url);
+
     let mut lr = ListResult {
         map: HashMap::new(),
         total_count: 0,

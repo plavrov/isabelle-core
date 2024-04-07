@@ -1,3 +1,5 @@
+use isabelle_plugin_api::api::*;
+use isabelle_plugin_api::plugin_pool::PluginPool;
 use crate::handler::route::call_collection_read_hook;
 use crate::state::store::Store;
 use crate::state::store_local::*;
@@ -12,6 +14,18 @@ pub struct Data {
     pub data_path: String,
     pub public_url: String,
     pub port: u16,
+    pub plugin_pool: PluginPool,
+    pub plugin_api: PluginApi,
+
+    pub item_pre_edit_hook: HashMap<String, IsabelleRouteItemPreEditHook>,
+    pub item_post_edit_hook: HashMap<String, IsabelleRouteItemPostEditHook>,
+    pub item_auth_hook: HashMap<String, IsabelleRouteItemAuthHook>,
+    pub item_list_filter_hook: HashMap<String, IsabelleRouteItemListFilterHook>,
+    pub url_hook: HashMap<String, IsabelleRouteUrlHook>,
+    pub unprotected_url_hook: HashMap<String, IsabelleRouteUnprotectedUrlHook>,
+    pub unprotected_url_post_hook: HashMap<String, IsabelleRouteUnprotectedUrlPostHook>,
+    pub collection_read_hook: HashMap<String, IsabelleRouteCollectionReadHook>,
+    pub call_otp_hook: HashMap<String, IsabelleRouteCallOtpHook>,
 }
 
 impl Data {
@@ -25,6 +39,18 @@ impl Data {
             data_path: "".to_string(),
             public_url: "".to_string(),
             port: 8090,
+            plugin_pool: PluginPool {},
+            plugin_api: PluginApi::new(),
+
+            item_pre_edit_hook: HashMap::new(),
+            item_post_edit_hook: HashMap::new(),
+            item_auth_hook: HashMap::new(),
+            item_list_filter_hook: HashMap::new(),
+            url_hook: HashMap::new(),
+            unprotected_url_hook: HashMap::new(),
+            unprotected_url_post_hook: HashMap::new(),
+            collection_read_hook: HashMap::new(),
+            call_otp_hook: HashMap::new(),
         }
     }
 
