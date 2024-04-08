@@ -22,7 +22,8 @@ pub async fn itm_edit(
     req: HttpRequest,
     mut payload: Multipart,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
@@ -67,13 +68,13 @@ pub async fn itm_edit(
     itm.normalize_negated();
 
     if srv.has_collection(&mc.collection) {
-        let srv_mut = srv.deref_mut();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
         let mut itm_clone = itm.clone();
 
         let old_itm = srv_mut.rw.get_item(&mc.collection, itm.id).await;
         /* call pre edit hooks */
         {
-            let routes = srv_mut
+            let routes = (*srv_mut)
                 .rw
                 .get_internals()
                 .await
@@ -82,7 +83,7 @@ pub async fn itm_edit(
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
                     let res = call_item_pre_edit_hook(
-                        srv_mut,
+                        &mut (*srv_mut),
                         parts[1],
                         &usr,
                         &mc.collection,
@@ -103,7 +104,7 @@ pub async fn itm_edit(
 
         /* call hooks */
         if old_itm != None {
-            let routes = srv_mut
+            let routes = (*srv_mut)
                 .rw
                 .get_internals()
                 .await
@@ -111,13 +112,13 @@ pub async fn itm_edit(
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(srv_mut, &parts[1], &mc.collection, itm.id, true)
+                    call_item_post_edit_hook(&mut (*srv_mut), &parts[1], &mc.collection, itm.id, true)
                         .await;
                 }
             }
         }
 
-        srv_mut
+        (*srv_mut)
             .rw
             .set_item(&mc.collection, &itm_clone, mc.merge)
             .await;
@@ -125,7 +126,7 @@ pub async fn itm_edit(
 
         /* call hooks */
         {
-            let routes = srv
+            let routes = (*srv_mut)
                 .rw
                 .get_internals()
                 .await
@@ -134,7 +135,7 @@ pub async fn itm_edit(
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
                     call_item_post_edit_hook(
-                        srv.deref_mut(),
+                        &mut (*srv_mut),
                         &parts[1],
                         &mc.collection,
                         itm.id,
@@ -161,7 +162,8 @@ pub async fn itm_edit(
 }
 
 pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     let mc = serde_qs::from_str::<MergeColl>(&req.query_string()).unwrap();
@@ -215,7 +217,8 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 }
 
 pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     let lq = serde_qs::from_str::<ListQuery>(&req.query_string()).unwrap();
@@ -224,10 +227,6 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
         error!("Collection {} doesn't exist", lq.collection);
         return HttpResponse::BadRequest().into();
     }
-
-    info!("Test");
-    info!("Test URL1: {}", ((*srv.deref_mut()).plugin_api.globals_get_public_url)());
-    info!("Test URL2: {}", (*srv.deref_mut()).public_url);
 
     let mut lr = ListResult {
         map: HashMap::new(),

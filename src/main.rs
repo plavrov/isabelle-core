@@ -125,7 +125,8 @@ async fn main() -> std::io::Result<()> {
     let mut new_unprotected_routes: HashMap<String, String> = HashMap::new();
 
     {
-        let mut srv = G_STATE.server.lock().unwrap();
+        let srv_lock = G_STATE.server.lock();
+        let mut srv = srv_lock.borrow_mut();
         {
             (*srv.deref_mut()).rw.database_name = database_name.clone();
             (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
@@ -143,7 +144,9 @@ async fn main() -> std::io::Result<()> {
 
                     runtime.block_on(
                         async {
-                            G_STATE.server.clone().lock().unwrap().rw.get_all_items(collection, sort_key, filter).await
+                            let srv_lock = G_STATE.server.lock();
+                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                            srv_mut.rw.get_all_items(collection, sort_key, filter).await
                         }
                     )
                 }),
@@ -152,7 +155,9 @@ async fn main() -> std::io::Result<()> {
 
                     runtime.block_on(
                         async {
-                            G_STATE.server.clone().lock().unwrap().rw.get_items(collection, id_min, id_max, sort_key, filter, skip, limit).await
+                            let srv_lock = G_STATE.server.lock();
+                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                            srv_mut.rw.get_items(collection, id_min, id_max, sort_key, filter, skip, limit).await
                         }
                     )
                 }),
@@ -161,7 +166,9 @@ async fn main() -> std::io::Result<()> {
 
                     runtime.block_on(
                         async {
-                            G_STATE.server.clone().lock().unwrap().rw.get_item(collection, id).await
+                            let srv_lock = G_STATE.server.lock();
+                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                            srv_mut.rw.get_item(collection, id).await
                         }
                     )
                 }),
@@ -170,7 +177,9 @@ async fn main() -> std::io::Result<()> {
 
                     runtime.block_on(
                         async {
-                            G_STATE.server.clone().lock().unwrap().rw.set_item(collection, itm, *merge).await
+                            let srv_lock = G_STATE.server.lock();
+                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                            srv_mut.rw.set_item(collection, itm, *merge).await
                         }
                     )
                 }),
@@ -179,14 +188,18 @@ async fn main() -> std::io::Result<()> {
 
                     runtime.block_on(
                         async {
-                            G_STATE.server.clone().lock().unwrap().rw.del_item(collection, id).await
+                            let srv_lock = G_STATE.server.lock();
+                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                            srv_mut.rw.del_item(collection, id).await
                         }
                     )
                 }),
 
                 /* globals */
                 globals_get_public_url: Box::new(|| {
-                    G_STATE.server.lock().unwrap().public_url.clone()
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.public_url.clone()
                 }),
 
                 /* exposed functions */
@@ -196,54 +209,74 @@ async fn main() -> std::io::Result<()> {
 
                     runtime.block_on(
                         async {
-                            send_email(&mut G_STATE.server.clone().lock().unwrap(), to, subject, body).await
+                            let srv_lock = G_STATE.server.lock();
+                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                            send_email(srv_mut, to, subject, body).await
                         }
                     )
                 }),
 
                 /* routes */
                 route_register_item_pre_edit_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().item_pre_edit_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.item_pre_edit_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_item_post_edit_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().item_post_edit_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.item_post_edit_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_item_auth_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().item_auth_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.item_auth_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_item_list_filter_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().item_list_filter_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.item_list_filter_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_url_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().url_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.url_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_unprotected_url_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().unprotected_url_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.unprotected_url_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_unprotected_url_post_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().unprotected_url_post_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.unprotected_url_post_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_collection_read_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().collection_read_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.collection_read_hook.insert(name.to_string(), hook);
                     return true;
                 }),
 
                 route_register_call_otp_hook: Box::new(|name, hook| {
-                    G_STATE.server.clone().lock().unwrap().call_otp_hook.insert(name.to_string(), hook);
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    srv_mut.call_otp_hook.insert(name.to_string(), hook);
                     return true;
                 }),
             };

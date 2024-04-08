@@ -19,7 +19,8 @@ pub async fn setting_edit(
     req: HttpRequest,
     mut payload: Multipart,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     if !check_role(&mut srv, &usr, "admin").await {
@@ -58,7 +59,8 @@ pub async fn setting_list(
     data: web::Data<State>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     if !check_role(&mut srv, &usr, "admin").await {
@@ -76,7 +78,8 @@ pub async fn setting_gcal_auth(
     data: web::Data<State>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     if !check_role(&mut srv, &usr, "admin").await {
@@ -91,7 +94,8 @@ pub async fn setting_gcal_auth_end(
     data: web::Data<State>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
     if !check_role(&mut srv, &usr, "admin").await {

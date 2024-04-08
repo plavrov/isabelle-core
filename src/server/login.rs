@@ -35,7 +35,8 @@ pub async fn gen_otp(
         }
     }
 
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     info!("User name: {}", lu.username.clone());
     let usr = get_user(&mut srv, lu.username.clone()).await;
 
@@ -93,7 +94,8 @@ pub async fn login(
         }
     }
 
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     info!("User name: {}", lu.username.clone());
     let usr = get_user(&mut srv, lu.username.clone()).await;
 
@@ -147,7 +149,8 @@ pub async fn logout(
 }
 
 pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
 
     let mut user: DetailedLoginUser = DetailedLoginUser {
         username: "".to_string(),

@@ -127,7 +127,8 @@ pub async fn url_route(
     data: actix_web::web::Data<State>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let routes = srv
         .rw
         .get_internals()
@@ -182,7 +183,8 @@ pub async fn url_unprotected_route(
     data: actix_web::web::Data<State>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let routes = srv
         .rw
         .get_internals()
@@ -208,7 +210,8 @@ pub async fn url_unprotected_post_route(
     req: HttpRequest,
     payload: Multipart,
 ) -> HttpResponse {
-    let mut srv = data.server.lock().unwrap();
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
     let routes = srv
         .rw
         .get_internals()

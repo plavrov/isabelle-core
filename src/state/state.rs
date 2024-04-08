@@ -1,9 +1,11 @@
+use std::cell::RefCell;
 use std::sync::Arc;
 use crate::state::data::*;
-use std::sync::Mutex;
+
+use parking_lot::ReentrantMutex;
 
 pub struct State {
-    pub server: Arc<Mutex<Data>>,
+    pub server: Arc<ReentrantMutex<RefCell<Data>>>,
 }
 
 impl Clone for State {
@@ -20,7 +22,7 @@ impl State {
     pub fn new() -> Self {
         let srv = Data::new();
         Self {
-            server: Arc::new(Mutex::new(srv)),
+            server: Arc::new(ReentrantMutex::new(RefCell::new(srv))),
         }
     }
 }
