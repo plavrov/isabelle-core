@@ -241,6 +241,23 @@ async fn main() -> std::io::Result<()> {
                     srv_mut.public_url.clone()
                 }),
 
+                globals_get_settings: Box::new(|| {
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    let (sender, receiver) = mpsc::channel();
+                    thread::spawn(move || {
+                        let rt = Runtime::new().unwrap();
+                        sender.send(
+                            rt.block_on(
+                                async {
+                                    srv_mut.rw.get_settings().await
+                                }
+                            )
+                        ).unwrap()
+                    });
+                    receiver.recv().unwrap()
+                }),
+
                 /* exposed functions */
 
                 fn_send_email: Box::new(|to, subject, body| {
