@@ -20,7 +20,7 @@ mod util;
 use crate::handler::route::url_route;
 use crate::handler::route::url_unprotected_post_route;
 use crate::handler::route::url_unprotected_route;
-use crate::notif::gcal::init_google;
+use crate::notif::gcal::*;
 use crate::server::itm::*;
 use crate::server::login::*;
 use crate::server::user_control::*;
@@ -270,6 +270,40 @@ async fn main() -> std::io::Result<()> {
                             send_email(srv_mut, to, subject, body).await
                         }
                     )
+                }),
+
+                fn_init_google: Box::new(|| {
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    let (sender, receiver) = mpsc::channel();
+                    thread::spawn(move || {
+                        let rt = Runtime::new().unwrap();
+                        sender.send(
+                            rt.block_on(
+                                async {
+                                    init_google(srv_mut).await
+                                }
+                            )
+                        ).unwrap()
+                    });
+                    receiver.recv().unwrap()
+                }),
+
+                fn_sync_with_google: Box::new(|add, name, date_time| {
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    let (sender, receiver) = mpsc::channel();
+                    thread::spawn(move || {
+                        let rt = Runtime::new().unwrap();
+                        sender.send(
+                            rt.block_on(
+                                async {
+                                    sync_with_google(srv_mut, add, name, date_time).await
+                                }
+                            )
+                        ).unwrap()
+                    });
+                    receiver.recv().unwrap()
                 }),
 
                 /* routes */

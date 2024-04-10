@@ -75,7 +75,6 @@ pub async fn call_item_post_edit_hook(
     }
 
     match hndl {
-        "equestrian_job_sync" => equestrian_job_sync(srv, collection, id, del).await,
         &_ => {}
     }
 }
