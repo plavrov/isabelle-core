@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
 use crate::util::crypto::*;
-use once_cell::sync::Lazy;
 use tokio::runtime::Handle;
 use std::sync::mpsc;
 use tokio::task;
@@ -58,8 +57,6 @@ fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore>
 lazy_static! {
     static ref G_STATE : State = State::new();
 }
-
-static HANDLE: Lazy<Mutex<Option<Handle>>> = Lazy::new(Default::default);
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -146,8 +143,6 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).data_path = data_path.to_string();
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
-
-            *HANDLE.lock().unwrap() = Some(Handle::current());
 
             (*srv.deref_mut()).plugin_api = PluginApi {
                 /* database */
