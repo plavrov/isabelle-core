@@ -97,15 +97,12 @@ pub async fn call_itm_auth_hook(
     }
 
     match hndl {
-        "equestrian_itm_auth_hook" => {
-            return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del).await;
-        }
         &_ => return false,
     }
 }
 
 pub async fn call_itm_list_filter_hook(
-    mut srv: &mut crate::state::data::Data,
+    srv: &mut crate::state::data::Data,
     hndl: &str,
     user: &Option<Item>,
     collection: &str,
@@ -119,9 +116,6 @@ pub async fn call_itm_list_filter_hook(
         }
     }
     match hndl {
-        "equestrian_itm_filter_hook" => {
-            return equestrian_itm_filter_hook(&mut srv, user, collection, context, map).await;
-        }
         &_ => {}
     }
 }
