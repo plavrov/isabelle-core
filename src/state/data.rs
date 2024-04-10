@@ -72,7 +72,7 @@ impl Data {
                 let mut loaded_item = loaded_item_opt.unwrap();
                 let mut should_be_saved = false;
                 for route in &routes {
-                    if call_collection_read_hook(&route.1, collection, &mut loaded_item).await {
+                    if call_collection_read_hook(self, &route.1, collection, &mut loaded_item).await {
                         should_be_saved = true;
                     }
                 }

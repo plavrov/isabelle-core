@@ -1,6 +1,12 @@
 #[macro_use]
 extern crate lazy_static;
-
+use crate::util::crypto::*;
+use once_cell::sync::Lazy;
+use tokio::runtime::Handle;
+use std::sync::mpsc;
+use tokio::task;
+use tokio::runtime::Runtime;
+use std::thread;
 use crate::notif::email::send_email;
 
 use isabelle_plugin_api::api::PluginApi;
@@ -18,6 +24,7 @@ use crate::handler::route::url_unprotected_route;
 use crate::notif::gcal::init_google;
 use crate::server::itm::*;
 use crate::server::login::*;
+use crate::server::user_control::*;
 use std::collections::HashMap;
 
 use crate::server::setting::*;
@@ -33,6 +40,7 @@ use actix_web::{cookie::Key, cookie::SameSite, web, App, HttpServer};
 use log::info;
 use std::env;
 use std::ops::DerefMut;
+use std::sync::Mutex;
 
 fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
@@ -50,6 +58,8 @@ fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore>
 lazy_static! {
     static ref G_STATE : State = State::new();
 }
+
+static HANDLE: Lazy<Mutex<Option<Handle>>> = Lazy::new(Default::default);
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -137,6 +147,8 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
 
+            *HANDLE.lock().unwrap() = Some(Handle::current());
+
             (*srv.deref_mut()).plugin_api = PluginApi {
                 /* database */
                 db_get_all_items: Box::new(|collection, sort_key, filter| {
@@ -193,6 +205,38 @@ async fn main() -> std::io::Result<()> {
                             srv_mut.rw.del_item(collection, id).await
                         }
                     )
+                }),
+
+                /* auth */
+                auth_check_role: Box::new(|arg_user, arg_role| {
+                    let user = arg_user.clone();
+                    let role = arg_role.to_string();
+                    let (sender, receiver) = mpsc::channel();
+                    let srv_lock = G_STATE.server.lock();
+                    let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    thread::spawn(move || {
+                        let rt = Runtime::new().unwrap();
+                        sender.send(
+                            rt.block_on(
+                                async {
+                                    check_role(srv_mut, &user, &role).await
+                                }
+                            )
+                        ).unwrap()
+                    });
+                    receiver.recv().unwrap()
+                }),
+
+                auth_get_new_salt: Box::new(|| {
+                    get_new_salt()
+                }),
+
+                auth_get_password_hash: Box::new(|pw, salt| {
+                    get_password_hash(pw, salt)
+                }),
+
+                auth_verify_password: Box::new(|pw, hash| {
+                    verify_password(pw, hash)
                 }),
 
                 /* globals */
@@ -319,6 +363,7 @@ async fn main() -> std::io::Result<()> {
             }
             if first_run {
                 let m = &mut (*srv.deref_mut());
+                info!("First run");
                 merge_database(&mut m.file_rw, &mut m.rw).await;
             }
         }

@@ -23,19 +23,14 @@ pub async fn call_item_pre_edit_hook(
     del: bool,
     merge: bool,
 ) -> ProcessResult {
+    for hook in &srv.item_pre_edit_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return hook.1(&srv.plugin_api, user, collection, old_itm, itm, del, merge);
+        }
+    }
+
     match hndl {
-        "security_password_challenge_pre_edit_hook" => {
-            return security_password_challenge_pre_edit_hook(
-                srv, user, collection, old_itm, itm, del, merge,
-            )
-            .await;
-        }
-        "security_check_unique_login_email" => {
-            return security_check_unique_login_email(
-                srv, user, collection, old_itm, itm, del, merge,
-            )
-            .await;
-        }
         &_ => {
             return ProcessResult {
                 succeeded: true,
@@ -52,6 +47,13 @@ pub async fn call_item_post_edit_hook(
     id: u64,
     del: bool,
 ) {
+    for hook in &srv.item_post_edit_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return hook.1(&srv.plugin_api, collection, id, del);
+        }
+    }
+
     match hndl {
         "equestrian_job_sync" => equestrian_job_sync(srv, collection, id, del).await,
         &_ => {}
@@ -67,6 +69,13 @@ pub async fn call_itm_auth_hook(
     new_item: Option<Item>,
     del: bool,
 ) -> bool {
+    for hook in &srv.item_auth_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return hook.1(&srv.plugin_api, user, collection, id, new_item, del);
+        }
+    }
+
     match hndl {
         "equestrian_itm_auth_hook" => {
             return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del).await;
@@ -86,12 +95,15 @@ pub async fn call_itm_list_filter_hook(
     context: &str,
     map: &mut HashMap<u64, Item>,
 ) {
+    for hook in &srv.item_list_filter_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return hook.1(&srv.plugin_api, user, collection, context, map);
+        }
+    }
     match hndl {
         "equestrian_itm_filter_hook" => {
             return equestrian_itm_filter_hook(&mut srv, user, collection, context, map).await;
-        }
-        "security_itm_filter_hook" => {
-            return security_itm_filter_hook(&mut srv, user, collection, context, map).await;
         }
         &_ => {}
     }
@@ -238,11 +250,19 @@ pub async fn url_unprotected_post_route(
     HttpResponse::NotFound().into()
 }
 
-pub async fn call_collection_read_hook(hndl: &str, collection: &str, itm: &mut Item) -> bool {
-    match hndl {
-        "security_collection_read_hook" => {
-            return security_collection_read_hook(collection, itm).await;
+pub async fn call_collection_read_hook(
+    data: &mut crate::state::data::Data,
+    hndl: &str,
+    collection: &str,
+    itm: &mut Item) -> bool {
+
+    for hook in &data.collection_read_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return hook.1(&data.plugin_api, collection, itm);
         }
+    }
+    match hndl {
         _ => {
             return false;
         }
@@ -250,10 +270,13 @@ pub async fn call_collection_read_hook(hndl: &str, collection: &str, itm: &mut I
 }
 
 pub async fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
-    match hndl {
-        "security_otp_send_email" => {
-            security_otp_send_email(srv, itm).await;
+    for hook in &srv.call_otp_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return hook.1(&srv.plugin_api, &itm);
         }
+    }
+    match hndl {
         _ => {}
     }
 }
