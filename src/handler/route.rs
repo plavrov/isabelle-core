@@ -1,5 +1,5 @@
+use isabelle_plugin_api::api::WebResponse;
 use crate::handler::equestrian::*;
-use crate::handler::web::web_contact;
 use crate::state::store::Store;
 use crate::State;
 use actix_identity::Identity;
@@ -10,6 +10,28 @@ use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use log::info;
 use std::collections::HashMap;
+use futures_util::TryStreamExt;
+use crate::server::user_control::*;
+
+fn conv_response(resp: WebResponse) -> HttpResponse {
+    match resp {
+        WebResponse::Ok => {
+            return HttpResponse::Ok().into();
+        }
+        WebResponse::NotFound => {
+            return HttpResponse::NotFound().into();
+        }
+        WebResponse::Unauthorized => {
+            return HttpResponse::Unauthorized().into();
+        }
+        WebResponse::BadRequest => {
+            return HttpResponse::BadRequest().into();
+        }
+        WebResponse::Forbidden => {
+            return HttpResponse::Forbidden().into();
+        }
+    }
+}
 
 pub async fn call_item_pre_edit_hook(
     srv: &mut crate::state::data::Data,
@@ -173,12 +195,36 @@ pub async fn call_url_unprotected_post_route(
     user: Option<Identity>,
     hndl: &str,
     query: &str,
-    payload: Multipart,
+    mut payload: Multipart,
 ) -> HttpResponse {
-    match hndl {
-        "web_contact" => {
-            return web_contact(&mut srv, user, query, payload).await;
+    let mut usr : Option<Item> = None;
+
+    if user.is_none() {
+        usr = get_user(&mut srv, user.unwrap().id().unwrap()).await;
+    }
+
+    let mut post_itm = Item::new();
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        while let Ok(Some(chunk)) = field.try_next().await {
+            let data = chunk;
+
+            if field.name() == "item" {
+                let v = &data.to_vec();
+                let strv = std::str::from_utf8(v).unwrap_or("{}");
+                let new_itm: Item = serde_json::from_str(strv).unwrap_or(Item::new());
+                post_itm.merge(&new_itm);
+            }
         }
+    }
+
+    for hook in &srv.unprotected_url_post_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return conv_response(hook.1(&srv.plugin_api, &usr, query, &post_itm));
+        }
+    }
+
+    match hndl {
         &_ => {
             return HttpResponse::NotFound().into();
         }
@@ -219,6 +265,7 @@ pub async fn url_unprotected_post_route(
 ) -> HttpResponse {
     let srv_lock = data.server.lock();
     let mut srv = srv_lock.borrow_mut();
+
     let routes = srv
         .rw
         .get_internals()
