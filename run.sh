@@ -83,4 +83,11 @@ if [ "$gc_path" == "" ] ; then
     gc_path="$(pwd)/isabelle-gc"
 fi
 
+if [ "$(uname)" == "Darwin" ] ; then
+    /usr/libexec/PlistBuddy -c "Add :com.apple.security.get-task-allow bool true" tmp.entitlements
+    for file in ${binary} $(ls libisabelle_plugin*) ; do
+        codesign -s - -f --entitlements tmp.entitlements "$file"
+    done
+fi
+
 RUST_LOG=info RUST_BACKTRACE=1 "${binary}" --port "${port}" --pub-url "${pub_url}" --pub-fqdn "${pub_fqdn}" --data-path "${data_path}" --gc-path "${gc_path}" --database "${database}" --py-path "${py_path}" ${first_run}
