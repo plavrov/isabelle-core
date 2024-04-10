@@ -1,6 +1,4 @@
 use crate::handler::equestrian::*;
-use crate::handler::intranet::*;
-
 use crate::handler::web::web_contact;
 use crate::state::store::Store;
 use crate::State;
@@ -79,9 +77,6 @@ pub async fn call_itm_auth_hook(
     match hndl {
         "equestrian_itm_auth_hook" => {
             return equestrian_itm_auth_hook(srv, user, collection, id, new_item, del).await;
-        }
-        "intranet_itm_auth_hook" => {
-            return intranet_itm_auth_hook(srv, user, collection, id, new_item, del).await;
         }
         &_ => return false,
     }

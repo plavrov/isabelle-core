@@ -206,9 +206,9 @@ async fn main() -> std::io::Result<()> {
                 auth_check_role: Box::new(|arg_user, arg_role| {
                     let user = arg_user.clone();
                     let role = arg_role.to_string();
-                    let (sender, receiver) = mpsc::channel();
                     let srv_lock = G_STATE.server.lock();
                     let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                    let (sender, receiver) = mpsc::channel();
                     thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
                         sender.send(
