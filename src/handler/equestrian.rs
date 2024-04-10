@@ -8,12 +8,7 @@ use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
 use crate::server::user_control::*;
-
-use crate::init_google;
-use crate::notif::email::send_email;
-use crate::notif::gcal::sync_with_google;
 use log::info;
 use now::DateTimeNow;
 
@@ -24,20 +19,6 @@ pub fn date2ts(date: String, time: String) -> u64 {
         "%Y-%m-%d %H:%M",
     );
     return ndt.unwrap().timestamp() as u64;
-}
-
-pub async fn eventname(srv: &mut crate::state::data::Data, sch: &Item) -> String {
-    let mut teacher_id = sch.safe_id("teacher", u64::MAX);
-    if teacher_id == 0 {
-        teacher_id = u64::MAX;
-    }
-
-    let itm = srv.rw.get_item("user", teacher_id).await;
-    if teacher_id == u64::MAX || itm.is_none() {
-        "Training".to_string()
-    } else {
-        "Training with ".to_owned() + &itm.unwrap().safe_str("name", "<unknown>")
-    }
 }
 
 pub fn entry2datetimestr(entry: &Item) -> String {
