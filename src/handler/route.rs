@@ -1,5 +1,4 @@
 use isabelle_plugin_api::api::WebResponse;
-use crate::handler::equestrian::*;
 use crate::state::store::Store;
 use crate::State;
 use actix_identity::Identity;
@@ -129,24 +128,21 @@ pub async fn call_itm_list_filter_hook(
 }
 
 pub async fn call_url_route(
-    mut srv: &mut crate::state::data::Data,
+    srv: &mut crate::state::data::Data,
     user: Identity,
     hndl: &str,
     query: &str,
 ) -> HttpResponse {
+    let usr : Option<Item> =get_user(srv, user.id().unwrap()).await;
+
+    for hook in &srv.url_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return conv_response(hook.1(&srv.plugin_api, &usr, query));
+        }
+    }
+
     match hndl {
-        "equestrian_schedule_materialize" => {
-            return equestrian_schedule_materialize(&mut srv, user, query).await;
-        }
-        "equestrian_pay_find_broken_payments" => {
-            return equestrian_pay_find_broken_payments(&mut srv, user, query).await;
-        }
-        "equestrian_pay_deactivate_expired_payments" => {
-            return equestrian_pay_deactivate_expired_payments(&mut srv, user, query).await;
-        }
-        "equestrian_event_subscribe" => {
-            return equestrian_event_subscribe(&mut srv, user, query).await;
-        }
         &_ => {
             return HttpResponse::NotFound().into();
         }
@@ -180,11 +176,24 @@ pub async fn url_route(
 }
 
 pub async fn call_url_unprotected_route(
-    _srv: &mut crate::state::data::Data,
-    _user: Option<Identity>,
+    srv: &mut crate::state::data::Data,
+    user: Option<Identity>,
     hndl: &str,
-    _query: &str,
+    query: &str,
 ) -> HttpResponse {
+    let mut usr : Option<Item> = None;
+
+    if user.is_none() {
+        usr = get_user(srv, user.unwrap().id().unwrap()).await;
+    }
+
+    for hook in &srv.unprotected_url_hook {
+        if hndl == hook.0 {
+            info!("Calling hook {}", hook.0);
+            return conv_response(hook.1(&srv.plugin_api, &usr, query));
+        }
+    }
+
     match hndl {
         &_ => {
             return HttpResponse::NotFound().into();
