@@ -1,6 +1,6 @@
 #!/bin/bash
 # Release generation script for Isabelle Core project
-# Usage: ./tools/release.sh
+# Usage: ./tools/release.sh [--out archive]
 # Script is supposed to be run from main folder, e.g. ./tools/release.sh
 output=""
 
@@ -11,6 +11,10 @@ while test -n "$1" ; do
     case $1 in
         --out)
             output="$2"
+            shift 1
+            ;;
+        *)
+            fail "Unknown argument: $1"
             ;;
     esac
     shift 1
@@ -28,13 +32,22 @@ if [ "$output" == "" ] ; then
     exit 1
 fi
 
-
+# Get build & target folder, normalize output path
 build_folder="$(cd ${build_folder} && pwd)"
 target_folder="$TOP_DIR/target/release"
 output="$(lib_core_normalize_filepath ${output})"
 
+# Get to target folder
 cd "${target_folder}"
+
+# Get the repository hash
 echo $(get_hash) > hash
+
+# Get the top script to run the binary
 cp ${TOP_DIR}/run.sh ./
+
+# Save the binary, hash and script to out.tar.xz
 tar cJvf out.tar.xz isabelle-core hash run.sh
+
+# Copy out the archive to output path
 cp out.tar.xz "${output}"
