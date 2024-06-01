@@ -17,6 +17,7 @@ gc_path="$6"
 database="isabelle"
 gh_login=""
 gh_password=""
+plugin_dir=""
 
 if [ "$(uname)" == "Darwin" ] ; then
     py_path="/opt/homebrew/bin/python3"
@@ -65,6 +66,10 @@ while test -n "$1" ; do
             gh_password="$2"
             shift 1
             ;;
+        --plugin-dir)
+            plugin_dir="$2"
+            shift 1
+            ;;
     esac
     shift 1
 done
@@ -90,4 +95,4 @@ if [ "$(uname)" == "Darwin" ] ; then
     done
 fi
 
-RUST_LOG=info RUST_BACKTRACE=1 "${binary}" --port "${port}" --pub-url "${pub_url}" --pub-fqdn "${pub_fqdn}" --data-path "${data_path}" --gc-path "${gc_path}" --database "${database}" --py-path "${py_path}" ${first_run}
+RUST_LOG=info RUST_BACKTRACE=1 "${binary}" --port "${port}" --pub-url "${pub_url}" --pub-fqdn "${pub_fqdn}" --data-path "${data_path}" --gc-path "${gc_path}" --database "${database}" --py-path "${py_path}" ${plugin_dir+--plugin-dir} ${plugin_dir:+"${plugin_dir}"} ${first_run}
