@@ -27,7 +27,6 @@ use log::info;
 
 /// Get user by given login
 pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
-
     // FIXME: optimize
     let users = srv.rw.get_all_items("user", "name", "").await;
     let tmp_login = login.to_lowercase();

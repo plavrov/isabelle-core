@@ -27,13 +27,13 @@ use crate::util::crypto::*;
 
 use std::sync::mpsc;
 
-use tokio::runtime::Runtime;
-use std::thread;
 use crate::notif::email::send_email;
+use std::thread;
+use tokio::runtime::Runtime;
 
-use isabelle_plugin_api::api::PluginApi;
 use crate::state::merger::merge_database;
 use crate::state::store::Store;
+use isabelle_plugin_api::api::PluginApi;
 mod handler;
 mod notif;
 mod server;
@@ -84,7 +84,6 @@ lazy_static! {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     // Prepare and read arguments
     let args: Vec<String> = env::args().collect();
     let mut gc_path: String = "".to_string();
@@ -186,57 +185,54 @@ async fn main() -> std::io::Result<()> {
                 db_get_all_items: Box::new(|collection, sort_key, filter| {
                     let runtime = tokio::runtime::Runtime::new().unwrap();
 
-                    runtime.block_on(
-                        async {
-                            let srv_lock = G_STATE.server.lock();
-                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                            srv_mut.rw.get_all_items(collection, sort_key, filter).await
-                        }
-                    )
+                    runtime.block_on(async {
+                        let srv_lock = G_STATE.server.lock();
+                        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                        srv_mut.rw.get_all_items(collection, sort_key, filter).await
+                    })
                 }),
-                db_get_items: Box::new(|collection, id_min, id_max, sort_key, filter, skip, limit| {
-                    let runtime = tokio::runtime::Runtime::new().unwrap();
+                db_get_items: Box::new(
+                    |collection, id_min, id_max, sort_key, filter, skip, limit| {
+                        let runtime = tokio::runtime::Runtime::new().unwrap();
 
-                    runtime.block_on(
-                        async {
+                        runtime.block_on(async {
                             let srv_lock = G_STATE.server.lock();
                             let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                            srv_mut.rw.get_items(collection, id_min, id_max, sort_key, filter, skip, limit).await
-                        }
-                    )
-                }),
+                            srv_mut
+                                .rw
+                                .get_items(
+                                    collection, id_min, id_max, sort_key, filter, skip, limit,
+                                )
+                                .await
+                        })
+                    },
+                ),
                 db_get_item: Box::new(|collection, id| {
                     let runtime = tokio::runtime::Runtime::new().unwrap();
 
-                    runtime.block_on(
-                        async {
-                            let srv_lock = G_STATE.server.lock();
-                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                            srv_mut.rw.get_item(collection, id).await
-                        }
-                    )
+                    runtime.block_on(async {
+                        let srv_lock = G_STATE.server.lock();
+                        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                        srv_mut.rw.get_item(collection, id).await
+                    })
                 }),
                 db_set_item: Box::new(|collection, itm, merge| {
                     let runtime = tokio::runtime::Runtime::new().unwrap();
 
-                    runtime.block_on(
-                        async {
-                            let srv_lock = G_STATE.server.lock();
-                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                            srv_mut.rw.set_item(collection, itm, *merge).await
-                        }
-                    )
+                    runtime.block_on(async {
+                        let srv_lock = G_STATE.server.lock();
+                        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                        srv_mut.rw.set_item(collection, itm, *merge).await
+                    })
                 }),
                 db_del_item: Box::new(|collection, id| {
                     let runtime = tokio::runtime::Runtime::new().unwrap();
 
-                    runtime.block_on(
-                        async {
-                            let srv_lock = G_STATE.server.lock();
-                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                            srv_mut.rw.del_item(collection, id).await
-                        }
-                    )
+                    runtime.block_on(async {
+                        let srv_lock = G_STATE.server.lock();
+                        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                        srv_mut.rw.del_item(collection, id).await
+                    })
                 }),
 
                 /* auth */
@@ -248,28 +244,18 @@ async fn main() -> std::io::Result<()> {
                     let (sender, receiver) = mpsc::channel();
                     thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
-                        sender.send(
-                            rt.block_on(
-                                async {
-                                    check_role(srv_mut, &user, &role).await
-                                }
-                            )
-                        ).unwrap()
+                        sender
+                            .send(rt.block_on(async { check_role(srv_mut, &user, &role).await }))
+                            .unwrap()
                     });
                     receiver.recv().unwrap()
                 }),
 
-                auth_get_new_salt: Box::new(|| {
-                    get_new_salt()
-                }),
+                auth_get_new_salt: Box::new(|| get_new_salt()),
 
-                auth_get_password_hash: Box::new(|pw, salt| {
-                    get_password_hash(pw, salt)
-                }),
+                auth_get_password_hash: Box::new(|pw, salt| get_password_hash(pw, salt)),
 
-                auth_verify_password: Box::new(|pw, hash| {
-                    verify_password(pw, hash)
-                }),
+                auth_verify_password: Box::new(|pw, hash| verify_password(pw, hash)),
 
                 /* globals */
                 globals_get_public_url: Box::new(|| {
@@ -284,29 +270,22 @@ async fn main() -> std::io::Result<()> {
                     let (sender, receiver) = mpsc::channel();
                     thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
-                        sender.send(
-                            rt.block_on(
-                                async {
-                                    srv_mut.rw.get_settings().await
-                                }
-                            )
-                        ).unwrap()
+                        sender
+                            .send(rt.block_on(async { srv_mut.rw.get_settings().await }))
+                            .unwrap()
                     });
                     receiver.recv().unwrap()
                 }),
 
                 /* exposed functions */
-
                 fn_send_email: Box::new(|to, subject, body| {
                     let runtime = tokio::runtime::Runtime::new().unwrap();
 
-                    runtime.block_on(
-                        async {
-                            let srv_lock = G_STATE.server.lock();
-                            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                            send_email(srv_mut, to, subject, body).await
-                        }
-                    )
+                    runtime.block_on(async {
+                        let srv_lock = G_STATE.server.lock();
+                        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+                        send_email(srv_mut, to, subject, body).await
+                    })
                 }),
 
                 fn_init_google: Box::new(|| {
@@ -315,13 +294,9 @@ async fn main() -> std::io::Result<()> {
                     let (sender, receiver) = mpsc::channel();
                     thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
-                        sender.send(
-                            rt.block_on(
-                                async {
-                                    init_google(srv_mut).await
-                                }
-                            )
-                        ).unwrap()
+                        sender
+                            .send(rt.block_on(async { init_google(srv_mut).await }))
+                            .unwrap()
                     });
                     receiver.recv().unwrap()
                 }),
@@ -332,13 +307,11 @@ async fn main() -> std::io::Result<()> {
                     let (sender, receiver) = mpsc::channel();
                     thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
-                        sender.send(
-                            rt.block_on(
-                                async {
-                                    sync_with_google(srv_mut, add, name, date_time).await
-                                }
-                            )
-                        ).unwrap()
+                        sender
+                            .send(rt.block_on(async {
+                                sync_with_google(srv_mut, add, name, date_time).await
+                            }))
+                            .unwrap()
                     });
                     receiver.recv().unwrap()
                 }),
@@ -389,7 +362,9 @@ async fn main() -> std::io::Result<()> {
                 route_register_unprotected_url_post_hook: Box::new(|name, hook| {
                     let srv_lock = G_STATE.server.lock();
                     let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-                    srv_mut.unprotected_url_post_hook.insert(name.to_string(), hook);
+                    srv_mut
+                        .unprotected_url_post_hook
+                        .insert(name.to_string(), hook);
                     return true;
                 }),
 

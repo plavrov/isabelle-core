@@ -34,7 +34,6 @@ use std::fs;
 /// Local storage implementation
 #[derive(Debug, Clone)]
 pub struct StoreLocal {
-
     /// Path to folder
     pub path: String,
 

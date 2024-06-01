@@ -21,12 +21,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-use isabelle_plugin_api::api::*;
-use isabelle_plugin_api::plugin_pool::PluginPool;
 use crate::handler::route::call_collection_read_hook;
 use crate::state::store::Store;
 use crate::state::store_local::*;
 use crate::state::store_mongo::*;
+use isabelle_plugin_api::api::*;
+use isabelle_plugin_api::plugin_pool::PluginPool;
 use std::collections::HashMap;
 
 /// Server data structure
@@ -109,7 +109,6 @@ impl Data {
 
         // Load all collections
         for collection in &collections {
-
             // Load all items and resave them
             let items = self.rw.get_item_ids(collection).await;
             for itm in items {
@@ -120,7 +119,8 @@ impl Data {
                 let mut loaded_item = loaded_item_opt.unwrap();
                 let mut should_be_saved = false;
                 for route in &routes {
-                    if call_collection_read_hook(self, &route.1, collection, &mut loaded_item).await {
+                    if call_collection_read_hook(self, &route.1, collection, &mut loaded_item).await
+                    {
                         should_be_saved = true;
                     }
                 }

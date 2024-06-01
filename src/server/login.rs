@@ -153,8 +153,7 @@ pub async fn login(
         // Verify password/otp
         let pw = itm_real.safe_str("password", "");
         let otp = itm_real.safe_str("otp", "");
-        if (pw != "" && verify_password(&lu.password, &pw)) ||
-           (otp != "" && lu.password == otp) {
+        if (pw != "" && verify_password(&lu.password, &pw)) || (otp != "" && lu.password == otp) {
             // Password matches - log in.
             Identity::login(&req.extensions(), itm_real.safe_str("email", "")).unwrap();
             info!("Logged in as {}", lu.username);

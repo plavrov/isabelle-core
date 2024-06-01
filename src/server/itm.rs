@@ -138,8 +138,14 @@ pub async fn itm_edit(
             for route in routes {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 if parts[0] == mc.collection {
-                    call_item_post_edit_hook(&mut (*srv_mut), &parts[1], &mc.collection, itm.id, true)
-                        .await;
+                    call_item_post_edit_hook(
+                        &mut (*srv_mut),
+                        &parts[1],
+                        &mc.collection,
+                        itm.id,
+                        true,
+                    )
+                    .await;
                 }
             }
         }

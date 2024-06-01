@@ -21,9 +21,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use crate::state::data::*;
 use std::cell::RefCell;
 use std::sync::Arc;
-use crate::state::data::*;
 
 use parking_lot::ReentrantMutex;
 

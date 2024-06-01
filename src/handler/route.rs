@@ -21,19 +21,19 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-use isabelle_plugin_api::api::WebResponse;
+use crate::server::user_control::*;
 use crate::state::store::Store;
 use crate::State;
 use actix_identity::Identity;
 use actix_multipart::Multipart;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
+use futures_util::TryStreamExt;
 use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::process_result::ProcessResult;
+use isabelle_plugin_api::api::WebResponse;
 use log::info;
 use std::collections::HashMap;
-use futures_util::TryStreamExt;
-use crate::server::user_control::*;
 
 /// Convert internal Web response to proper HttpResponse
 fn conv_response(resp: WebResponse) -> HttpResponse {
@@ -162,7 +162,7 @@ pub async fn call_url_route(
     hndl: &str,
     query: &str,
 ) -> HttpResponse {
-    let usr : Option<Item> = get_user(srv, user.id().unwrap()).await;
+    let usr: Option<Item> = get_user(srv, user.id().unwrap()).await;
 
     for hook in &srv.url_hook {
         if hndl == hook.0 {
@@ -213,7 +213,7 @@ pub async fn call_url_unprotected_route(
     hndl: &str,
     query: &str,
 ) -> HttpResponse {
-    let mut usr : Option<Item> = None;
+    let mut usr: Option<Item> = None;
 
     if user.is_none() {
         usr = get_user(srv, user.unwrap().id().unwrap()).await;
@@ -241,7 +241,7 @@ pub async fn call_url_unprotected_post_route(
     query: &str,
     mut payload: Multipart,
 ) -> HttpResponse {
-    let mut usr : Option<Item> = None;
+    let mut usr: Option<Item> = None;
 
     if user.is_none() {
         usr = get_user(&mut srv, user.unwrap().id().unwrap()).await;
@@ -345,8 +345,8 @@ pub async fn call_collection_read_hook(
     data: &mut crate::state::data::Data,
     hndl: &str,
     collection: &str,
-    itm: &mut Item) -> bool {
-
+    itm: &mut Item,
+) -> bool {
     for hook in &data.collection_read_hook {
         if hndl == hook.0 {
             info!("Calling hook {}", hook.0);

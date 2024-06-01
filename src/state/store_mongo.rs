@@ -125,7 +125,6 @@ impl StoreMongo {
 #[async_trait]
 impl Store for StoreMongo {
     async fn connect(&mut self, url: &str, alturl: &str) {
-
         // Preserve parameters
         self.path = url.to_string();
         self.local_path = alturl.to_string();

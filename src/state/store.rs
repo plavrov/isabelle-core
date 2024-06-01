@@ -29,7 +29,6 @@ use std::collections::HashMap;
 /// Store implementation
 #[async_trait]
 pub trait Store {
-
     /// Connect the store to database
     async fn connect(&mut self, addr: &str, altaddr: &str);
 
