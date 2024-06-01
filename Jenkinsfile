@@ -1,4 +1,5 @@
 pipeline {
+  /* Use docker image from tools/build-env folder */
   agent {
     dockerfile {
       filename 'Dockerfile_ubuntu_2304'
@@ -7,6 +8,7 @@ pipeline {
   }
 
   environment {
+    /* Collect versions saved in tools/ folder */
     FULL_VERSION = sh(script: "./tools/get_version.sh full", returnStdout: true).trim()
     SHORT_VERSION = sh(script: "./tools/get_version.sh", returnStdout: true).trim()
   }
@@ -22,13 +24,23 @@ pipeline {
     }
     stage('Perform checks') {
       steps {
+        /* Update Cargo */
         sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo update -p isabelle-dm'
+
+        /* Fail if 'cargo fix' changes anything */
         sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo fix && git diff --exit-code'
+
+        /* Fail if 'cargo fmt' changes anything */
         sh 'env PATH=${HOME}/.cargo/bin:${PATH} cargo fmt && git diff --exit-code'
+
+        /* Fail if tag is not updated with current version */
         sh 'git tag | grep ${SHORT_VERSION}'
+
+        /* Fail if Cargo.toml is not updated with current version */
         sh 'cat Cargo.toml | grep ${SHORT_VERSION}'
       }
     }
+
     stage('Build for all platforms') {
       parallel {
         stage('Build (Linux)') {
@@ -38,8 +50,10 @@ pipeline {
         }
       }
     }
+
     stage('Prepare bundle') {
       stages {
+        /* Right now, we build just for Linux, that's the preferred platform for */
         stage('Prepare artifacts (branch)') {
           steps {
             sh 'mkdir -p build && (rm -rf build/* || true)'
@@ -170,6 +184,7 @@ pipeline {
     }
   }
   post {
+    /* Send notification to Telegram */
     success {
       sh './ttg/ttg_send_notification --env --ignore-bad -- "${JOB_NAME}/${BUILD_NUMBER}: PASSED"'
     }
