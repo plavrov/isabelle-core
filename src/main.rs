@@ -68,6 +68,7 @@ async fn main() -> std::io::Result<()> {
     let mut pub_path: String = "http://localhost:8081".to_string();
     let mut pub_fqdn: String = "localhost".to_string();
     let mut database_name: String = "isabelle".to_string();
+    let mut plugin_dir: String = ".".to_string();
     let mut port: u16 = 8090;
     let mut gc_next = false;
     let mut py_next = false;
@@ -77,6 +78,7 @@ async fn main() -> std::io::Result<()> {
     let mut port_next = false;
     let mut db_url_next = false;
     let mut database_name_next = false;
+    let mut plugin_dir_next = false;
     let mut first_run = false;
 
     for arg in args {
@@ -104,6 +106,9 @@ async fn main() -> std::io::Result<()> {
         } else if database_name_next {
             database_name = arg.parse().unwrap();
             database_name_next = false;
+        } else if plugin_dir_next {
+            plugin_dir = arg.parse().unwrap();
+            plugin_dir_next = false;
         }
 
         if arg == "--gc-path" {
@@ -120,6 +125,8 @@ async fn main() -> std::io::Result<()> {
             db_url_next = true;
         } else if arg == "--database" {
             database_name_next = true;
+        } else if arg == "--plugin-dir" {
+            plugin_dir_next = true;
         } else if arg == "--first-run" {
             first_run = true;
         }
@@ -374,7 +381,7 @@ async fn main() -> std::io::Result<()> {
             info!("URL: {}", (*srv.deref_mut()).public_url);
             {
                 let s = &(*srv.deref_mut());
-                s.plugin_pool.load_plugins(&s.plugin_api, ".");
+                s.plugin_pool.load_plugins(&s.plugin_api, &plugin_dir);
             }
             info!("Init checks");
             (*srv.deref_mut()).init_checks().await;
