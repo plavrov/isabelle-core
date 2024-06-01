@@ -22,3 +22,8 @@ sample-data
 /build
 /*.tar.xz
 /ttg
+
+*.diff
+*.dylib
+/data-*
+tmp.entitlements
