@@ -63,7 +63,7 @@ use log::info;
 use std::env;
 use std::ops::DerefMut;
 
-
+/// Session middleware based on cookies
 fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
         .session_lifecycle(BrowserSession::default())
@@ -78,11 +78,14 @@ fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore>
 }
 
 lazy_static! {
+    /// Global state
     static ref G_STATE : State = State::new();
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
+    // Prepare and read arguments
     let args: Vec<String> = env::args().collect();
     let mut gc_path: String = "".to_string();
     let mut py_path: String = "".to_string();
@@ -155,9 +158,11 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    // Log everything
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
+    // Routes: they must be collected here in order to be set up in Actix
     let mut new_routes: HashMap<String, String> = HashMap::new();
     let mut new_unprotected_routes: HashMap<String, String> = HashMap::new();
 
@@ -165,6 +170,7 @@ async fn main() -> std::io::Result<()> {
         let srv_lock = G_STATE.server.lock();
         let mut srv = srv_lock.borrow_mut();
         {
+            // Put options to internal structures and connect to database
             (*srv.deref_mut()).rw.database_name = database_name.clone();
             (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
             (*srv.deref_mut()).rw.connect(&db_url, &data_path).await;
@@ -174,6 +180,7 @@ async fn main() -> std::io::Result<()> {
             (*srv.deref_mut()).public_url = pub_path.to_string();
             (*srv.deref_mut()).port = port;
 
+            // Prepare plugin API. This is not much efficient at the moment
             (*srv.deref_mut()).plugin_api = PluginApi {
                 /* database */
                 db_get_all_items: Box::new(|collection, sort_key, filter| {
@@ -400,19 +407,25 @@ async fn main() -> std::io::Result<()> {
                     return true;
                 }),
             };
+
+            // Load plugins
             info!("Loading plugins");
             info!("URL: {}", (*srv.deref_mut()).public_url);
             {
                 let s = &(*srv.deref_mut());
                 s.plugin_pool.load_plugins(&s.plugin_api, &plugin_dir);
             }
+
+            // Perform initialization checks, etc.
             info!("Init checks");
             (*srv.deref_mut()).init_checks().await;
 
-            info!("Initializing google!");
+            // Initialize Google Calendar
+            info!("Initialize Google Calendar");
             let res = init_google(&mut (*srv.deref_mut())).await;
             info!("Result: {}", res);
 
+            // Get all extra routes and put them to map
             {
                 let routes = (*srv.deref_mut())
                     .rw
@@ -437,6 +450,8 @@ async fn main() -> std::io::Result<()> {
                     info!("Unprotected route: {} : {}", parts[0], parts[1]);
                 }
             }
+
+            // If it is a first run, merge database.
             if first_run {
                 let m = &mut (*srv.deref_mut());
                 info!("First run");
@@ -445,6 +460,7 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    // If it is first run, don't do anything else
     if first_run {
         return Ok(());
     }
@@ -452,6 +468,7 @@ async fn main() -> std::io::Result<()> {
     let data = Data::new(G_STATE.clone());
     info!("Starting server");
     HttpServer::new(move || {
+        // Set up all generic routes
         let mut app = App::new()
             .app_data(data.clone())
             .wrap(Cors::permissive())
@@ -471,6 +488,7 @@ async fn main() -> std::io::Result<()> {
                 "/setting/gcal_auth_end",
                 web::post().to(setting_gcal_auth_end),
             );
+        // Set up extra protected routes
         for route in &new_routes {
             if route.1 == "post" {
                 app = app.route(route.0, web::post().to(url_route))
@@ -478,6 +496,7 @@ async fn main() -> std::io::Result<()> {
                 app = app.route(route.0, web::get().to(url_route))
             }
         }
+        // Set up extra unprotected routes
         for route in &new_unprotected_routes {
             if route.1 == "post" {
                 app = app.route(route.0, web::post().to(url_unprotected_post_route))

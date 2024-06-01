@@ -27,6 +27,7 @@ use argon2::{
 };
 use rand::Rng;
 
+/// Verify password: the real password, the hash
 pub fn verify_password(pw: &str, pw_hash: &str) -> bool {
     let parsed_hash = PasswordHash::new(&pw_hash);
     Argon2::default()
@@ -34,11 +35,13 @@ pub fn verify_password(pw: &str, pw_hash: &str) -> bool {
         .is_ok()
 }
 
+/// Get new salt
 pub fn get_new_salt() -> String {
     let salt = SaltString::generate(&mut OsRng);
     return salt.to_string();
 }
 
+/// Derive hash from given password and salt
 pub fn get_password_hash(pw: &str, salt: &str) -> String {
     let argon2 = Argon2::default();
 
@@ -48,6 +51,7 @@ pub fn get_password_hash(pw: &str, salt: &str) -> String {
     return password_hash.unwrap().serialize().as_str().to_string();
 }
 
+/// Generate new OTP code
 pub fn get_otp_code() -> String {
     let num = rand::thread_rng().gen_range(100000000..999999999);
     num.to_string()

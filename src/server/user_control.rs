@@ -25,7 +25,10 @@ use crate::state::store::Store;
 use isabelle_dm::data_model::item::Item;
 use log::info;
 
+/// Get user by given login
 pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Option<Item> {
+
+    // FIXME: optimize
     let users = srv.rw.get_all_items("user", "name", "").await;
     let tmp_login = login.to_lowercase();
     info!("Users: {}", users.map.len());
@@ -41,6 +44,7 @@ pub async fn get_user(srv: &mut crate::state::data::Data, login: String) -> Opti
     return None;
 }
 
+/// Check user role
 pub async fn check_role(
     srv: &mut crate::state::data::Data,
     user: &Option<Item>,
@@ -60,6 +64,7 @@ pub async fn check_role(
         .safe_bool(&(role_is.to_owned() + role), false);
 }
 
+/// Clear OTP for all users with given login/email
 pub async fn clear_otp(srv: &mut crate::state::data::Data, login: String) {
     let users = srv.rw.get_all_items("user", "name", "").await;
     let tmp_login = login.to_lowercase();

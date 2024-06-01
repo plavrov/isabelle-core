@@ -32,6 +32,7 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
+/// Sync specific entry with google
 pub async fn sync_with_google(
     srv: &mut crate::state::data::Data,
     add: bool,
@@ -81,6 +82,7 @@ pub async fn sync_with_google(
     info!("Synchronization is done");
 }
 
+/// Initialize Google Calendar
 pub async fn init_google(srv: &mut crate::state::data::Data) -> String {
     let settings = srv.rw.get_settings().await;
     if !settings.safe_bool("sync_google_cal", false)
@@ -126,6 +128,7 @@ pub async fn init_google(srv: &mut crate::state::data::Data) -> String {
     return String::from_utf8(res.stdout).unwrap();
 }
 
+/// Authenticate Google
 pub async fn auth_google(srv: &mut crate::state::data::Data) -> String {
     let settings = srv.rw.get_settings().await;
     if !settings.safe_bool("sync_google_cal", false)
@@ -180,6 +183,7 @@ pub async fn auth_google(srv: &mut crate::state::data::Data) -> String {
     return "running".to_string();
 }
 
+/// Finish Google Authentication
 pub async fn auth_google_end(
     srv: &mut crate::state::data::Data,
     full_query: String,

@@ -39,6 +39,8 @@ use serde_qs;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 
+/// Action that is called on editing items. This function unrolls the
+/// multipart data, all needed hooks, and eventually prepare response.
 pub async fn itm_edit(
     user: Identity,
     data: web::Data<State>,
@@ -64,6 +66,7 @@ pub async fn itm_edit(
             }
         }
     }
+
     /* call auth hooks */
     {
         let routes = srv
@@ -169,7 +172,6 @@ pub async fn itm_edit(
             }
         }
 
-        //write_data(&srv);
         return HttpResponse::Ok().body(
             serde_json::to_string(&ProcessResult {
                 succeeded: true,
@@ -184,6 +186,8 @@ pub async fn itm_edit(
     return HttpResponse::BadRequest().into();
 }
 
+/// Action that is called on removing the item. This function calls
+/// all necessary hooks and actually performs removal.
 pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -> impl Responder {
     let srv_lock = data.server.lock();
     let mut srv = srv_lock.borrow_mut();
@@ -226,10 +230,8 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
             }
         }
 
-        //let coll = srv_mut.itm.get_mut(&mc.collection).unwrap();
         if srv_mut.rw.del_item(&mc.collection, itm.id).await {
             info!("Collection {} element {} removed", mc.collection, itm.id);
-            //write_data(srv.deref_mut());
             return HttpResponse::Ok();
         }
     } else {
@@ -239,6 +241,9 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
     return HttpResponse::BadRequest();
 }
 
+/// Action that is called on any attempt to list database items.
+/// This function invokes all necessary hooks before giving away the list
+/// in form of json array.
 pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) -> HttpResponse {
     let srv_lock = data.server.lock();
     let mut srv = srv_lock.borrow_mut();

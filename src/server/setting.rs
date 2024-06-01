@@ -46,12 +46,13 @@ pub async fn setting_edit(
     let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
+    // Settings can't be edited by non-admins.
     if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
+    // Merge settings from multipart data
     let mut itm = serde_qs::from_str::<Item>(&req.query_string()).unwrap();
-
     while let Ok(Some(mut field)) = payload.try_next().await {
         while let Ok(Some(chunk)) = field.try_next().await {
             let data = chunk;
@@ -66,8 +67,10 @@ pub async fn setting_edit(
     }
 
     info!("Settings edited");
+
+    // Set settings
     srv.rw.set_settings(itm.clone()).await;
-    //write_data(srv.deref_mut());
+
     return HttpResponse::Ok().body(
         serde_json::to_string(&ProcessResult {
             succeeded: true,
@@ -86,11 +89,14 @@ pub async fn setting_list(
     let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
+    // Non-admins can't list settings
     if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
+    // Return settings finally
     let st = srv.rw.get_settings().await.clone();
+
     HttpResponse::Ok()
         .body(serde_json::to_string(&st).unwrap())
         .into()
@@ -105,10 +111,12 @@ pub async fn setting_gcal_auth(
     let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
+    // Non-admins can't authenticate with Google Calendar
     if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
+    // Start authentication
     HttpResponse::Ok().body(auth_google(&mut srv).await).into()
 }
 
@@ -121,10 +129,12 @@ pub async fn setting_gcal_auth_end(
     let mut srv = srv_lock.borrow_mut();
     let usr = get_user(&mut srv, user.id().unwrap()).await;
 
+    // Non-admins can't finish Google Authentication
     if !check_role(&mut srv, &usr, "admin").await {
         return HttpResponse::Forbidden().into();
     }
 
+    // Take authentication data from query
     info!("Auth end");
     #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
     pub struct AuthEndData {
@@ -136,6 +146,7 @@ pub async fn setting_gcal_auth_end(
     let config = Config::new(10, false);
     let data: AuthEndData = config.deserialize_str(&_req.query_string()).unwrap();
 
+    // Finish authentication
     let public_url = srv.public_url.clone();
     HttpResponse::Ok()
         .body(

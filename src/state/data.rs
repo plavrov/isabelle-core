@@ -29,15 +29,34 @@ use crate::state::store_local::*;
 use crate::state::store_mongo::*;
 use std::collections::HashMap;
 
+/// Server data structure
 pub struct Data {
+    /// File-based read/write data, which is useful for initial propagation
+    /// of database.
     pub file_rw: StoreLocal,
+
+    /// Read database access struct.
     pub rw: StoreMongo,
+
+    /// Path to Google Calendar.
     pub gc_path: String,
+
+    /// Path to Python binary
     pub py_path: String,
+
+    /// Path to data directory, which is extremely important for file_rw
     pub data_path: String,
+
+    /// Public URL which is needed for constructing backlinks
     pub public_url: String,
+
+    /// Port at which Core resides.
     pub port: u16,
+
+    /// Plugin control
     pub plugin_pool: PluginPool,
+
+    /// Plugin API instance
     pub plugin_api: PluginApi,
 
     pub item_pre_edit_hook: HashMap<String, IsabelleRouteItemPreEditHook>,
@@ -77,15 +96,21 @@ impl Data {
         }
     }
 
+    /// Check existence of collection
     pub fn has_collection(&mut self, collection: &str) -> bool {
         return self.rw.collections.contains_key(collection);
     }
 
+    /// Early initialization
     pub async fn init_checks(&mut self) {
         let internals = self.rw.get_internals().await;
         let routes = internals.safe_strstr("collection_read_hook", &HashMap::new());
         let collections = self.rw.get_collections().await;
+
+        // Load all collections
         for collection in &collections {
+
+            // Load all items and resave them
             let items = self.rw.get_item_ids(collection).await;
             for itm in items {
                 let loaded_item_opt = self.rw.get_item(collection, itm.0).await;

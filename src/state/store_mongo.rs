@@ -38,16 +38,28 @@ use mongodb::{
 };
 use std::collections::HashMap;
 
+/// Mongo storage implementation
 #[derive(Debug, Clone)]
 pub struct StoreMongo {
+    /// URL to Mongo database
     pub path: String,
+
+    /// Local settings path (like for Local storage)
     pub local_path: String,
+
+    /// Collection hash map
     pub collections: HashMap<String, u64>,
+
+    /// Items map
     pub items: HashMap<u64, HashMap<u64, bool>>,
+
+    /// Item counters
     pub items_count: HashMap<u64, u64>,
 
+    /// Actual Mongo client
     pub client: Option<mongodb::Client>,
 
+    /// Database name
     pub database_name: String,
 }
 
@@ -113,10 +125,15 @@ impl StoreMongo {
 #[async_trait]
 impl Store for StoreMongo {
     async fn connect(&mut self, url: &str, alturl: &str) {
+
+        // Preserve parameters
         self.path = url.to_string();
         self.local_path = alturl.to_string();
+
+        // Connect
         let res = self.do_conn().await;
         if res {
+            // If successful, create all collections
             info!("Connected {} / {}!", url, self.database_name);
             let internals = self.get_internals().await;
             let collections = internals.safe_strstr("collections", &HashMap::new());
@@ -138,7 +155,7 @@ impl Store for StoreMongo {
                 let filter = doc! {}; // An empty filter matches all documents
                 let options = FindOptions::default();
 
-                // Find documents in the collection
+                // Find documents in the collection and fill hash map/counter
                 let mut cursor = coll.find(filter, options).await.unwrap();
                 let mut count = 0;
                 while let Some(doc) = cursor.try_next().await.unwrap() {

@@ -31,11 +31,20 @@ use log::{error, info};
 use std::collections::HashMap;
 use std::fs;
 
+/// Local storage implementation
 #[derive(Debug, Clone)]
 pub struct StoreLocal {
+
+    /// Path to folder
     pub path: String,
+
+    /// Collection hash map
     pub collections: HashMap<String, u64>,
+
+    /// All items
     pub items: HashMap<u64, HashMap<u64, bool>>,
+
+    /// Item counters
     pub items_count: HashMap<u64, u64>,
 }
 

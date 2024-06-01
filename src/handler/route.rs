@@ -35,6 +35,7 @@ use std::collections::HashMap;
 use futures_util::TryStreamExt;
 use crate::server::user_control::*;
 
+/// Convert internal Web response to proper HttpResponse
 fn conv_response(resp: WebResponse) -> HttpResponse {
     match resp {
         WebResponse::Ok => {
@@ -64,6 +65,7 @@ fn conv_response(resp: WebResponse) -> HttpResponse {
     }
 }
 
+/// Call hook associated with pre-editing of item data.
 pub async fn call_item_pre_edit_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
@@ -91,6 +93,7 @@ pub async fn call_item_pre_edit_hook(
     }
 }
 
+/// Call hook associated with post-editing of item data.
 pub async fn call_item_post_edit_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
@@ -110,6 +113,7 @@ pub async fn call_item_post_edit_hook(
     }
 }
 
+/// Call item action authorization hook that can prohibit editing or removal
 pub async fn call_itm_auth_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
@@ -131,6 +135,7 @@ pub async fn call_itm_auth_hook(
     }
 }
 
+/// Call list filter hook, allowing for hiding specific list items
 pub async fn call_itm_list_filter_hook(
     srv: &mut crate::state::data::Data,
     hndl: &str,
@@ -150,13 +155,14 @@ pub async fn call_itm_list_filter_hook(
     }
 }
 
+/// Call HTTP url hook, allowing for responses to web requests.
 pub async fn call_url_route(
     srv: &mut crate::state::data::Data,
     user: Identity,
     hndl: &str,
     query: &str,
 ) -> HttpResponse {
-    let usr : Option<Item> =get_user(srv, user.id().unwrap()).await;
+    let usr : Option<Item> = get_user(srv, user.id().unwrap()).await;
 
     for hook in &srv.url_hook {
         if hndl == hook.0 {
@@ -172,6 +178,8 @@ pub async fn call_url_route(
     }
 }
 
+/// Call HTTP URL hooks. This function checks actual location from request
+/// first.
 pub async fn url_route(
     user: Identity,
     data: actix_web::web::Data<State>,
@@ -198,6 +206,7 @@ pub async fn url_route(
     HttpResponse::NotFound().into()
 }
 
+/// Call URL route that doesn't require authenticated user.
 pub async fn call_url_unprotected_route(
     srv: &mut crate::state::data::Data,
     user: Option<Identity>,
@@ -224,6 +233,7 @@ pub async fn call_url_unprotected_route(
     }
 }
 
+/// Call URL POST route that doesn't require authenticated user.
 pub async fn call_url_unprotected_post_route(
     mut srv: &mut crate::state::data::Data,
     user: Option<Identity>,
@@ -265,6 +275,8 @@ pub async fn call_url_unprotected_post_route(
     }
 }
 
+/// Call URL route that doesn't require authenticated user.
+/// This function also checks the actual location in the request.
 pub async fn url_unprotected_route(
     user: Option<Identity>,
     data: actix_web::web::Data<State>,
@@ -291,6 +303,8 @@ pub async fn url_unprotected_route(
     HttpResponse::NotFound().into()
 }
 
+/// Call URL POST route that doesn't require authenticated user.
+/// This function also checks the actual location in the request.
 pub async fn url_unprotected_post_route(
     user: Option<Identity>,
     data: actix_web::web::Data<State>,
@@ -326,6 +340,7 @@ pub async fn url_unprotected_post_route(
     HttpResponse::NotFound().into()
 }
 
+/// Call collection read hook that can actually filter out particular item
 pub async fn call_collection_read_hook(
     data: &mut crate::state::data::Data,
     hndl: &str,
@@ -345,6 +360,7 @@ pub async fn call_collection_read_hook(
     }
 }
 
+/// Call One-Time Password hook
 pub async fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
     for hook in &srv.call_otp_hook {
         if hndl == hook.0 {

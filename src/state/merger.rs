@@ -24,6 +24,8 @@
 use crate::state::store::*;
 use log::info;
 
+/// Merge collections from one store to another.
+/// This is done only once, so no need to optimize too much.
 pub async fn merge_database(st1: &mut dyn Store, st2: &mut dyn Store) {
     let collections = st1.get_collections().await;
     for collection in &collections {

@@ -32,9 +32,7 @@ pub struct State {
 }
 
 impl Clone for State {
-    // Define the clone method
     fn clone(&self) -> Self {
-        // Create a new instance with the same value
         State {
             server: self.server.clone(),
         }

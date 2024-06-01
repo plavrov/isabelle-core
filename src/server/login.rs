@@ -37,6 +37,7 @@ use isabelle_dm::transfer_model::login_user::LoginUser;
 use log::{error, info};
 use std::collections::HashMap;
 
+/// Generate one-time password for the user.
 pub async fn gen_otp(
     _user: Option<Identity>,
     data: web::Data<State>,
@@ -94,6 +95,8 @@ pub async fn gen_otp(
     });
 }
 
+/// Log in into the system using username/password pair provided inside the
+/// POST data.
 pub async fn login(
     _user: Option<Identity>,
     data: web::Data<State>,
@@ -105,6 +108,7 @@ pub async fn login(
         password: "".to_string(),
     };
 
+    // Take the username/password from POST data
     while let Ok(Some(mut field)) = payload.try_next().await {
         while let Ok(Some(chunk)) = field.try_next().await {
             let data = chunk;
@@ -120,9 +124,12 @@ pub async fn login(
     let srv_lock = data.server.lock();
     let mut srv = srv_lock.borrow_mut();
     info!("User name: {}", lu.username.clone());
+
+    // Find the user in the database
     let usr = get_user(&mut srv, lu.username.clone()).await;
 
     if usr == None {
+        // Not found - error out.
         info!("No user {} found, couldn't log in", lu.username.clone());
         return web::Json(ProcessResult {
             succeeded: false,
@@ -131,8 +138,10 @@ pub async fn login(
     } else {
         let itm_real = usr.unwrap();
 
+        // Clear the OTP data - it is no longer needed
         clear_otp(&mut srv, lu.username.clone()).await;
 
+        // Don't let inactive users log in.
         if itm_real.safe_bool("role_is_active", false) == false {
             info!("User {} is inactive, couldn't log in", lu.username.clone());
             return web::Json(ProcessResult {
@@ -140,12 +149,17 @@ pub async fn login(
                 error: "User is inactive".to_string(),
             });
         }
+
+        // Verify password/otp
         let pw = itm_real.safe_str("password", "");
         let otp = itm_real.safe_str("otp", "");
-        if (pw != "" && verify_password(&lu.password, &pw)) || (otp != "" && lu.password == otp) {
+        if (pw != "" && verify_password(&lu.password, &pw)) ||
+           (otp != "" && lu.password == otp) {
+            // Password matches - log in.
             Identity::login(&req.extensions(), itm_real.safe_str("email", "")).unwrap();
             info!("Logged in as {}", lu.username);
         } else {
+            // Password doesn't match - error out.
             error!("Invalid password for {}", lu.username);
             return web::Json(ProcessResult {
                 succeeded: false,
@@ -160,6 +174,7 @@ pub async fn login(
     });
 }
 
+/// Log the user out.
 pub async fn logout(
     _user: Identity,
     _data: web::Data<State>,
@@ -171,6 +186,8 @@ pub async fn logout(
     HttpResponse::Ok()
 }
 
+/// Check if the user is logged in. Additionally, this function returns a json
+/// with a few more basic site settings and user roles.
 pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> impl Responder {
     let srv_lock = data.server.lock();
     let mut srv = srv_lock.borrow_mut();
@@ -232,6 +249,7 @@ pub async fn is_logged_in(_user: Option<Identity>, data: web::Data<State>) -> im
         return web::Json(user);
     }
 
+    // FIXME: optimize check
     let role_is = srv
         .rw
         .get_internals()
