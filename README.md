@@ -27,8 +27,9 @@ cargo build
 
 ## Running
 
+Use `run.sh` script:
 ```
-RUST_LOG=info ./target/debug/isabelle-core --port 8090 --pub-url http://localhost:8081 --data-path sample-data --gc-path isabelle-gc --py-path $(which python3)
+./run.sh
 ```
 
 ## License
