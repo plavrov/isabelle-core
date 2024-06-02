@@ -46,6 +46,10 @@ echo $(get_hash) > hash
 # Get the top script to run the binary
 cp ${TOP_DIR}/run.sh ./
 
+if [ "$(uname)" != "Darwin" ] ; then
+    patchelf --set-rpath '$ORIGIN' isabelle-core
+fi
+
 # Save the binary, hash and script to out.tar.xz
 tar cJvf out.tar.xz isabelle-core hash run.sh
 
