@@ -61,7 +61,8 @@ fn conv_response(resp: WebResponse) -> HttpResponse {
         }
         WebResponse::Forbidden => {
             return HttpResponse::Forbidden().into();
-        }
+        },
+        WebResponse::NotImplemented => todo!()
     }
 }
 
@@ -76,10 +77,11 @@ pub async fn call_item_pre_edit_hook(
     del: bool,
     merge: bool,
 ) -> ProcessResult {
-    for hook in &srv.item_pre_edit_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return hook.1(&srv.plugin_api, user, collection, old_itm, itm, del, merge);
+    for plugin in &mut srv.plugin_pool.plugins {
+        let r = plugin.item_pre_edit_hook(&srv.plugin_api, hndl, user,
+            collection, old_itm.clone(), itm, del, merge);
+        if !r.succeeded && r.error != "not implemented" {
+            return r;
         }
     }
 
@@ -101,11 +103,9 @@ pub async fn call_item_post_edit_hook(
     id: u64,
     del: bool,
 ) {
-    for hook in &srv.item_post_edit_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return hook.1(&srv.plugin_api, collection, id, del);
-        }
+    for plugin in &mut srv.plugin_pool.plugins {
+        plugin.item_post_edit_hook(&srv.plugin_api, hndl, collection,
+            id, del);
     }
 
     match hndl {
@@ -123,11 +123,9 @@ pub async fn call_itm_auth_hook(
     new_item: Option<Item>,
     del: bool,
 ) -> bool {
-    for hook in &srv.item_auth_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return hook.1(&srv.plugin_api, user, collection, id, new_item, del);
-        }
+    for plugin in &mut srv.plugin_pool.plugins {
+        plugin.item_auth_hook(&srv.plugin_api, hndl, user,
+            collection, id, new_item.clone(), del);
     }
 
     match hndl {
@@ -144,12 +142,11 @@ pub async fn call_itm_list_filter_hook(
     context: &str,
     map: &mut HashMap<u64, Item>,
 ) {
-    for hook in &srv.item_list_filter_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return hook.1(&srv.plugin_api, user, collection, context, map);
-        }
+    for plugin in &mut srv.plugin_pool.plugins {
+        plugin.item_list_filter_hook(&srv.plugin_api, hndl, user,
+            collection, context, map);
     }
+
     match hndl {
         &_ => {}
     }
@@ -164,10 +161,15 @@ pub async fn call_url_route(
 ) -> HttpResponse {
     let usr: Option<Item> = get_user(srv, user.id().unwrap()).await;
 
-    for hook in &srv.url_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return conv_response(hook.1(&srv.plugin_api, &usr, query));
+    for plugin in &mut srv.plugin_pool.plugins {
+        let wr = plugin.route_url_hook(&srv.plugin_api, hndl, &usr, query);
+        match wr {
+            WebResponse::NotImplemented => {
+                continue;
+            }
+            _ => {
+                return conv_response(wr);
+            }
         }
     }
 
@@ -219,10 +221,15 @@ pub async fn call_url_unprotected_route(
         usr = get_user(srv, user.unwrap().id().unwrap()).await;
     }
 
-    for hook in &srv.unprotected_url_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return conv_response(hook.1(&srv.plugin_api, &usr, query));
+    for plugin in &mut srv.plugin_pool.plugins {
+        let wr = plugin.route_unprotected_url_hook(&srv.plugin_api, hndl, &usr, query);
+        match wr {
+            WebResponse::NotImplemented => {
+                continue;
+            }
+            _ => {
+                return conv_response(wr);
+            }
         }
     }
 
@@ -261,10 +268,16 @@ pub async fn call_url_unprotected_post_route(
         }
     }
 
-    for hook in &srv.unprotected_url_post_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return conv_response(hook.1(&srv.plugin_api, &usr, query, &post_itm));
+    for plugin in &mut srv.plugin_pool.plugins {
+        let wr = plugin.route_unprotected_url_post_hook(&srv.plugin_api,
+            hndl, &usr, query, &post_itm);
+        match wr {
+            WebResponse::NotImplemented => {
+                continue;
+            }
+            _ => {
+                return conv_response(wr);
+            }
         }
     }
 
@@ -347,12 +360,14 @@ pub async fn call_collection_read_hook(
     collection: &str,
     itm: &mut Item,
 ) -> bool {
-    for hook in &data.collection_read_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return hook.1(&data.plugin_api, collection, itm);
+    for plugin in &mut data.plugin_pool.plugins {
+        info!("Call collection read hook {}", hndl);
+        if plugin.route_collection_read_hook(&data.plugin_api,
+            hndl, collection, itm) {
+            return true;
         }
     }
+
     match hndl {
         _ => {
             return false;
@@ -362,12 +377,11 @@ pub async fn call_collection_read_hook(
 
 /// Call One-Time Password hook
 pub async fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
-    for hook in &srv.call_otp_hook {
-        if hndl == hook.0 {
-            info!("Calling hook {}", hook.0);
-            return hook.1(&srv.plugin_api, &itm);
-        }
+    for plugin in &mut srv.plugin_pool.plugins {
+        plugin.route_call_otp_hook(&srv.plugin_api,
+            hndl, &itm);
     }
+
     match hndl {
         _ => {}
     }

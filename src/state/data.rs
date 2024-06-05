@@ -21,6 +21,17 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use crate::sync_with_google;
+use crate::init_google;
+use crate::send_email;
+use crate::verify_password;
+use crate::get_password_hash;
+use crate::get_new_salt;
+use crate::check_role;
+use std::sync::mpsc;
+use isabelle_dm::data_model::item::Item;
+use crate::G_STATE;
+use isabelle_dm::data_model::list_result::ListResult;
 use crate::handler::route::call_collection_read_hook;
 use crate::state::store::Store;
 use crate::state::store_local::*;
@@ -28,6 +39,155 @@ use crate::state::store_mongo::*;
 use isabelle_plugin_api::api::*;
 use isabelle_plugin_api::plugin_pool::PluginPool;
 use std::collections::HashMap;
+use std::thread;
+use tokio::runtime::Runtime;
+
+struct IsabellePluginApi {
+}
+
+unsafe impl Send for IsabellePluginApi {
+
+}
+
+impl PluginApi for IsabellePluginApi {
+    fn db_get_all_items(&self, collection: &str, sort_key: &str, filter: &str)
+        -> ListResult {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        runtime.block_on(async {
+            let srv_lock = G_STATE.server.lock();
+            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+            srv_mut.rw.get_all_items(collection, sort_key, filter).await
+        })
+    }
+
+    fn db_get_items(&self, collection: &str,
+        id_min: u64,
+        id_max: u64,
+        sort_key: &str,
+        filter: &str,
+        skip: u64,
+        limit: u64) -> ListResult {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        runtime.block_on(async {
+            let srv_lock = G_STATE.server.lock();
+            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+            srv_mut
+                .rw
+                .get_items(
+                    collection, id_min, id_max, sort_key, filter, skip, limit,
+                )
+                .await
+        })
+    }
+    fn db_get_item(&self, collection: &str, id: u64) -> Option<Item> {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        runtime.block_on(async {
+            let srv_lock = G_STATE.server.lock();
+            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+            srv_mut.rw.get_item(collection, id).await
+        })
+    }
+    fn db_set_item(&self, collection: &str, itm: &Item, merge: bool) {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        runtime.block_on(async {
+            let srv_lock = G_STATE.server.lock();
+            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+            srv_mut.rw.set_item(collection, itm, merge).await
+        })
+    }
+    fn db_del_item(&self, collection: &str, id: u64) -> bool {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        runtime.block_on(async {
+            let srv_lock = G_STATE.server.lock();
+            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+            srv_mut.rw.del_item(collection, id).await
+        })
+    }
+
+    fn globals_get_public_url(&self) -> String {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        srv_mut.public_url.clone()
+    }
+    fn global_get_settings(&self) -> Item {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async { srv_mut.rw.get_settings().await }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
+    }
+
+    fn auth_check_role(&self, itm: &Option<Item>, role: &str) -> bool {
+        let user = itm.clone();
+        let role = role.to_string();
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async { check_role(srv_mut, &user, &role).await }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
+    }
+    fn auth_get_new_salt(&self) -> String {
+        get_new_salt()
+    }
+    fn auth_get_password_hash(&self, pw: &str, salt: &str) -> String {
+        get_password_hash(pw, salt)
+    }
+    fn auth_verify_password(&self, pw: &str, pw_hash: &str) -> bool {
+        verify_password(pw, pw_hash)
+    }
+
+    fn fn_send_email(&self, to: &str, subject: &str, body: &str) {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        runtime.block_on(async {
+            let srv_lock = G_STATE.server.lock();
+            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+            send_email(srv_mut, to, subject, body).await
+        })
+    }
+    fn fn_init_google(&self) -> String {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async { init_google(srv_mut).await }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
+    }
+    fn fn_sync_with_google(&self, add: bool, name: String, date_time: String) {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async {
+                    sync_with_google(srv_mut, add, name, date_time).await
+                }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
+    }
+}
+
 
 /// Server data structure
 pub struct Data {
@@ -57,17 +217,7 @@ pub struct Data {
     pub plugin_pool: PluginPool,
 
     /// Plugin API instance
-    pub plugin_api: PluginApi,
-
-    pub item_pre_edit_hook: HashMap<String, IsabelleRouteItemPreEditHook>,
-    pub item_post_edit_hook: HashMap<String, IsabelleRouteItemPostEditHook>,
-    pub item_auth_hook: HashMap<String, IsabelleRouteItemAuthHook>,
-    pub item_list_filter_hook: HashMap<String, IsabelleRouteItemListFilterHook>,
-    pub url_hook: HashMap<String, IsabelleRouteUrlHook>,
-    pub unprotected_url_hook: HashMap<String, IsabelleRouteUnprotectedUrlHook>,
-    pub unprotected_url_post_hook: HashMap<String, IsabelleRouteUnprotectedUrlPostHook>,
-    pub collection_read_hook: HashMap<String, IsabelleRouteCollectionReadHook>,
-    pub call_otp_hook: HashMap<String, IsabelleRouteCallOtpHook>,
+    pub plugin_api: Box<dyn PluginApi>,
 }
 
 impl Data {
@@ -81,18 +231,8 @@ impl Data {
             data_path: "".to_string(),
             public_url: "".to_string(),
             port: 8090,
-            plugin_pool: PluginPool {},
-            plugin_api: PluginApi::new(),
-
-            item_pre_edit_hook: HashMap::new(),
-            item_post_edit_hook: HashMap::new(),
-            item_auth_hook: HashMap::new(),
-            item_list_filter_hook: HashMap::new(),
-            url_hook: HashMap::new(),
-            unprotected_url_hook: HashMap::new(),
-            unprotected_url_post_hook: HashMap::new(),
-            collection_read_hook: HashMap::new(),
-            call_otp_hook: HashMap::new(),
+            plugin_pool: PluginPool { plugins: Vec::new() },
+            plugin_api: Box::new(IsabellePluginApi { }),
         }
     }
 
