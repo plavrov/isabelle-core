@@ -23,8 +23,8 @@
  */
 #[macro_use]
 extern crate lazy_static;
-use isabelle_dm::data_model::list_result::ListResult;
 use crate::util::crypto::*;
+use isabelle_dm::data_model::list_result::ListResult;
 
 use std::sync::mpsc;
 

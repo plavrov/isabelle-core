@@ -61,8 +61,8 @@ fn conv_response(resp: WebResponse) -> HttpResponse {
         }
         WebResponse::Forbidden => {
             return HttpResponse::Forbidden().into();
-        },
-        WebResponse::NotImplemented => todo!()
+        }
+        WebResponse::NotImplemented => todo!(),
     }
 }
 
@@ -78,8 +78,16 @@ pub async fn call_item_pre_edit_hook(
     merge: bool,
 ) -> ProcessResult {
     for plugin in &mut srv.plugin_pool.plugins {
-        let r = plugin.item_pre_edit_hook(&srv.plugin_api, hndl, user,
-            collection, old_itm.clone(), itm, del, merge);
+        let r = plugin.item_pre_edit_hook(
+            &srv.plugin_api,
+            hndl,
+            user,
+            collection,
+            old_itm.clone(),
+            itm,
+            del,
+            merge,
+        );
         if !r.succeeded && r.error != "not implemented" {
             return r;
         }
@@ -104,8 +112,7 @@ pub async fn call_item_post_edit_hook(
     del: bool,
 ) {
     for plugin in &mut srv.plugin_pool.plugins {
-        plugin.item_post_edit_hook(&srv.plugin_api, hndl, collection,
-            id, del);
+        plugin.item_post_edit_hook(&srv.plugin_api, hndl, collection, id, del);
     }
 
     match hndl {
@@ -124,8 +131,15 @@ pub async fn call_itm_auth_hook(
     del: bool,
 ) -> bool {
     for plugin in &mut srv.plugin_pool.plugins {
-        plugin.item_auth_hook(&srv.plugin_api, hndl, user,
-            collection, id, new_item.clone(), del);
+        plugin.item_auth_hook(
+            &srv.plugin_api,
+            hndl,
+            user,
+            collection,
+            id,
+            new_item.clone(),
+            del,
+        );
     }
 
     match hndl {
@@ -143,8 +157,7 @@ pub async fn call_itm_list_filter_hook(
     map: &mut HashMap<u64, Item>,
 ) {
     for plugin in &mut srv.plugin_pool.plugins {
-        plugin.item_list_filter_hook(&srv.plugin_api, hndl, user,
-            collection, context, map);
+        plugin.item_list_filter_hook(&srv.plugin_api, hndl, user, collection, context, map);
     }
 
     match hndl {
@@ -269,8 +282,8 @@ pub async fn call_url_unprotected_post_route(
     }
 
     for plugin in &mut srv.plugin_pool.plugins {
-        let wr = plugin.route_unprotected_url_post_hook(&srv.plugin_api,
-            hndl, &usr, query, &post_itm);
+        let wr =
+            plugin.route_unprotected_url_post_hook(&srv.plugin_api, hndl, &usr, query, &post_itm);
         match wr {
             WebResponse::NotImplemented => {
                 continue;
@@ -362,8 +375,7 @@ pub async fn call_collection_read_hook(
 ) -> bool {
     for plugin in &mut data.plugin_pool.plugins {
         info!("Call collection read hook {}", hndl);
-        if plugin.collection_read_hook(&data.plugin_api,
-            hndl, collection, itm) {
+        if plugin.collection_read_hook(&data.plugin_api, hndl, collection, itm) {
             return true;
         }
     }
@@ -378,8 +390,7 @@ pub async fn call_collection_read_hook(
 /// Call One-Time Password hook
 pub async fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
     for plugin in &mut srv.plugin_pool.plugins {
-        plugin.call_otp_hook(&srv.plugin_api,
-            hndl, &itm);
+        plugin.call_otp_hook(&srv.plugin_api, hndl, &itm);
     }
 
     match hndl {

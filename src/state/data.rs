@@ -21,37 +21,33 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-use crate::sync_with_google;
+use crate::check_role;
+use crate::get_new_salt;
+use crate::get_password_hash;
+use crate::handler::route::call_collection_read_hook;
 use crate::init_google;
 use crate::send_email;
-use crate::verify_password;
-use crate::get_password_hash;
-use crate::get_new_salt;
-use crate::check_role;
-use std::sync::mpsc;
-use isabelle_dm::data_model::item::Item;
-use crate::G_STATE;
-use isabelle_dm::data_model::list_result::ListResult;
-use crate::handler::route::call_collection_read_hook;
 use crate::state::store::Store;
 use crate::state::store_local::*;
 use crate::state::store_mongo::*;
+use crate::sync_with_google;
+use crate::verify_password;
+use crate::G_STATE;
+use isabelle_dm::data_model::item::Item;
+use isabelle_dm::data_model::list_result::ListResult;
 use isabelle_plugin_api::api::*;
 use isabelle_plugin_api::plugin_pool::PluginPool;
 use std::collections::HashMap;
+use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
 
-struct IsabellePluginApi {
-}
+struct IsabellePluginApi {}
 
-unsafe impl Send for IsabellePluginApi {
-
-}
+unsafe impl Send for IsabellePluginApi {}
 
 impl PluginApi for IsabellePluginApi {
-    fn db_get_all_items(&self, collection: &str, sort_key: &str, filter: &str)
-        -> ListResult {
+    fn db_get_all_items(&self, collection: &str, sort_key: &str, filter: &str) -> ListResult {
         let runtime = tokio::runtime::Runtime::new().unwrap();
 
         runtime.block_on(async {
@@ -61,13 +57,16 @@ impl PluginApi for IsabellePluginApi {
         })
     }
 
-    fn db_get_items(&self, collection: &str,
+    fn db_get_items(
+        &self,
+        collection: &str,
         id_min: u64,
         id_max: u64,
         sort_key: &str,
         filter: &str,
         skip: u64,
-        limit: u64) -> ListResult {
+        limit: u64,
+    ) -> ListResult {
         let runtime = tokio::runtime::Runtime::new().unwrap();
 
         runtime.block_on(async {
@@ -75,9 +74,7 @@ impl PluginApi for IsabellePluginApi {
             let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
             srv_mut
                 .rw
-                .get_items(
-                    collection, id_min, id_max, sort_key, filter, skip, limit,
-                )
+                .get_items(collection, id_min, id_max, sort_key, filter, skip, limit)
                 .await
         })
     }
@@ -179,15 +176,12 @@ impl PluginApi for IsabellePluginApi {
         thread::spawn(move || {
             let rt = Runtime::new().unwrap();
             sender
-                .send(rt.block_on(async {
-                    sync_with_google(srv_mut, add, name, date_time).await
-                }))
+                .send(rt.block_on(async { sync_with_google(srv_mut, add, name, date_time).await }))
                 .unwrap()
         });
         receiver.recv().unwrap()
     }
 }
-
 
 /// Server data structure
 pub struct Data {
@@ -231,8 +225,10 @@ impl Data {
             data_path: "".to_string(),
             public_url: "".to_string(),
             port: 8090,
-            plugin_pool: PluginPool { plugins: Vec::new() },
-            plugin_api: Box::new(IsabellePluginApi { }),
+            plugin_pool: PluginPool {
+                plugins: Vec::new(),
+            },
+            plugin_api: Box::new(IsabellePluginApi {}),
         }
     }
 
