@@ -25,12 +25,7 @@
 extern crate lazy_static;
 use crate::util::crypto::*;
 
-
-
-
 use crate::notif::email::send_email;
-
-
 
 use crate::state::merger::merge_database;
 use crate::state::store::Store;
