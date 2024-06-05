@@ -362,7 +362,7 @@ pub async fn call_collection_read_hook(
 ) -> bool {
     for plugin in &mut data.plugin_pool.plugins {
         info!("Call collection read hook {}", hndl);
-        if plugin.route_collection_read_hook(&data.plugin_api,
+        if plugin.collection_read_hook(&data.plugin_api,
             hndl, collection, itm) {
             return true;
         }
@@ -378,7 +378,7 @@ pub async fn call_collection_read_hook(
 /// Call One-Time Password hook
 pub async fn call_otp_hook(srv: &mut crate::state::data::Data, hndl: &str, itm: Item) {
     for plugin in &mut srv.plugin_pool.plugins {
-        plugin.route_call_otp_hook(&srv.plugin_api,
+        plugin.call_otp_hook(&srv.plugin_api,
             hndl, &itm);
     }
 

@@ -114,7 +114,7 @@ impl PluginApi for IsabellePluginApi {
         let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
         srv_mut.public_url.clone()
     }
-    fn global_get_settings(&self) -> Item {
+    fn globals_get_settings(&self) -> Item {
         let srv_lock = G_STATE.server.lock();
         let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
         let (sender, receiver) = mpsc::channel();
