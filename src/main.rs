@@ -181,6 +181,8 @@ async fn main() -> std::io::Result<()> {
             {
                 let s = &mut (*srv.deref_mut());
                 s.plugin_pool.load_plugins(&plugin_dir);
+                info!("Ping plugins");
+                s.plugin_pool.ping_plugins();
             }
 
             // Perform initialization checks, etc.
