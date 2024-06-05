@@ -24,17 +24,17 @@
 #[macro_use]
 extern crate lazy_static;
 use crate::util::crypto::*;
-use isabelle_dm::data_model::list_result::ListResult;
 
-use std::sync::mpsc;
+
+
 
 use crate::notif::email::send_email;
-use std::thread;
-use tokio::runtime::Runtime;
+
+
 
 use crate::state::merger::merge_database;
 use crate::state::store::Store;
-use isabelle_plugin_api::api::PluginApi;
+
 mod handler;
 mod notif;
 mod server;
