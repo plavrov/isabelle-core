@@ -230,7 +230,7 @@ pub async fn call_url_unprotected_route(
 ) -> HttpResponse {
     let mut usr: Option<Item> = None;
 
-    if user.is_none() {
+    if !user.is_none() {
         usr = get_user(srv, user.unwrap().id().unwrap()).await;
     }
 
@@ -263,7 +263,7 @@ pub async fn call_url_unprotected_post_route(
 ) -> HttpResponse {
     let mut usr: Option<Item> = None;
 
-    if user.is_none() {
+    if !user.is_none() {
         usr = get_user(&mut srv, user.unwrap().id().unwrap()).await;
     }
 
