@@ -149,14 +149,21 @@ impl PluginApi for IsabellePluginApi {
     }
 
     fn fn_send_email(&self, to: &str, subject: &str, body: &str) {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-
-        runtime.block_on(async {
-            let srv_lock = G_STATE.server.lock();
-            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-            send_email(srv_mut, to, subject, body).await
-        })
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        let to = to.to_string();
+        let subject = subject.to_string();
+        let body = body.to_string();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async { send_email(srv_mut, &to, &subject, &body).await }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
     }
+
     fn fn_init_google(&self) -> String {
         let srv_lock = G_STATE.server.lock();
         let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
