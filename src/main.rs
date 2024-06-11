@@ -37,6 +37,7 @@ mod state;
 mod util;
 
 use crate::handler::route::url_route;
+use crate::handler::route::url_post_route;
 use crate::handler::route::url_unprotected_post_route;
 use crate::handler::route::url_unprotected_route;
 use crate::notif::gcal::*;
@@ -260,7 +261,7 @@ async fn main() -> std::io::Result<()> {
         // Set up extra protected routes
         for route in &new_routes {
             if route.1 == "post" {
-                app = app.route(route.0, web::post().to(url_route))
+                app = app.route(route.0, web::post().to(url_post_route))
             } else if route.1 == "get" {
                 app = app.route(route.0, web::get().to(url_route))
             }

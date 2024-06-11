@@ -221,6 +221,89 @@ pub async fn url_route(
     HttpResponse::NotFound().into()
 }
 
+/// Call URL POST route that requires authenticated user.
+pub async fn call_url_post_route(
+    mut srv: &mut crate::state::data::Data,
+    user: Identity,
+    hndl: &str,
+    query: &str,
+    mut payload: Multipart,
+) -> HttpResponse {
+    let usr: Option<Item>;
+
+    usr = get_user(&mut srv, user.id().unwrap()).await;
+
+    let mut post_itm = Item::new();
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        while let Ok(Some(chunk)) = field.try_next().await {
+            let data = chunk;
+
+            if field.name() == "item" {
+                let v = &data.to_vec();
+                let strv = std::str::from_utf8(v).unwrap_or("{}");
+                let new_itm: Item = serde_json::from_str(strv).unwrap_or(Item::new());
+                post_itm.merge(&new_itm);
+            }
+        }
+    }
+
+    for plugin in &mut srv.plugin_pool.plugins {
+        let wr =
+            plugin.route_url_post_hook(&srv.plugin_api, hndl, &usr, query, &post_itm);
+        match wr {
+            WebResponse::NotImplemented => {
+                continue;
+            }
+            _ => {
+                return conv_response(wr);
+            }
+        }
+    }
+
+    match hndl {
+        &_ => {
+            return HttpResponse::NotFound().into();
+        }
+    }
+}
+
+/// Call URL POST route that requires authenticated user.
+/// This function also checks the actual location in the request.
+pub async fn url_post_route(
+    user: Identity,
+    data: actix_web::web::Data<State>,
+    req: HttpRequest,
+    payload: Multipart,
+) -> HttpResponse {
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
+
+    let routes = srv
+        .rw
+        .get_internals()
+        .await
+        .safe_strstr("extra_route", &HashMap::new());
+
+    info!("Custom post URL: {}", req.path());
+
+    for route in routes {
+        let parts: Vec<&str> = route.1.split(":").collect();
+        if parts[0] == req.path() {
+            info!("Call custom route {}", parts[2]);
+            return call_url_post_route(
+                &mut srv,
+                user,
+                parts[2],
+                req.query_string(),
+                payload,
+            )
+            .await;
+        }
+    }
+
+    HttpResponse::NotFound().into()
+}
+
 /// Call URL route that doesn't require authenticated user.
 pub async fn call_url_unprotected_route(
     srv: &mut crate::state::data::Data,
