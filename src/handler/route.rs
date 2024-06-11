@@ -248,8 +248,7 @@ pub async fn call_url_post_route(
     }
 
     for plugin in &mut srv.plugin_pool.plugins {
-        let wr =
-            plugin.route_url_post_hook(&srv.plugin_api, hndl, &usr, query, &post_itm);
+        let wr = plugin.route_url_post_hook(&srv.plugin_api, hndl, &usr, query, &post_itm);
         match wr {
             WebResponse::NotImplemented => {
                 continue;
@@ -290,14 +289,8 @@ pub async fn url_post_route(
         let parts: Vec<&str> = route.1.split(":").collect();
         if parts[0] == req.path() {
             info!("Call custom route {}", parts[2]);
-            return call_url_post_route(
-                &mut srv,
-                user,
-                parts[2],
-                req.query_string(),
-                payload,
-            )
-            .await;
+            return call_url_post_route(&mut srv, user, parts[2], req.query_string(), payload)
+                .await;
         }
     }
 
