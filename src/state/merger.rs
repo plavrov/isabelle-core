@@ -21,6 +21,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+#![cfg(not(feature = "full_file_database"))]
 use crate::state::store::*;
 use log::info;
 

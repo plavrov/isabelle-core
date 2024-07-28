@@ -29,6 +29,7 @@ use crate::init_google;
 use crate::send_email;
 use crate::state::store::Store;
 use crate::state::store_local::*;
+#[cfg(not(feature = "full_file_database"))]
 use crate::state::store_mongo::*;
 use crate::sync_with_google;
 use crate::verify_password;
@@ -41,6 +42,7 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
+use log::info;
 
 struct IsabellePluginApi {}
 
@@ -194,9 +196,13 @@ impl PluginApi for IsabellePluginApi {
 pub struct Data {
     /// File-based read/write data, which is useful for initial propagation
     /// of database.
+    #[cfg(not(feature = "full_file_database"))]
     pub file_rw: StoreLocal,
 
     /// Read database access struct.
+    #[cfg(feature = "full_file_database")]
+    pub rw: StoreLocal,
+    #[cfg(not(feature = "full_file_database"))]
     pub rw: StoreMongo,
 
     /// Path to Google Calendar.
@@ -223,9 +229,15 @@ pub struct Data {
 
 impl Data {
     pub fn new() -> Self {
+        #[cfg(feature = "full_file_database")]
+        let rw = StoreLocal::new();
+        #[cfg(not(feature = "full_file_database"))]
+        let rw = StoreMongo::new();
         Self {
+            #[cfg(not(feature = "full_file_database"))]
             file_rw: StoreLocal::new(),
-            rw: StoreMongo::new(),
+
+            rw: rw,
 
             gc_path: "".to_string(),
             py_path: "".to_string(),

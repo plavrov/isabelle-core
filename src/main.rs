@@ -27,6 +27,7 @@ use crate::util::crypto::*;
 
 use crate::notif::email::send_email;
 
+#[cfg(not(feature = "full_file_database"))]
 use crate::state::merger::merge_database;
 use crate::state::store::Store;
 
@@ -167,9 +168,18 @@ async fn main() -> std::io::Result<()> {
         let mut srv = srv_lock.borrow_mut();
         {
             // Put options to internal structures and connect to database
-            (*srv.deref_mut()).rw.database_name = database_name.clone();
-            (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
-            (*srv.deref_mut()).rw.connect(&db_url, &data_path).await;
+            #[cfg(not(feature = "full_file_database"))]
+            {
+                (*srv.deref_mut()).file_rw.connect(&data_path, "").await;
+                (*srv.deref_mut()).rw.database_name = database_name.clone();
+                (*srv.deref_mut()).rw.connect(&db_url, &data_path).await;
+            }
+            #[cfg(feature = "full_file_database")]
+            {
+                info!("Database url {} name {} unused", database_name.clone(),
+                    db_url.clone());
+                (*srv.deref_mut()).rw.connect(&data_path, "").await;
+            }
             (*srv.deref_mut()).gc_path = gc_path.to_string();
             (*srv.deref_mut()).py_path = py_path.to_string();
             (*srv.deref_mut()).data_path = data_path.to_string();
@@ -222,6 +232,7 @@ async fn main() -> std::io::Result<()> {
             }
 
             // If it is a first run, merge database.
+            #[cfg(not(feature = "full_file_database"))]
             if first_run {
                 let m = &mut (*srv.deref_mut());
                 info!("First run");

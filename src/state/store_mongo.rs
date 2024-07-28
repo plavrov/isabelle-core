@@ -66,6 +66,7 @@ pub struct StoreMongo {
 unsafe impl Send for StoreMongo {}
 
 impl StoreMongo {
+    #[cfg(not(feature = "full_file_database"))]
     pub fn new() -> Self {
         Self {
             path: "".to_string(),
