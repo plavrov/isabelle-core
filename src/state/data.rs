@@ -42,7 +42,6 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
-use log::info;
 
 struct IsabellePluginApi {}
 
