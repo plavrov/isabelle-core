@@ -176,8 +176,11 @@ async fn main() -> std::io::Result<()> {
             }
             #[cfg(feature = "full_file_database")]
             {
-                info!("Database url {} name {} unused", database_name.clone(),
-                    db_url.clone());
+                info!(
+                    "Database url {} name {} unused",
+                    database_name.clone(),
+                    db_url.clone()
+                );
                 (*srv.deref_mut()).rw.connect(&data_path, "").await;
             }
             (*srv.deref_mut()).gc_path = gc_path.to_string();
