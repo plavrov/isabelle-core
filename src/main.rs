@@ -62,13 +62,13 @@ use std::env;
 use std::ops::DerefMut;
 
 /// Session middleware based on cookies
-fn session_middleware(pub_fqdn: String) -> SessionMiddleware<CookieSessionStore> {
+fn session_middleware(_pub_fqdn: String) -> SessionMiddleware<CookieSessionStore> {
     SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
         .session_lifecycle(BrowserSession::default())
         .cookie_same_site(SameSite::None)
         .cookie_path("/".into())
         .cookie_name(String::from("isabelle-cookie"))
-        .cookie_domain(Some(pub_fqdn.into()))
+        //.cookie_domain(Some(pub_fqdn.into()))
         .cookie_content_security(CookieContentSecurity::Private)
         .cookie_http_only(true)
         .cookie_secure(true)
