@@ -17,8 +17,8 @@ bson = { version = "2.9.0", features = ["serde_with"] }
 chrono = "0.4.26"
 env_logger = "0.8.4"
 futures-util = "0.3.29"
-isabelle-dm = { "git" = "https://github.com/isabelle-platform/isabelle-dm", version = "1.1.0" }
-isabelle-plugin-api = { "git" = "https://github.com/isabelle-platform/isabelle-plugin-api", version = "1.1.0" }
+isabelle-dm = { "git" = "https://github.com/isabelle-platform/isabelle-dm", tag = "1.1.0" }
+isabelle-plugin-api = { "git" = "https://github.com/isabelle-platform/isabelle-plugin-api", tag = "1.1.0" }
 lazy_static = "1.4.0"
 lettre = "0.10.4"
 log = "0.4.0"
