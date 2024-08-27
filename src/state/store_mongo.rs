@@ -370,7 +370,7 @@ impl Store for StoreMongo {
             lr.total_count = itms.len() as u64;
         }
 
-        info!(" - result: {} items", count);
+        info!(" - result: {} items, total {}", lr.map.len(), lr.total_count);
         return lr;
     }
 
