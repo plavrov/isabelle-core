@@ -49,13 +49,21 @@ unsafe impl Send for IsabellePluginApi {}
 
 impl PluginApi for IsabellePluginApi {
     fn db_get_all_items(&self, collection: &str, sort_key: &str, filter: &str) -> ListResult {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-
-        runtime.block_on(async {
-            let srv_lock = G_STATE.server.lock();
-            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-            srv_mut.rw.get_all_items(collection, sort_key, filter).await
-        })
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        let collection1 = collection.to_string().clone();
+        let sort_key1 = sort_key.to_string().clone();
+        let filter1 = filter.to_string().clone();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async {
+                    srv_mut.rw.get_all_items(&collection1, &sort_key1, &filter1).await
+                }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
     }
 
     fn db_get_items(
@@ -68,43 +76,75 @@ impl PluginApi for IsabellePluginApi {
         skip: u64,
         limit: u64,
     ) -> ListResult {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-
-        runtime.block_on(async {
-            let srv_lock = G_STATE.server.lock();
-            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-            srv_mut
-                .rw
-                .get_items(collection, id_min, id_max, sort_key, filter, skip, limit)
-                .await
-        })
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        let collection1 = collection.to_string().clone();
+        let sort_key1 = sort_key.to_string().clone();
+        let filter1 = filter.to_string().clone();
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async {
+                    srv_mut
+                    .rw
+                    .get_items(&collection1, id_min, id_max, &sort_key1, &filter1, skip, limit)
+                    .await
+                }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
     }
     fn db_get_item(&self, collection: &str, id: u64) -> Option<Item> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        let collection1 = collection.to_string().clone();
 
-        runtime.block_on(async {
-            let srv_lock = G_STATE.server.lock();
-            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-            srv_mut.rw.get_item(collection, id).await
-        })
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async {
+                    srv_mut.rw.get_item(&collection1, id).await
+                }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
     }
+
     fn db_set_item(&self, collection: &str, itm: &Item, merge: bool) {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        let collection1 = collection.to_string().clone();
+        let itm1 = itm.clone();
 
-        runtime.block_on(async {
-            let srv_lock = G_STATE.server.lock();
-            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-            srv_mut.rw.set_item(collection, itm, merge).await
-        })
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async {
+                    srv_mut.rw.set_item(&collection1, &itm1, merge).await
+                }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
     }
-    fn db_del_item(&self, collection: &str, id: u64) -> bool {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
 
-        runtime.block_on(async {
-            let srv_lock = G_STATE.server.lock();
-            let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
-            srv_mut.rw.del_item(collection, id).await
-        })
+    fn db_del_item(&self, collection: &str, id: u64) -> bool {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        let (sender, receiver) = mpsc::channel();
+        let collection1 = collection.to_string().clone();
+
+        thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            sender
+                .send(rt.block_on(async {
+                    srv_mut.rw.del_item(&collection1, id).await
+                }))
+                .unwrap()
+        });
+        receiver.recv().unwrap()
     }
 
     fn globals_get_public_url(&self) -> String {
