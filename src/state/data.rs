@@ -59,7 +59,10 @@ impl PluginApi for IsabellePluginApi {
             let rt = Runtime::new().unwrap();
             sender
                 .send(rt.block_on(async {
-                    srv_mut.rw.get_all_items(&collection1, &sort_key1, &filter1).await
+                    srv_mut
+                        .rw
+                        .get_all_items(&collection1, &sort_key1, &filter1)
+                        .await
                 }))
                 .unwrap()
         });
@@ -87,9 +90,17 @@ impl PluginApi for IsabellePluginApi {
             sender
                 .send(rt.block_on(async {
                     srv_mut
-                    .rw
-                    .get_items(&collection1, id_min, id_max, &sort_key1, &filter1, skip, limit)
-                    .await
+                        .rw
+                        .get_items(
+                            &collection1,
+                            id_min,
+                            id_max,
+                            &sort_key1,
+                            &filter1,
+                            skip,
+                            limit,
+                        )
+                        .await
                 }))
                 .unwrap()
         });
@@ -104,9 +115,7 @@ impl PluginApi for IsabellePluginApi {
         thread::spawn(move || {
             let rt = Runtime::new().unwrap();
             sender
-                .send(rt.block_on(async {
-                    srv_mut.rw.get_item(&collection1, id).await
-                }))
+                .send(rt.block_on(async { srv_mut.rw.get_item(&collection1, id).await }))
                 .unwrap()
         });
         receiver.recv().unwrap()
@@ -122,9 +131,7 @@ impl PluginApi for IsabellePluginApi {
         thread::spawn(move || {
             let rt = Runtime::new().unwrap();
             sender
-                .send(rt.block_on(async {
-                    srv_mut.rw.set_item(&collection1, &itm1, merge).await
-                }))
+                .send(rt.block_on(async { srv_mut.rw.set_item(&collection1, &itm1, merge).await }))
                 .unwrap()
         });
         receiver.recv().unwrap()
@@ -139,9 +146,7 @@ impl PluginApi for IsabellePluginApi {
         thread::spawn(move || {
             let rt = Runtime::new().unwrap();
             sender
-                .send(rt.block_on(async {
-                    srv_mut.rw.del_item(&collection1, id).await
-                }))
+                .send(rt.block_on(async { srv_mut.rw.del_item(&collection1, id).await }))
                 .unwrap()
         });
         receiver.recv().unwrap()
