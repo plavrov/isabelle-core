@@ -21,6 +21,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use std::any::Any;
 use crate::check_role;
 use crate::get_new_salt;
 use crate::get_password_hash;
@@ -43,7 +44,8 @@ use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
 
-struct IsabellePluginApi {}
+struct IsabellePluginApi {
+}
 
 unsafe impl Send for IsabellePluginApi {}
 
@@ -234,6 +236,27 @@ impl PluginApi for IsabellePluginApi {
         });
         receiver.recv().unwrap()
     }
+
+    fn fn_get_state(&self, handle: &str) -> &Option<Box<(dyn Any + Send)>> {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+        if srv_mut.opaque_data.contains_key(handle) {
+            let obj = &srv_mut.opaque_data[handle];
+            return obj;
+        } else {
+            return &None;
+        }
+    }
+
+    fn fn_set_state(&self, handle: &str, value: Option<Box<(dyn Any + Send)>>) {
+        let srv_lock = G_STATE.server.lock();
+        let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
+
+        if srv_mut.opaque_data.contains_key(handle) {
+            srv_mut.opaque_data.remove(handle);
+        }
+        srv_mut.opaque_data.insert(handle.to_string(), value);
+    }
 }
 
 /// Server data structure
@@ -269,6 +292,9 @@ pub struct Data {
 
     /// Plugin API instance
     pub plugin_api: Box<dyn PluginApi>,
+
+    /// Opaque data (mainly for plugins)
+    pub opaque_data: HashMap<String, Option<Box<(dyn Any + Send)>>>,
 }
 
 impl Data {
@@ -291,7 +317,8 @@ impl Data {
             plugin_pool: PluginPool {
                 plugins: Vec::new(),
             },
-            plugin_api: Box::new(IsabellePluginApi {}),
+            plugin_api: Box::new(IsabellePluginApi { }),
+            opaque_data: HashMap::new(),
         }
     }
 
