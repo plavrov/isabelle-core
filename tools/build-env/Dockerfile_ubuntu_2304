@@ -13,3 +13,5 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 RUN mkdir -p /home/root/.cargo && chmod -R 777 /home/root/.cargo
 
 ENV PATH="/home/root/.cargo/bin:${PATH}"
+
+RUN rustup update stable
