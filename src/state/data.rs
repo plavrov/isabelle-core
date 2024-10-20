@@ -21,7 +21,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-use std::any::Any;
 use crate::check_role;
 use crate::get_new_salt;
 use crate::get_password_hash;
@@ -39,13 +38,13 @@ use isabelle_dm::data_model::item::Item;
 use isabelle_dm::data_model::list_result::ListResult;
 use isabelle_plugin_api::api::*;
 use isabelle_plugin_api::plugin_pool::PluginPool;
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
 
-struct IsabellePluginApi {
-}
+struct IsabellePluginApi {}
 
 unsafe impl Send for IsabellePluginApi {}
 
@@ -317,7 +316,7 @@ impl Data {
             plugin_pool: PluginPool {
                 plugins: Vec::new(),
             },
-            plugin_api: Box::new(IsabellePluginApi { }),
+            plugin_api: Box::new(IsabellePluginApi {}),
             opaque_data: HashMap::new(),
         }
     }
