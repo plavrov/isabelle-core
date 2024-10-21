@@ -21,6 +21,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use chrono::Timelike;
 #[macro_use]
 extern crate lazy_static;
 use crate::util::crypto::*;
@@ -260,20 +261,23 @@ async fn main() -> std::io::Result<()> {
 
     // periodic tasks
     thread::spawn(move || {
-        let expression = "0   *   *     *       *  *  *";
+        let expression = "*   *   *     *       *  *  *";
         let schedule = Schedule::from_str(expression).unwrap();
         let offset = Some(FixedOffset::east_opt(0)).unwrap();
         loop {
             let mut upcoming = schedule.upcoming(offset.unwrap()).take(1);
             thread::sleep(Duration::from_millis(500));
 
-            let local = &Local::now();
+            let local = Local::now();
 
             if let Some(datetime) = upcoming.next() {
                 if datetime.timestamp() <= local.timestamp() {
                     let srv_lock = data_clone.server.lock();
                     let mut srv = srv_lock.borrow_mut();
-                    call_periodic_job_hook(&mut srv, "min")
+                    if local.time().second() == 0 {
+                        call_periodic_job_hook(&mut srv, "min");
+                    }
+                    call_periodic_job_hook(&mut srv, "sec");
                 }
             }
         }
