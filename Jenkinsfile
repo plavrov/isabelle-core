@@ -2,7 +2,7 @@ pipeline {
   /* Use docker image from tools/build-env folder */
   agent {
     dockerfile {
-      filename 'Dockerfile_ubuntu_2304'
+      filename 'Dockerfile_ubuntu_2404'
       dir 'tools/build-env'
     }
   }
