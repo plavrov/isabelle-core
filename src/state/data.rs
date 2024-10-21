@@ -44,7 +44,8 @@ use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
 
-struct IsabellePluginApi {}
+struct IsabellePluginApi {
+}
 
 unsafe impl Send for IsabellePluginApi {}
 
@@ -236,14 +237,14 @@ impl PluginApi for IsabellePluginApi {
         receiver.recv().unwrap()
     }
 
-    fn fn_get_state(&self, handle: &str) -> &Option<Box<(dyn Any + Send)>> {
+    fn fn_get_state(&self, handle: &str) -> &mut Option<Box<(dyn Any + Send)>> {
         let srv_lock = G_STATE.server.lock();
         let srv_mut = unsafe { &mut (*srv_lock.as_ptr()) };
         if srv_mut.opaque_data.contains_key(handle) {
-            let obj = &srv_mut.opaque_data[handle];
+            let obj = srv_mut.opaque_data.get_mut(handle).unwrap();
             return obj;
         } else {
-            return &None;
+            return &mut srv_mut.none_object;
         }
     }
 
@@ -294,6 +295,9 @@ pub struct Data {
 
     /// Opaque data (mainly for plugins)
     pub opaque_data: HashMap<String, Option<Box<(dyn Any + Send)>>>,
+
+    /// Purely internal none-object for proper boxing
+    none_object: Option<Box<(dyn Any + Send)>>,
 }
 
 impl Data {
@@ -316,8 +320,10 @@ impl Data {
             plugin_pool: PluginPool {
                 plugins: Vec::new(),
             },
-            plugin_api: Box::new(IsabellePluginApi {}),
+            plugin_api: Box::new(IsabellePluginApi {
+            }),
             opaque_data: HashMap::new(),
+            none_object: None,
         }
     }
 
