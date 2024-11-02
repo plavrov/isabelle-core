@@ -56,6 +56,16 @@
 			"shell": true,
 			"working_dir": "${project_path:${folder}}",
 			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
+		},
+		{
+			"cmd":
+			[
+				"make && ./run.sh --data-path ./data-cloudcpe --database cloudcpe --plugin-dir ."
+			],
+			"name": "CloudCPE Core - build & run",
+			"shell": true,
+			"working_dir": "${project_path:${folder}}",
+			"file_regex": "[ ]*--> (.*):(.*):(.*)$",
 		}
 	]
 }
