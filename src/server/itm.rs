@@ -267,7 +267,6 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
 
         if srv_mut.rw.del_item(&mc.collection, itm.id).await {
             info!("Collection {} element {} removed", mc.collection, itm.id);
-            return HttpResponse::Ok().into();
         }
 
         /* call hooks */
@@ -292,6 +291,8 @@ pub async fn itm_del(user: Identity, data: web::Data<State>, req: HttpRequest) -
                 }
             }
         }
+
+        return HttpResponse::Ok().into();
     } else {
         error!("Collection {} doesn't exist", mc.collection);
     }
