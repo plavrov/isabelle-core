@@ -44,8 +44,7 @@ use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
 
-struct IsabellePluginApi {
-}
+struct IsabellePluginApi {}
 
 unsafe impl Send for IsabellePluginApi {}
 
@@ -320,8 +319,7 @@ impl Data {
             plugin_pool: PluginPool {
                 plugins: Vec::new(),
             },
-            plugin_api: Box::new(IsabellePluginApi {
-            }),
+            plugin_api: Box::new(IsabellePluginApi {}),
             opaque_data: HashMap::new(),
             none_object: None,
         }
