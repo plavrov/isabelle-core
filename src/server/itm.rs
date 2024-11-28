@@ -345,8 +345,8 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             lq.collection, lq.id_min, lq.id_max, lq.sort_key, lq.skip, lq.limit, lq.filter
         );
 
-        let mut filters : Vec<String> = Vec::new();
-        let mut final_filter : String = "".to_string();
+        let mut filters: Vec<String> = Vec::new();
+        let mut final_filter: String = "".to_string();
 
         if lq.filter != "" {
             filters.push(lq.filter.to_string());
@@ -364,7 +364,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 &usr,
                 &lq.collection,
                 &lq.context,
-                "mongo"
+                "mongo",
             )
             .await;
             filters.extend(new_filters);
@@ -374,11 +374,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             if final_filter == "" {
                 final_filter = filt;
             } else {
-                final_filter = "{ \"$and\": [".to_owned() +
-                        &final_filter +
-                        ", " +
-                        &filt +
-                    "]}";
+                final_filter = "{ \"$and\": [".to_owned() + &final_filter + ", " + &filt + "]}";
             }
         }
 

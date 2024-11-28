@@ -181,7 +181,14 @@ pub async fn call_itm_list_db_filter_hook(
 ) -> Vec<String> {
     let mut filters = Vec::new();
     for plugin in &mut srv.plugin_pool.plugins {
-        let filter = plugin.item_list_db_filter_hook(&srv.plugin_api, hndl, user, collection, context, filter_type);
+        let filter = plugin.item_list_db_filter_hook(
+            &srv.plugin_api,
+            hndl,
+            user,
+            collection,
+            context,
+            filter_type,
+        );
         if filter != "" {
             filters.push(filter);
         }
