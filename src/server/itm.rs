@@ -344,6 +344,44 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             "Collection {} requested range {} - {} sort {} skip {} limit {} filter {}",
             lq.collection, lq.id_min, lq.id_max, lq.sort_key, lq.skip, lq.limit, lq.filter
         );
+
+        let mut filters : Vec<String> = Vec::new();
+        let mut final_filter : String = "".to_string();
+
+        if lq.filter != "" {
+            filters.push(lq.filter.to_string());
+        }
+
+        let routes = srv
+            .rw
+            .get_internals()
+            .await
+            .safe_strstr("itm_list_db_filter_hook", &HashMap::new());
+        for route in routes {
+            let new_filters = call_itm_list_db_filter_hook(
+                &mut srv,
+                &route.1,
+                &usr,
+                &lq.collection,
+                &lq.context,
+                "mongo"
+            )
+            .await;
+            filters.extend(new_filters);
+        }
+
+        for filt in filters {
+            if final_filter == "" {
+                final_filter = filt;
+            } else {
+                final_filter = "{ \"$and\": [".to_owned() +
+                        &final_filter +
+                        ", " +
+                        &filt +
+                    "]}";
+            }
+        }
+
         lr = srv
             .rw
             .get_items(
@@ -351,7 +389,7 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
                 lq.id_min,
                 lq.id_max,
                 &lq.sort_key,
-                &lq.filter,
+                &final_filter,
                 lq.skip,
                 lq.limit,
             )
