@@ -171,6 +171,24 @@ pub async fn call_itm_list_filter_hook(
     }
 }
 
+pub async fn call_itm_list_db_filter_hook(
+    srv: &mut crate::state::data::Data,
+    hndl: &str,
+    user: &Option<Item>,
+    collection: &str,
+    context: &str,
+    filter_type: &str,
+) -> Vec<String> {
+    let mut filters = Vec::new();
+    for plugin in &mut srv.plugin_pool.plugins {
+        let filter = plugin.item_list_db_filter_hook(&srv.plugin_api, hndl, user, collection, context, filter_type);
+        if filter != "" {
+            filters.push(filter);
+        }
+    }
+    return filters;
+}
+
 /// Call HTTP url hook, allowing for responses to web requests.
 pub async fn call_url_route(
     srv: &mut crate::state::data::Data,
