@@ -101,10 +101,10 @@ pipeline {
                                 makeEmptyDirs: false,
                                 noDefaultExcludes: false,
                                 patternSeparator: '[, ]+',
-                                remoteDirectory: 'branches/${BRANCH_FOLDER}-${BUILD_NUMBER}',
+                                remoteDirectory: "branches/${BRANCH_FOLDER}-${BUILD_NUMBER}",
                                 remoteDirectorySDF: false,
                                 removePrefix: 'build',
-                                sourceFiles: 'build/isabelle-core-*${BRANCH_FOLDER}-${BUILD_NUMBER}*.tar.xz'
+                                sourceFiles: "build/isabelle-core-*${BRANCH_FOLDER}-${BUILD_NUMBER}*.tar.xz"
                               ]],
                             usePromotionTimestamp: false,
                             useWorkspaceInPromotion: false,
@@ -128,10 +128,10 @@ pipeline {
                                 makeEmptyDirs: false,
                                 noDefaultExcludes: false,
                                 patternSeparator: '[, ]+',
-                                remoteDirectory: 'branches/${BRANCH_FOLDER}',
+                                remoteDirectory: "branches/${BRANCH_FOLDER}",
                                 remoteDirectorySDF: false,
                                 removePrefix: 'build',
-                                sourceFiles: 'build/isabelle-core-*${BRANCH_FOLDER}-latest*.tar.xz'
+                                sourceFiles: "build/isabelle-core-*${BRANCH_FOLDER}-latest*.tar.xz"
                               ]],
                             usePromotionTimestamp: false,
                             useWorkspaceInPromotion: false,
@@ -167,7 +167,7 @@ pipeline {
                                 remoteDirectory: "${FULL_VERSION}",
                                 remoteDirectorySDF: false,
                                 removePrefix: 'build/versioned_artifacts',
-                                sourceFiles: 'build/versioned_artifacts/isabelle-core-*.tar.xz'
+                                sourceFiles: "build/versioned_artifacts/isabelle-core-*.tar.xz"
                               ]],
                             usePromotionTimestamp: false,
                             useWorkspaceInPromotion: false,
