@@ -280,6 +280,7 @@ pub async fn call_url_post_route(
                 let v = &data.to_vec();
                 let strv = std::str::from_utf8(v).unwrap_or("{}");
                 let new_itm: Item = serde_json::from_str(strv).unwrap_or(Item::new());
+                post_itm.id = new_itm.id;
                 post_itm.merge(&new_itm);
             }
         } else {
