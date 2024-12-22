@@ -307,12 +307,6 @@ impl Store for StoreMongo {
                 .database(&self.database_name)
                 .collection(collection);
 
-            let find_options = FindOptions::builder()
-                .sort(doc! { sort_key: -1 })
-                .skip(eff_skip)
-                .limit(Some(eff_limit))
-                .build();
-
             let json_bson: Document = if filter != "" {
                 info!("Using real filter: {}", filter);
                 let bson_document = self.json_to_bson(filter).await;
