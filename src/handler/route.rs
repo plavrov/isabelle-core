@@ -91,14 +91,10 @@ pub async fn call_item_pre_edit_hook(
         }
     }
 
-    match hndl {
-        &_ => {
-            return ProcessResult {
-                succeeded: true,
-                error: "".to_string(),
-            };
-        }
-    }
+    return ProcessResult {
+        succeeded: true,
+        error: "".to_string(),
+    };
 }
 
 /// Call hook associated with post-editing of item data.
