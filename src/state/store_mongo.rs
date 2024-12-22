@@ -328,10 +328,10 @@ impl Store for StoreMongo {
                 Document::new()
             };
 
-            let count = coll.count_documents(json_bson.clone()).await;
+            let count = coll.count_documents(json_bson.clone()).skip(eff_skip).limit(eff_limit.try_into().unwrap()).await;
             lr.total_count = count.unwrap_or(0);
 
-            let mut cursor = coll.find(json_bson).await;
+            let mut cursor = coll.find(json_bson).skip(eff_skip).limit(eff_limit).await;
             loop {
                 let result = cursor.as_mut().unwrap().try_next().await;
                 match result {
