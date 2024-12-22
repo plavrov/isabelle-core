@@ -32,10 +32,7 @@ use isabelle_dm::data_model::item::*;
 use log::info;
 use serde_json::Value;
 
-use mongodb::{
-    bson::doc, Client, Collection,
-    IndexModel,
-};
+use mongodb::{bson::doc, Client, Collection, IndexModel};
 use std::collections::HashMap;
 
 /// Mongo storage implementation
@@ -141,9 +138,7 @@ impl Store for StoreMongo {
             let db = self.client.as_ref().unwrap().database(&self.database_name);
             for coll_name in collections {
                 info!("Create collection {}", &coll_name.1);
-                db.create_collection(&coll_name.1)
-                    .await
-                    .unwrap();
+                db.create_collection(&coll_name.1).await.unwrap();
                 let coll: Collection<Item> = db.collection(&coll_name.1);
                 let index: IndexModel = IndexModel::builder().keys(doc! { "id": 1 }).build();
                 let _result = coll.create_index(index).await;
@@ -322,7 +317,11 @@ impl Store for StoreMongo {
                 Document::new()
             };
 
-            let count = coll.count_documents(json_bson.clone()).skip(eff_skip).limit(eff_limit.try_into().unwrap()).await;
+            let count = coll
+                .count_documents(json_bson.clone())
+                .skip(eff_skip)
+                .limit(eff_limit.try_into().unwrap())
+                .await;
             lr.total_count = count.unwrap_or(0);
 
             let mut cursor = coll.find(json_bson).skip(eff_skip).limit(eff_limit).await;
