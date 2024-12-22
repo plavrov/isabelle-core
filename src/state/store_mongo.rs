@@ -33,7 +33,7 @@ use log::info;
 use serde_json::Value;
 
 use mongodb::{
-    bson::doc, options::CreateCollectionOptions, options::FindOptions, Client, Collection,
+    bson::doc, options::FindOptions, Client, Collection,
     IndexModel,
 };
 use std::collections::HashMap;
