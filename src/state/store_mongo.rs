@@ -141,22 +141,21 @@ impl Store for StoreMongo {
             let db = self.client.as_ref().unwrap().database(&self.database_name);
             for coll_name in collections {
                 info!("Create collection {}", &coll_name.1);
-                db.create_collection(&coll_name.1, CreateCollectionOptions::default())
+                db.create_collection(&coll_name.1)
                     .await
                     .unwrap();
                 let coll: Collection<Item> = db.collection(&coll_name.1);
                 let index: IndexModel = IndexModel::builder().keys(doc! { "id": 1 }).build();
-                let _result = coll.create_index(index, None).await;
+                let _result = coll.create_index(index).await;
 
                 let coll_idx = self.collections.len().try_into().unwrap();
                 self.collections.insert(coll_name.1.to_string(), coll_idx);
 
                 let mut map: HashMap<u64, bool> = HashMap::new();
                 let filter = doc! {}; // An empty filter matches all documents
-                let options = FindOptions::default();
 
                 // Find documents in the collection and fill hash map/counter
-                let mut cursor = coll.find(filter, options).await.unwrap();
+                let mut cursor = coll.find(filter).await.unwrap();
                 let mut count = 0;
                 while let Some(doc) = cursor.try_next().await.unwrap() {
                     map.insert(doc.id, true);
@@ -179,7 +178,7 @@ impl Store for StoreMongo {
             .as_ref()
             .unwrap()
             .database(&self.database_name)
-            .list_collection_names(None)
+            .list_collection_names()
             .await
             .unwrap();
         let mut lst: Vec<String> = Vec::new();
@@ -230,7 +229,7 @@ impl Store for StoreMongo {
             "id": id as i64,
         };
 
-        let result = coll.find_one(filter, None).await;
+        let result = coll.find_one(filter).await;
 
         match result {
             Ok(r) => {
@@ -329,10 +328,10 @@ impl Store for StoreMongo {
                 Document::new()
             };
 
-            let count = coll.count_documents(json_bson.clone(), None).await;
+            let count = coll.count_documents(json_bson.clone()).await;
             lr.total_count = count.unwrap_or(0);
 
-            let mut cursor = coll.find(json_bson, find_options).await;
+            let mut cursor = coll.find(json_bson).await;
             loop {
                 let result = cursor.as_mut().unwrap().try_next().await;
                 match result {
@@ -409,9 +408,9 @@ impl Store for StoreMongo {
         };
 
         if old_itm.as_ref().is_none() {
-            let _res = coll.insert_one(new_itm.clone(), None).await;
+            let _res = coll.insert_one(new_itm.clone()).await;
         } else {
-            let _res = coll.replace_one(filter, new_itm.clone(), None).await;
+            let _res = coll.replace_one(filter, new_itm.clone()).await;
         }
 
         let coll_id = self.collections[collection];
@@ -444,7 +443,7 @@ impl Store for StoreMongo {
             "id": id as i64,
         };
 
-        let _res = coll.delete_one(filter, None).await;
+        let _res = coll.delete_one(filter).await;
 
         let coll_id = self.collections[collection];
         if self.items.contains_key(&coll_id) {
