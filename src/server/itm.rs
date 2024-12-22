@@ -410,7 +410,9 @@ pub async fn itm_list(user: Identity, data: web::Data<State>, req: HttpRequest) 
             .get_internals()
             .await
             .safe_strstr("itm_list_filter_hook", &HashMap::new());
-        for route in routes {
+        let mut sorted_routes: Vec<_> = routes.iter().collect();
+        sorted_routes.sort_by(|a, b| a.0.cmp(b.0));
+        for route in sorted_routes {
             call_itm_list_filter_hook(
                 &mut srv,
                 &route.1,
