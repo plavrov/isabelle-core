@@ -21,9 +21,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-use std::path::Path;
 use actix_web::HttpResponse;
 use isabelle_plugin_api::api::WebResponse;
+use std::path::Path;
 
 /// Convert internal Web response to proper HttpResponse
 pub async fn conv_response(resp: WebResponse) -> HttpResponse {
