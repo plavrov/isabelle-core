@@ -175,7 +175,7 @@ pub async fn call_url_route(
                 continue;
             }
             _ => {
-                return conv_response(wr);
+                return conv_response(wr).await;
             }
         }
     }
@@ -267,8 +267,7 @@ pub async fn call_url_post_route(
     }
 
     handle_file_cleanup(&files).await;
-
-    return conv_response(response);
+    return conv_response(response).await;
 }
 
 /// Call URL route that doesn't require authenticated user.
@@ -291,7 +290,7 @@ pub async fn call_url_unprotected_route(
                 continue;
             }
             _ => {
-                return conv_response(wr);
+                return conv_response(wr).await;
             }
         }
     }
@@ -335,7 +334,7 @@ pub async fn call_url_unprotected_post_route(
 
     handle_file_cleanup(&files).await;
 
-    return conv_response(response);
+    return conv_response(response).await;
 }
 
 /// Call collection read hook that can actually filter out particular item

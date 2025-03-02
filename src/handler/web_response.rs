@@ -21,11 +21,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use std::path::Path;
 use actix_web::HttpResponse;
 use isabelle_plugin_api::api::WebResponse;
 
 /// Convert internal Web response to proper HttpResponse
-pub fn conv_response(resp: WebResponse) -> HttpResponse {
+pub async fn conv_response(resp: WebResponse) -> HttpResponse {
     match resp {
         WebResponse::Ok => {
             return HttpResponse::Ok().into();
@@ -33,8 +34,18 @@ pub fn conv_response(resp: WebResponse) -> HttpResponse {
         WebResponse::OkData(text) => {
             return HttpResponse::Ok().body(text);
         }
-        WebResponse::OkFile(name, _data) => {
-            return HttpResponse::Ok().body(name);
+        WebResponse::OkFile(_name, _data) => {
+            return HttpResponse::Ok().into();
+        }
+        WebResponse::OkFilePath(_name, p) => {
+            let path = Path::new(&p);
+            if Path::exists(&path) {
+                let file = actix_files::NamedFile::open_async(path).await.unwrap();
+                let req = actix_web::test::TestRequest::default().to_http_request();
+                return file.into_response(&req);
+            } else {
+                return HttpResponse::NotFound().into();
+            }
         }
         WebResponse::NotFound => {
             return HttpResponse::NotFound().into();
