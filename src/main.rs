@@ -47,6 +47,8 @@ use crate::handler::route::url_post_route;
 use crate::handler::route::url_route;
 use crate::handler::route::url_unprotected_post_route;
 use crate::handler::route::url_unprotected_route;
+use crate::handler::route::url_rest_route;
+use crate::handler::route::url_post_rest_route;
 use crate::handler::route_call::call_periodic_job_hook;
 use crate::notif::gcal::*;
 use crate::server::itm::*;
@@ -104,6 +106,7 @@ async fn main() -> std::io::Result<()> {
     // Routes: they must be collected here in order to be set up in Actix
     let mut new_routes: HashMap<String, String> = HashMap::new();
     let mut new_unprotected_routes: HashMap<String, String> = HashMap::new();
+    let mut new_rest_routes: HashMap<String, String> = HashMap::new();
 
     {
         let srv_lock = G_STATE.server.lock();
@@ -180,6 +183,18 @@ async fn main() -> std::io::Result<()> {
                 let parts: Vec<&str> = route.1.split(":").collect();
                 new_unprotected_routes.insert(parts[0].to_string(), parts[1].to_string());
                 info!("Adding unprotected route: {} : {}", parts[0], parts[1]);
+            }
+        }
+        {
+            let routes = srv
+                .rw
+                .get_internals()
+                .await
+                .safe_strstr("extra_rest_route", &HashMap::new());
+            for route in routes {
+                let parts: Vec<&str> = route.1.split(":").collect();
+                new_rest_routes.insert(parts[0].to_string(), parts[1].to_string());
+                info!("Adding rest route: {} : {}", parts[0], parts[1]);
             }
         }
 
@@ -264,6 +279,14 @@ async fn main() -> std::io::Result<()> {
                 app = app.route(route.0, web::post().to(url_unprotected_post_route))
             } else if route.1 == "get" {
                 app = app.route(route.0, web::get().to(url_unprotected_route))
+            }
+        }
+        // Set up rest routes
+        for route in &new_rest_routes {
+            if route.1 == "post" {
+                app = app.route(route.0, web::post().to(url_post_rest_route))
+            } else if route.1 == "get" {
+                app = app.route(route.0, web::get().to(url_rest_route))
             }
         }
         app

@@ -21,6 +21,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use actix_web::web;
+use serde_json::Value;
 use crate::handler::web_response::*;
 use crate::server::user_control::*;
 use actix_identity::Identity;
@@ -335,6 +337,39 @@ pub async fn call_url_unprotected_post_route(
     handle_file_cleanup(&files).await;
 
     return conv_response(response).await;
+}
+
+/// Call URL REST route.
+pub async fn call_url_rest_route(
+    mut srv: &mut crate::state::data::Data,
+    user: Option<Identity>,
+    hndl: &str,
+    method: &str,
+    query: &str,
+    payload: &str,
+) -> WebResponse {
+    let mut usr: Option<Item> = None;
+
+    if !user.is_none() {
+        usr = get_user(&mut srv, user.unwrap().id().unwrap()).await;
+    }
+
+    let mut response: WebResponse = WebResponse::Ok;
+
+    for plugin in &mut srv.plugin_pool.plugins {
+        let wr =
+            plugin.route_rest_hook(&srv.plugin_api, hndl, method, &usr, query, payload);
+        match wr {
+            WebResponse::NotImplemented => {
+                continue;
+            }
+            _ => {
+                response = wr;
+            }
+        }
+    }
+
+    return response;
 }
 
 /// Call collection read hook that can actually filter out particular item

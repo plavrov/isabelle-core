@@ -21,6 +21,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use futures_util::StreamExt;
+use actix_web::HttpMessage;
+use crate::handler::web_response::conv_response;
+use isabelle_plugin_api::api::WebResponse;
+use actix_web::web;
+use serde_json::Value;
 use crate::handler::route_call::*;
 use crate::state::store::Store;
 use crate::State;
@@ -152,4 +158,84 @@ pub async fn url_unprotected_post_route(
     }
 
     HttpResponse::NotFound().into()
+}
+
+
+/// Call URL REST hook with the payload
+pub async fn url_generic_rest_route(
+    user: Option<Identity>,
+    data: actix_web::web::Data<State>,
+    req: HttpRequest,
+    payload: &mut web::Payload,
+    method: &str,
+) -> HttpResponse {
+
+    let mut body = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        let chunk = chunk.unwrap();
+        // limit max size of in-memory payload
+        if (body.len() + chunk.len()) > 20 * 1024 * 1024 {
+            return HttpResponse::BadRequest().into();
+        }
+        body.extend_from_slice(&chunk);
+    }
+
+    let body = std::str::from_utf8(&body);
+    if !body.is_ok() {
+        return HttpResponse::BadRequest().into();
+    }
+
+    let body = body.unwrap();
+
+    let srv_lock = data.server.lock();
+    let mut srv = srv_lock.borrow_mut();
+    let routes = srv
+        .rw
+        .get_internals()
+        .await
+        .safe_strstr("extra_rest_route", &HashMap::new());
+
+    for route in routes {
+        let parts: Vec<&str> = route.1.split(":").collect();
+        if parts[0] == req.path() {
+            trace!("Call custom route {}", parts[2]);
+            let resp = call_url_rest_route(&mut srv, user, parts[2], method, req.query_string(), body).await;
+            match &resp {
+                WebResponse::Login(email) => {
+                    Identity::login(&req.extensions(), email.to_string()).unwrap();
+                }
+                WebResponse::Logout => {
+                    /* FIXME */
+                }
+                _ => {
+
+                }
+            }
+            return conv_response(resp).await;
+        }
+    }
+
+    HttpResponse::NotFound().into()
+}
+
+/// Call URL rest hooks. This function checks actual location from request
+/// first.
+pub async fn url_rest_route(
+    user: Option<Identity>,
+    data: actix_web::web::Data<State>,
+    req: HttpRequest,
+    mut payload: web::Payload,
+) -> HttpResponse {
+    return url_generic_rest_route(user, data, req, &mut payload, "GET").await;
+}
+
+/// Call URL rest hooks. This function checks actual location from request
+/// first.
+pub async fn url_post_rest_route(
+    user: Option<Identity>,
+    data: actix_web::web::Data<State>,
+    req: HttpRequest,
+    mut payload: web::Payload,
+) -> HttpResponse {
+    return url_generic_rest_route(user, data, req, &mut payload, "POST").await;
 }

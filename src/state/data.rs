@@ -21,6 +21,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+use isabelle_dm::data_model::process_result::ProcessResult;
 use crate::check_role;
 use crate::get_new_salt;
 use crate::get_password_hash;
@@ -246,6 +247,22 @@ impl PluginApi for IsabellePluginApi {
     }
     fn auth_verify_password(&self, pw: &str, pw_hash: &str) -> bool {
         verify_password(pw, pw_hash)
+    }
+
+    fn auth_login(&self, _login: &str, _password: &str) -> ProcessResult {
+        return ProcessResult { succeeded: false, error: "test".to_string() };
+    }
+
+    fn auth_logout(&self, _login: &str) -> ProcessResult {
+        return ProcessResult { succeeded: false, error: "test".to_string() };
+    }
+
+    fn auth_gen_otp(&self, _login: &str) -> ProcessResult {
+        return ProcessResult { succeeded: false, error: "test".to_string() };
+    }
+
+    fn auth_register(&self, _login: &str, _email: &str) -> ProcessResult {
+        return ProcessResult { succeeded: false, error: "test".to_string() };
     }
 
     fn fn_send_email(&self, to: &str, subject: &str, body: &str) {
