@@ -28,7 +28,10 @@ use std::path::Path;
 /// Convert internal Web response to proper HttpResponse
 pub async fn conv_response(resp: WebResponse) -> HttpResponse {
     match resp {
-        WebResponse::Ok => {
+        WebResponse::Ok | WebResponse::Logout => {
+            return HttpResponse::Ok().into();
+        }
+        WebResponse::Login(_email) => {
             return HttpResponse::Ok().into();
         }
         WebResponse::OkData(text) => {
