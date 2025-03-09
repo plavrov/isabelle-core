@@ -355,8 +355,7 @@ pub async fn call_url_rest_route(
     let mut response: WebResponse = WebResponse::Ok;
 
     for plugin in &mut srv.plugin_pool.plugins {
-        let wr =
-            plugin.route_rest_hook(&srv.plugin_api, hndl, method, &usr, query, payload);
+        let wr = plugin.route_rest_hook(&srv.plugin_api, hndl, method, &usr, query, payload);
         match wr {
             WebResponse::NotImplemented => {
                 continue;
