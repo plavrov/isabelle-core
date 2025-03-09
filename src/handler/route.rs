@@ -26,7 +26,6 @@ use actix_web::HttpMessage;
 use crate::handler::web_response::conv_response;
 use isabelle_plugin_api::api::WebResponse;
 use actix_web::web;
-use serde_json::Value;
 use crate::handler::route_call::*;
 use crate::state::store::Store;
 use crate::State;

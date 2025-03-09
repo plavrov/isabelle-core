@@ -21,8 +21,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-use actix_web::web;
-use serde_json::Value;
 use crate::handler::web_response::*;
 use crate::server::user_control::*;
 use actix_identity::Identity;
